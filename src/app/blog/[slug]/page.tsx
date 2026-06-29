@@ -168,7 +168,7 @@ export default async function BlogPostPage({
           <div className="mt-8">
             <Link
               href="/blog"
-              className="text-primary inline-flex items-center gap-2 text-sm font-medium hover:underline"
+              className="text-primary -mx-3 inline-flex min-h-11 items-center gap-2 rounded-full px-3 py-2.5 text-sm font-medium hover:underline"
             >
               <ArrowLeft className="size-4" />
               Back to all articles

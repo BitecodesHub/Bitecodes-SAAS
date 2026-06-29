@@ -81,7 +81,7 @@ export default function ContactPage() {
 
             <div>
               <p className="text-sm font-semibold">Follow along</p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex gap-3">
                 {socials.map((s) => (
                   <a
                     key={s.label}
@@ -89,7 +89,7 @@ export default function ContactPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-10 items-center justify-center rounded-full border transition-colors"
+                    className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-11 items-center justify-center rounded-full border transition-colors"
                   >
                     <s.icon className="size-4" />
                   </a>

@@ -13,6 +13,7 @@ import { JsonLd } from "@/components/json-ld";
 import { services, getService } from "@/data/services";
 import { getTech } from "@/data/technologies";
 import { createMetadata, breadcrumbSchema, serviceSchema } from "@/lib/seo";
+import { ServicePricing } from "@/components/pricing/service-pricing";
 
 export function generateStaticParams() {
   return services.map((s) => ({ slug: s.slug }));
@@ -112,6 +113,7 @@ export default async function ServiceDetailPage({
                 )}
               </div>
             </div>
+            <ServicePricing slug={service.slug} />
             <div className="border-border from-brand-1 via-brand-2 to-brand-3 rounded-2xl border bg-gradient-to-br p-6 text-white">
               <h3 className="text-lg font-semibold">Ready to start?</h3>
               <p className="mt-2 text-sm text-white/85">

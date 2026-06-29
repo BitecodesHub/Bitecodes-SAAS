@@ -27,7 +27,9 @@ export default function robots(): MetadataRoute.Robots {
       // indexed and cited by generative answer engines.
       { userAgent: aiBots, allow: "/" },
     ],
-    sitemap: `${siteConfig.url}/sitemap.xml`,
+    // Point at the sitemap index so crawlers discover the
+    // news/image/video/products/categories/tags sub-sitemaps from one entry.
+    sitemap: `${siteConfig.url}/sitemap-index.xml`,
     host: siteConfig.url,
   };
 }

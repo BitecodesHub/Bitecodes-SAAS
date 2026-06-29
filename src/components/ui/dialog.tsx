@@ -19,7 +19,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "bg-background/70 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 backdrop-blur-sm",
+      "bg-foreground/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 backdrop-blur-sm dark:bg-black/60",
       className,
     )}
     {...props}
@@ -49,7 +49,7 @@ const DialogSheet = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="focus-visible:ring-ring absolute top-5 right-5 rounded-full p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2">
+      <DialogPrimitive.Close className="focus-visible:ring-ring absolute top-4 right-4 flex size-11 items-center justify-center rounded-full opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2">
         <X className="size-5" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

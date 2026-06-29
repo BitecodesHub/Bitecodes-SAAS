@@ -2,7 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/lib/site";
-import { organizationSchema, websiteSchema } from "@/lib/seo";
+import {
+  organizationSchema,
+  websiteSchema,
+  FEED_ALTERNATE_TYPES,
+} from "@/lib/seo";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/navigation/site-footer";
@@ -48,7 +52,10 @@ export const metadata: Metadata = {
   authors: [{ name: siteConfig.founder }],
   creator: siteConfig.name,
   publisher: siteConfig.name,
-  alternates: { canonical: "/" },
+  alternates: {
+    canonical: "/",
+    types: FEED_ALTERNATE_TYPES,
+  },
   openGraph: {
     type: "website",
     siteName: siteConfig.name,

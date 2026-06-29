@@ -54,7 +54,7 @@ export function PageHeader({
                     ) : (
                       <Link
                         href={crumb.href}
-                        className="hover:text-foreground transition-colors"
+                        className="hover:text-foreground inline-flex min-h-11 items-center rounded-md px-1.5 py-2 transition-colors"
                       >
                         {crumb.name}
                       </Link>

@@ -1,0 +1,27 @@
+/* TEAM */
+
+Founder: Ismail
+Studio: Bitecodes
+Contact: hello@bitecodes.com
+Location: Remote-first · Ahmedabad, Gujarat, India
+Founded: 2021
+
+/* SITE */
+
+Last update: 2026
+Language: English
+Standards: HTML5, CSS3, JavaScript (ES2023+)
+
+/* COLOPHON / STACK */
+
+Framework: Next.js 16 (App Router) · React 19
+Language: TypeScript
+Styling: Tailwind CSS
+Fonts: Inter, Geist Mono
+Hosting: Vercel
+Version control: Git
+
+/* THANKS */
+
+To our clients and the open-source community behind Next.js, React,
+TypeScript, Tailwind CSS, and Vercel.

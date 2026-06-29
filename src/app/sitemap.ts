@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/", priority: 1 },
     { path: "/services", priority: 0.9 },
     { path: "/portfolio", priority: 0.9 },
+    { path: "/pricing", priority: 0.8 },
     { path: "/about", priority: 0.8 },
     { path: "/technologies", priority: 0.7 },
     { path: "/industries", priority: 0.7 },
@@ -22,6 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/privacy", priority: 0.3 },
     { path: "/terms", priority: 0.3 },
     { path: "/cookies", priority: 0.3 },
+    // Machine-readable GEO document — discoverable via sitemap for AI crawlers.
+    { path: "/llms-full.txt", priority: 0.3 },
   ];
 
   const routes: MetadataRoute.Sitemap = staticRoutes.map((r) => ({

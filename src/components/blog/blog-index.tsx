@@ -63,7 +63,7 @@ export function BlogIndex({
               aria-pressed={category === f}
               onClick={() => setCategory(f)}
               className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                "min-h-11 rounded-full border px-4 py-3 text-sm font-medium transition-colors",
                 category === f
                   ? "bg-primary text-primary-foreground border-transparent"
                   : "border-border text-muted-foreground hover:text-foreground",

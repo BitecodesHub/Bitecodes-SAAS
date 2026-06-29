@@ -243,6 +243,7 @@ export const footerNav: FooterColumn[] = [
   {
     heading: "Resources",
     links: [
+      { title: "Pricing", href: "/pricing" },
       { title: "Blog", href: "/blog" },
       { title: "Careers", href: "/careers" },
       { title: "Contact", href: "/contact" },

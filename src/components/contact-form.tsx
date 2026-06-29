@@ -37,7 +37,7 @@ type ContactValues = z.infer<typeof contactSchema>;
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
   return (
-    <p id={id} role="alert" className="text-destructive mt-1.5 text-xs">
+    <p id={id} role="alert" className="text-destructive mt-1.5 text-sm">
       {message}
     </p>
   );
@@ -141,7 +141,7 @@ export function ContactForm() {
           <select
             id="budget"
             className={cn(
-              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-sm shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none",
+              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
             )}
             {...register("budget")}
           >

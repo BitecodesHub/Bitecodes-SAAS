@@ -5,7 +5,7 @@ import type { Stat } from "@/types/content";
  * you are comfortable publishing.
  */
 export const stats: Stat[] = [
-  { label: "Projects delivered", value: 50, suffix: "+" },
+  { label: "Projects delivered", value: 8, suffix: "+" },
   { label: "Client retention", value: 95, suffix: "%" },
   { label: "Countries served", value: 6, suffix: "" },
   { label: "Avg. Lighthouse score", value: 98, suffix: "/100" },

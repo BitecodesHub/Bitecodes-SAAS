@@ -2,7 +2,29 @@ import type { Metadata } from "next";
 import { siteConfig } from "@/lib/site";
 import { technologies } from "@/data/technologies";
 import { founder } from "@/data/founder";
+import { getPricing, CURRENCIES, convertPrice } from "@/lib/pricing";
 import type { Service } from "@/types/content";
+
+// priceValidUntil: ~4 months ahead, computed once at module load. Stale
+// dates trigger Google structured-data warnings, so derive rather than
+// hardcode.
+const PRICE_VALID_UNTIL = new Date(Date.now() + 1000 * 60 * 60 * 24 * 120)
+  .toISOString()
+  .slice(0, 10);
+
+/**
+ * RSS/Atom feed autodiscovery entries for <link rel="alternate">. Shared by
+ * the root layout AND createMetadata: Next wholesale-replaces (does not
+ * deep-merge) the `alternates` object with each page's metadata, so unless
+ * per-page metadata also carries these `types`, the feed links vanish from
+ * every route's <head>. One source guarantees they always ship.
+ */
+export const FEED_ALTERNATE_TYPES = {
+  "application/rss+xml": [{ url: "/rss.xml", title: "Bitecodes Blog — RSS" }],
+  "application/atom+xml": [
+    { url: "/atom.xml", title: "Bitecodes Blog — Atom" },
+  ],
+};
 
 interface PageMetaInput {
   title?: string;
@@ -34,7 +56,7 @@ export function createMetadata({
       ? title
       : { absolute: `${siteConfig.name} — ${siteConfig.tagline}` },
     description,
-    alternates: { canonical: url },
+    alternates: { canonical: url, types: FEED_ALTERNATE_TYPES },
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
@@ -101,22 +123,60 @@ export function organizationSchema() {
   };
 }
 
-/** Service JSON-LD for a single service offering. */
+/** Service JSON-LD for a single service offering, with multi-currency Offers. */
 export function serviceSchema(service: Service) {
+  const serviceUrl = `${siteConfig.url}/services/${service.slug}`;
+  const pricing = getPricing(service.slug);
+
+  // 3 Offer nodes (USD, INR, AUD) — allowed by Google: multiple Offer objects
+  // under Service.offers. Each carries a priceCurrency so regional crawlers
+  // and answer engines can pick the relevant one. The numeric price matches
+  // the visible HTML rendered from src/lib/pricing.priceRows(slug).
+  const offers = pricing
+    ? CURRENCIES.map((c) => {
+        const amount = convertPrice(pricing.startingFromUSD, c.code);
+        const offer: Record<string, unknown> = {
+          "@type": "Offer",
+          price: String(amount),
+          priceCurrency: c.code,
+          availability: "https://schema.org/InStock",
+          url: serviceUrl,
+          priceValidUntil: PRICE_VALID_UNTIL,
+          itemOffered: {
+            "@type": "Service",
+            name: service.title,
+            url: serviceUrl,
+          },
+        };
+        if (pricing.unit === "month") {
+          // Recurring retainer — signal the monthly billing unit.
+          offer.eligibleTransactionVolume = {
+            "@type": "UnitPriceSpecification",
+            priceCurrency: c.code,
+            price: String(amount),
+            billingDuration: "P1M",
+          };
+        }
+        return offer;
+      })
+    : undefined;
+
   return {
     "@context": "https://schema.org",
     "@type": "Service",
     name: service.title,
     serviceType: service.title,
     description: service.description,
-    url: `${siteConfig.url}/services/${service.slug}`,
+    url: serviceUrl,
     areaServed: "Worldwide",
+    availableLanguage: ["English"],
     provider: {
       "@type": "Organization",
       "@id": `${siteConfig.url}/#organization`,
       name: siteConfig.name,
       url: siteConfig.url,
     },
+    ...(offers ? { offers } : {}),
   };
 }
 

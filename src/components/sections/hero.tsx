@@ -31,7 +31,7 @@ export function Hero() {
       <div className="container-page flex flex-col items-center pt-24 pb-20 text-center sm:pt-32 sm:pb-28">
         <Link
           href="/services/ai-integration"
-          className="group glass gradient-ring text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm shadow-sm transition-colors"
+          className="group glass gradient-ring text-muted-foreground hover:text-foreground inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm shadow-sm transition-colors"
         >
           <Sparkles className="text-brand-1 size-3.5" />
           <span>AI integration &amp; MCP servers, done right</span>

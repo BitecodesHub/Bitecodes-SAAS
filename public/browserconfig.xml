@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Microsoft Edge / Windows tile configuration. Bitecodes does not ship native
+  size-specific tile assets; the 192px and 512px PWA icons are referenced and
+  scaled by the browser. Replace with dedicated tile PNGs if visual fidelity on
+  Windows live tiles becomes important.
+-->
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/icon-192.png"/>
+      <square150x150logo src="/icon-192.png"/>
+      <wide310x150logo src="/icon-512.png"/>
+      <square310x310logo src="/icon-512.png"/>
+      <TileColor>#4f46e5</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>

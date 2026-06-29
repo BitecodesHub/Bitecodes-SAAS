@@ -54,7 +54,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-9 items-center justify-center rounded-full border transition-colors"
+                  className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-11 items-center justify-center rounded-full border transition-colors"
                 >
                   <s.icon className="size-4" />
                 </a>

@@ -21,8 +21,8 @@ export const siteConfig = {
   contact: {
     email: "hello@bitecodes.com", // TODO(client)
     salesEmail: "sales@bitecodes.com", // TODO(client)
-    phone: "+91 00000 00000", // TODO(client)
-    phoneHref: "tel:+910000000000", // TODO(client)
+    phone: "+91 94287 67709",
+    phoneHref: "tel:+919428767709",
     address: {
       line1: "Remote-first studio", // TODO(client)
       city: "Ahmedabad",

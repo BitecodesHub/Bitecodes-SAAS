@@ -1,0 +1,5 @@
+Contact: mailto:hello@bitecodes.com
+Expires: 2027-06-29T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://bitecodes.com/.well-known/security.txt
+Policy: https://bitecodes.com/privacy
