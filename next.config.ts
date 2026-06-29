@@ -21,16 +21,34 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Strip dev-only console output from the production bundle.
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
   // Modern image formats for any future next/image usage.
   images: {
     formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 60 * 60 * 24,
   },
   // Trim client bundles by optimizing barrel imports from icon/animation libs.
   experimental: {
     optimizePackageImports: ["lucide-react", "motion"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // Hashed, immutable static assets (JS/CSS/font/media) — cache forever at
+    // the edge and in the browser. Filenames are content-hashed, so a new
+    // deploy ships new URLs and there is no stale-content risk.
+    const immutableCache = [
+      {
+        key: "Cache-Control",
+        value: "public, max-age=31536000, immutable",
+      },
+    ];
+    return [
+      { source: "/_next/static/:path*", headers: immutableCache },
+      // Security + privacy headers apply to every route, including HTML.
+      { source: "/:path*", headers: securityHeaders },
+    ];
   },
 };
 

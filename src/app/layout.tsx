@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/lib/site";
 import { organizationSchema, websiteSchema } from "@/lib/seo";
@@ -11,7 +11,10 @@ import { BackToTop } from "@/components/back-to-top";
 import { JsonLd } from "@/components/json-ld";
 import { MotionProvider } from "@/components/motion/motion-provider";
 
-const geistSans = Geist({
+// Inter — the publicly-available Google Fonts sans that is the standard
+// equivalent to Google Sans (which is proprietary / not on Google Fonts).
+// One family for body + display keeps the identity clean, modern, and fast.
+const interSans = Inter({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
@@ -21,15 +24,6 @@ const geistMono = Geist_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
-});
-
-// Editorial serif for display headings — the human, "designed" counterpoint to
-// the default violet-grotesque template. Paired with Geist for body/UI.
-const fraunces = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["opsz", "SOFT", "WONK"],
 });
 
 export const metadata: Metadata = {
@@ -90,7 +84,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full`}
+      className={`${interSans.variable} ${geistMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col antialiased">
         <ThemeProvider

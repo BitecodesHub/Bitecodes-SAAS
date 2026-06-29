@@ -6,10 +6,9 @@
  *
  * A light-first, minimalist identity: a warm paper-white canvas, pure-white
  * surfaces separated by hairline borders and very soft shadows, a single
- * confident indigo accent, generous rounded corners, and an editorial serif
- * (Fraunces) for display headings paired with a clean grotesque (Geist) for
- * body and UI. The pairing is deliberate — it reads as designed-by-a-human,
- * not the default violet-sans template.
+ * confident indigo accent, and generous rounded corners. Typography is a
+ * single clean grotesque (Inter) for body and display, with tighter optical
+ * tracking on headings for a confident, modern rhythm.
  *
  * Dark mode is supported (next-themes, class strategy) but light is the
  * canonical brand surface. OKLCH tokens throughout for perceptual uniformity.
@@ -119,7 +118,7 @@
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
-  --font-display: var(--font-display), Georgia, "Times New Roman", serif;
+  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 8px);
   --radius-md: calc(var(--radius) - 4px);
@@ -158,14 +157,17 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     font-feature-settings: "cv11", "ss01";
+    /* Crisper mobile taps; the focused state is styled separately below. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   /*
-   * Display headings use the editorial serif. Applied globally so every page
-   * inherits the custom typographic identity without per-component edits.
-   * Optical sizing keeps large headlines crisp and small ones readable.
+   * Display headings share the sans family but get a tighter optical rhythm so
+   * large type stays crisp and confident. Applied globally so every page
+   * inherits the identity without per-component edits.
    */
   h1,
   h2,
@@ -173,7 +175,7 @@
     font-family: var(--font-display);
     font-optical-sizing: auto;
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
   }
 
   ::selection {
