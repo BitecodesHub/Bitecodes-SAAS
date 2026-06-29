@@ -105,7 +105,7 @@ export default function RootLayout({
           <ScrollProgress />
           <MotionProvider>
             <SiteHeader />
-            <main id="main" className="flex-1 pt-16">
+            <main id="main" className="flex-1">
               {children}
             </main>
             <SiteFooter />

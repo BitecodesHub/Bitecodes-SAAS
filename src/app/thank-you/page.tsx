@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function ThankYouPage() {
   return (
-    <section className="relative flex min-h-[70vh] items-center overflow-hidden">
+    <section className="relative flex min-h-[70vh] items-center overflow-hidden pt-16">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 -z-10"

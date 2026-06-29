@@ -172,29 +172,43 @@ export default async function ProjectDetailPage({
         </div>
       </Section>
 
-      {/* Gallery placeholders */}
-      <Section spacing="sm">
-        <div className="container-page">
-          <h2 className="text-xl font-semibold">Gallery</h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {Array.from({ length: project.gallery }).map((_, i) => (
-              <Reveal key={i} delay={i * 0.05}>
-                <div
-                  className={cn(
-                    "border-border relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border bg-gradient-to-br",
-                    project.accent,
-                  )}
-                >
-                  <div className="bg-grid absolute inset-0 opacity-20" />
-                  <span className="relative text-sm font-medium text-white/80">
-                    {project.name} · {i + 1}
-                  </span>
+      {/* Live preview */}
+      {project.liveUrl && (
+        <Section spacing="sm">
+          <div className="container-page">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Live website</h2>
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+              >
+                Open in new tab
+                <ArrowRight className="size-4" />
+              </a>
+            </div>
+            <div className="border-border mt-5 overflow-hidden rounded-2xl border shadow-[var(--shadow-soft)]">
+              <div className="bg-muted/50 flex items-center gap-2 border-b px-4 py-2.5">
+                <div className="flex gap-1.5">
+                  <span className="size-2.5 rounded-full bg-red-400" />
+                  <span className="size-2.5 rounded-full bg-yellow-400" />
+                  <span className="size-2.5 rounded-full bg-green-400" />
                 </div>
-              </Reveal>
-            ))}
+                <span className="text-muted-foreground ml-2 truncate text-xs">
+                  {project.liveUrl}
+                </span>
+              </div>
+              <iframe
+                src={project.liveUrl}
+                className="h-[600px] w-full"
+                title={`Live preview of ${project.liveUrl}`}
+                loading="lazy"
+              />
+            </div>
           </div>
-        </div>
-      </Section>
+        </Section>
+      )}
 
       {/* Next project */}
       <Section spacing="sm" className="border-border border-t">

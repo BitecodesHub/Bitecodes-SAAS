@@ -8,18 +8,18 @@ import type { Project } from "@/types/content";
 export const projects: Project[] = [
   {
     slug: "prism",
-    name: "PRISM",
-    client: "Bitecodes",
+    name: "PRism",
+    client: "Sublime Care (Australia)",
     category: "AI · SEO Platform",
     year: "2025",
     teaser:
       "An AI-driven SEO and generative-engine-optimization platform that audits, fixes, and future-proofs websites.",
     overview:
-      "PRISM is an AI-powered SEO and GEO (generative engine optimization) platform that helps site owners rank in both traditional search and AI answer engines. It audits technical SEO, generates structured data, manages redirects and sitemaps, and rewrites content to be citation-ready for LLMs.",
+      "PRism is an AI-powered SEO and GEO (generative engine optimization) platform that helps site owners rank in both traditional search and AI answer engines. It audits technical SEO, generates structured data, manages redirects and sitemaps, and rewrites content to be citation-ready for LLMs.",
     challenge:
       "SEO tooling was built for a search world that is rapidly changing. Site owners needed a single system that could handle classic technical SEO and the new reality of AI crawlers and answer engines — without a team of specialists.",
     solution:
-      "We built PRISM as an automation engine with a clean dashboard and an MCP server interface. It runs full technical audits, auto-generates schema, manages an llms.txt and AI-bot policy, fixes canonicals and broken links, and rewrites pages for generative engines — all with a reversible change history.",
+      "We built PRism as an automation engine with a clean dashboard and an MCP server interface. It runs full technical audits, auto-generates schema, manages an llms.txt and AI-bot policy, fixes canonicals and broken links, and rewrites pages for generative engines — all with a reversible change history.",
     technologies: [
       "nextjs",
       "typescript",
@@ -44,6 +44,7 @@ export const projects: Project[] = [
     accent: "from-violet-500 via-indigo-500 to-blue-500",
     featured: true,
     gallery: 4,
+    liveUrl: "https://prism.sublimecare.com.au",
   },
   {
     slug: "parking-management-system",
@@ -111,7 +112,7 @@ export const projects: Project[] = [
       { metric: "Lower", label: "Operating overhead" },
     ],
     accent: "from-emerald-500 via-teal-500 to-cyan-500",
-    featured: true,
+    featured: false,
     gallery: 4,
   },
   {
@@ -146,6 +147,37 @@ export const projects: Project[] = [
     gallery: 3,
   },
   {
+    slug: "conceptserve-technologies",
+    name: "ConceptServe Technologies",
+    client: "ConceptServe Technologies",
+    category: "Web · Corporate Platform",
+    year: "2024",
+    teaser:
+      "A fast, professional web platform and engineering partnership for a technology services firm.",
+    overview:
+      "We partnered with ConceptServe Technologies to deliver their web presence and custom software, providing ongoing engineering capacity across multiple products.",
+    challenge:
+      "ConceptServe needed a senior engineering partner who could deliver a polished web platform and pick up custom software work reliably, without the overhead of growing an in-house team.",
+    solution:
+      "We delivered a fast corporate platform and embedded as an ongoing engineering partner — shipping features, maintaining quality, and advising on architecture across their product line.",
+    technologies: ["nextjs", "react", "typescript", "nodejs", "postgresql"],
+    features: [
+      "Fast, SEO-friendly corporate platform",
+      "Reusable design system",
+      "Ongoing engineering partnership",
+      "Architecture and code-review support",
+    ],
+    results: [
+      { metric: "Reliable", label: "Delivery cadence" },
+      { metric: "Senior", label: "Engineering, on demand" },
+      { metric: "Multiple", label: "Products supported" },
+    ],
+    accent: "from-blue-500 via-indigo-500 to-violet-500",
+    featured: true,
+    gallery: 3,
+    liveUrl: "https://conceptserve.com",
+  },
+  {
     slug: "sublime-care",
     name: "Sublime Care",
     client: "Sublime Care (Australia)",
@@ -175,36 +207,7 @@ export const projects: Project[] = [
     accent: "from-teal-500 via-emerald-500 to-green-500",
     featured: true,
     gallery: 3,
-  },
-  {
-    slug: "conceptserve-technologies",
-    name: "ConceptServe Technologies",
-    client: "ConceptServe Technologies",
-    category: "Web · Corporate Platform",
-    year: "2024",
-    teaser:
-      "A fast, professional web platform and engineering partnership for a technology services firm.",
-    overview:
-      "We partnered with ConceptServe Technologies to deliver their web presence and custom software, providing ongoing engineering capacity across multiple products.",
-    challenge:
-      "ConceptServe needed a senior engineering partner who could deliver a polished web platform and pick up custom software work reliably, without the overhead of growing an in-house team.",
-    solution:
-      "We delivered a fast corporate platform and embedded as an ongoing engineering partner — shipping features, maintaining quality, and advising on architecture across their product line.",
-    technologies: ["nextjs", "react", "typescript", "nodejs", "postgresql"],
-    features: [
-      "Fast, SEO-friendly corporate platform",
-      "Reusable design system",
-      "Ongoing engineering partnership",
-      "Architecture and code-review support",
-    ],
-    results: [
-      { metric: "Reliable", label: "Delivery cadence" },
-      { metric: "Senior", label: "Engineering, on demand" },
-      { metric: "Multiple", label: "Products supported" },
-    ],
-    accent: "from-blue-500 via-indigo-500 to-violet-500",
-    featured: false,
-    gallery: 3,
+    liveUrl: "https://sublimecare.com.au",
   },
   {
     slug: "saanvi-production-house",

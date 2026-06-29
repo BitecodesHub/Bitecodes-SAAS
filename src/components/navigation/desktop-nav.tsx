@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export function DesktopNav() {
   return (
-    <NavigationMenu className="hidden lg:flex">
+    <NavigationMenu className="bg-background/80 hidden rounded-full border px-1.5 shadow-sm backdrop-blur-md lg:flex">
       <NavigationMenuList>
         {mainNav.map((item) =>
           item.sections ? (
