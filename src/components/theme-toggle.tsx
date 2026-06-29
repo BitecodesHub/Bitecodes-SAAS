@@ -1,0 +1,24 @@
+"use client";
+
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+
+export function ThemeToggle() {
+  const { setTheme, resolvedTheme } = useTheme();
+
+  // Both icons are always rendered; the active one is chosen purely via the
+  // `.dark` class in CSS, so there is no hydration mismatch and no effect.
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      aria-label="Toggle color theme"
+      className="relative overflow-hidden"
+    >
+      <Sun className="size-5 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+      <Moon className="absolute size-5 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+    </Button>
+  );
+}

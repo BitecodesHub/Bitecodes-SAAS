@@ -1,0 +1,411 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Bitecodes design system — "Quiet Confidence".
+ *
+ * A light-first, minimalist identity: a warm paper-white canvas, pure-white
+ * surfaces separated by hairline borders and very soft shadows, a single
+ * confident indigo accent, generous rounded corners, and an editorial serif
+ * (Fraunces) for display headings paired with a clean grotesque (Geist) for
+ * body and UI. The pairing is deliberate — it reads as designed-by-a-human,
+ * not the default violet-sans template.
+ *
+ * Dark mode is supported (next-themes, class strategy) but light is the
+ * canonical brand surface. OKLCH tokens throughout for perceptual uniformity.
+ */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 1.25rem;
+
+  /* Light theme — warm paper white, near-black ink, single indigo accent */
+  --background: oklch(0.992 0.004 95);
+  --foreground: oklch(0.18 0.014 281);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.014 281);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.014 281);
+
+  --primary: oklch(0.45 0.2 282);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.968 0.006 281);
+  --secondary-foreground: oklch(0.22 0.014 281);
+
+  --muted: oklch(0.968 0.006 281);
+  --muted-foreground: oklch(0.46 0.014 281);
+
+  --accent: oklch(0.96 0.014 282);
+  --accent-foreground: oklch(0.26 0.03 282);
+
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.905 0.006 281);
+  --input: oklch(0.905 0.006 281);
+  --ring: oklch(0.45 0.2 282);
+
+  /* Brand ramp — one accent, three stops for restrained gradients */
+  --brand-1: oklch(0.45 0.2 282); /* indigo   */
+  --brand-2: oklch(0.48 0.19 273); /* indigo-violet */
+  --brand-3: oklch(0.52 0.16 258); /* periwinkle   */
+
+  --glow: oklch(0.45 0.2 282 / 0.16);
+}
+
+.dark {
+  /* Refined near-black with a cool indigo undertone */
+  --background: oklch(0.15 0.018 281);
+  --foreground: oklch(0.97 0.004 285);
+
+  --card: oklch(0.198 0.02 282);
+  --card-foreground: oklch(0.97 0.004 285);
+
+  --popover: oklch(0.185 0.02 282);
+  --popover-foreground: oklch(0.97 0.004 285);
+
+  --primary: oklch(0.68 0.2 287);
+  --primary-foreground: oklch(0.14 0.02 282);
+
+  --secondary: oklch(0.25 0.018 282);
+  --secondary-foreground: oklch(0.97 0.004 285);
+
+  --muted: oklch(0.25 0.018 282);
+  --muted-foreground: oklch(0.72 0.025 283);
+
+  --accent: oklch(0.3 0.04 285);
+  --accent-foreground: oklch(0.97 0.004 285);
+
+  --destructive: oklch(0.64 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.68 0.2 287);
+
+  --brand-1: oklch(0.7 0.2 287);
+  --brand-2: oklch(0.68 0.18 276);
+  --brand-3: oklch(0.74 0.15 260);
+
+  --glow: oklch(0.68 0.2 287 / 0.4);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
+
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+  --font-display: var(--font-display), Georgia, "Times New Roman", serif;
+
+  --radius-sm: calc(var(--radius) - 8px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+
+  --shadow-soft:
+    0 1px 2px oklch(0.2 0.02 281 / 0.04), 0 8px 24px oklch(0.2 0.02 281 / 0.06);
+  --shadow-lift:
+    0 1px 2px oklch(0.2 0.02 281 / 0.05), 0 18px 48px oklch(0.2 0.02 281 / 0.1);
+  --shadow-glow: 0 0 0 1px var(--glow), 0 18px 60px var(--glow);
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite alternate;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-accordion-down: accordion-down 0.3s ease-out;
+  --animate-accordion-up: accordion-up 0.3s ease-out;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 5rem;
+    overflow-x: clip;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  /*
+   * Display headings use the editorial serif. Applied globally so every page
+   * inherits the custom typographic identity without per-component edits.
+   * Optical sizing keeps large headlines crisp and small ones readable.
+   */
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background-color: oklch(0.45 0.2 282 / 0.18);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .container-page {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+    max-width: 80rem;
+  }
+
+  @media (min-width: 640px) {
+    .container-page {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Restrained two-stop accent gradient for emphasis words. */
+  .text-gradient {
+    background-image: linear-gradient(
+      110deg,
+      var(--color-brand-1),
+      var(--color-brand-3)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Fine grid texture — barely-there on white. */
+  .bg-grid {
+    background-image:
+      linear-gradient(
+        to right,
+        oklch(0.45 0.2 282 / 0.05) 1px,
+        transparent 1px
+      ),
+      linear-gradient(
+        to bottom,
+        oklch(0.45 0.2 282 / 0.05) 1px,
+        transparent 1px
+      );
+    background-size: 56px 56px;
+  }
+
+  .dark .bg-grid {
+    background-image:
+      linear-gradient(to right, oklch(0.7 0.2 287 / 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, oklch(0.7 0.2 287 / 0.07) 1px, transparent 1px);
+  }
+
+  /* Hero ambient — a single, soft accent wash rather than a busy mesh. */
+  .bg-mesh {
+    background-image: radial-gradient(
+      60% 70% at 50% 0%,
+      oklch(0.45 0.2 282 / 0.1),
+      transparent 70%
+    );
+  }
+
+  .dark .bg-mesh {
+    background-image: radial-gradient(
+      60% 70% at 50% 0%,
+      oklch(0.68 0.2 287 / 0.22),
+      transparent 70%
+    );
+  }
+
+  /* Frosted glass surface — white-tinted, subtle. */
+  .glass {
+    background-color: oklch(1 0 0 / 0.72);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+  }
+
+  .dark .glass {
+    background-color: oklch(0.198 0.02 282 / 0.62);
+  }
+
+  /* Hairline gradient border via mask compositing. */
+  .gradient-ring {
+    position: relative;
+  }
+
+  .gradient-ring::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      var(--color-brand-1),
+      var(--color-brand-3)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .gradient-ring:hover::before {
+    opacity: 1;
+  }
+
+  .glow-primary {
+    box-shadow:
+      0 0 0 1px var(--glow),
+      0 16px 50px var(--glow);
+  }
+
+  .mask-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 10%,
+      black 90%,
+      transparent
+    );
+  }
+
+  /* Pure-CSS scroll progress bar (no JS). */
+  .scroll-progress {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 60;
+    height: 2px;
+    transform-origin: left;
+    transform: scaleX(0);
+    background: linear-gradient(
+      to right,
+      var(--color-brand-1),
+      var(--color-brand-3)
+    );
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .scroll-progress {
+      animation: scroll-progress-grow linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+@keyframes scroll-progress-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes aurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate3d(4%, -3%, 0) scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
