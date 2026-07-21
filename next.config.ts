@@ -35,17 +35,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["lucide-react", "motion"],
   },
   async headers() {
-    // Hashed, immutable static assets (JS/CSS/font/media) — cache forever at
-    // the edge and in the browser. Filenames are content-hashed, so a new
-    // deploy ships new URLs and there is no stale-content risk.
-    const immutableCache = [
-      {
-        key: "Cache-Control",
-        value: "public, max-age=31536000, immutable",
-      },
-    ];
+    // Next.js owns Cache-Control for its content-hashed assets. Overriding it
+    // can break development and framework caching behavior.
     return [
-      { source: "/_next/static/:path*", headers: immutableCache },
       // Security + privacy headers apply to every route, including HTML.
       { source: "/:path*", headers: securityHeaders },
     ];
