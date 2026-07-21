@@ -1,12 +1,10 @@
 import type { Stat } from "@/types/content";
 
-/*
- * Headline metrics. TODO(client): tune these to the real, defensible numbers
- * you are comfortable publishing.
- */
+/* Operational facts that are directly supported by the published site model.
+ * Replace or extend these only with measured, attributable business data. */
 export const stats: Stat[] = [
-  { label: "Projects delivered", value: 8, suffix: "+" },
-  { label: "Client retention", value: 95, suffix: "%" },
-  { label: "Countries served", value: 6, suffix: "" },
-  { label: "Avg. Lighthouse score", value: 98, suffix: "/100" },
+  { label: "Service capabilities", value: 19, suffix: "" },
+  { label: "Delivery stages", value: 7, suffix: "" },
+  { label: "Public case studies", value: 10, suffix: "" },
+  { label: "Response target", value: 1, suffix: " business day" },
 ];

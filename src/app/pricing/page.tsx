@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, Calculator } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
 import { createMetadata, breadcrumbSchema } from "@/lib/seo";
@@ -69,6 +71,34 @@ export default function PricingPage() {
           { name: "Pricing", href: "/pricing" },
         ]}
       />
+
+      <Section spacing="sm">
+        <div className="container-page">
+          <div className="border-primary/20 bg-primary/5 flex flex-col gap-5 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-start gap-4">
+              <span className="bg-primary text-primary-foreground flex size-12 shrink-0 items-center justify-center rounded-2xl">
+                <Calculator className="size-5" />
+              </span>
+              <div>
+                <h2 className="text-xl font-semibold">
+                  Plan a realistic project budget
+                </h2>
+                <p className="text-muted-foreground mt-1 max-w-2xl text-sm leading-relaxed">
+                  Configure your product, capabilities, platforms, delivery
+                  speed, and support to get an instant INR estimate and
+                  timeline.
+                </p>
+              </div>
+            </div>
+            <Button asChild variant="gradient" className="shrink-0">
+              <Link href="/project-cost-calculator">
+                Calculate project cost
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </Section>
 
       <Section>
         <div className="container-page space-y-16">

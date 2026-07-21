@@ -39,6 +39,6 @@ export const faqs: Faq[] = [
   {
     question: "How do you ensure quality and performance?",
     answer:
-      "Quality is built in, not bolted on: automated tests, code reviews, accessibility checks, and performance budgets are part of every project. We routinely target near-perfect Lighthouse scores and back our claims with before-and-after numbers.",
+      "Quality is planned into each engagement through defined acceptance criteria, review, testing, accessibility checks, performance budgets, and deployment verification appropriate to the scope. Any target metrics and reporting method are agreed before delivery.",
   },
 ];

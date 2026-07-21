@@ -13,9 +13,9 @@ import { cn } from "@/lib/utils";
 const reasons = [
   {
     icon: Gauge,
-    title: "Performance obsessed",
+    title: "Performance by design",
     description:
-      "We design within performance budgets from day one and routinely target near-perfect Lighthouse scores across mobile and desktop.",
+      "We agree measurable performance budgets, test representative devices, and optimize the complete delivery path—not just the demo.",
     wide: true,
   },
   {

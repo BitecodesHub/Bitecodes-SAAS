@@ -110,9 +110,6 @@ export function GET() {
     push(`Challenge: ${p.challenge}`);
     push(`Solution: ${p.solution}`);
     push(`Features: ${p.features.join("; ")}.`);
-    push(
-      `Results: ${p.results.map((r) => `${r.metric} ${r.label}`).join("; ")}.`,
-    );
     push(`Stack: ${stackNames(p.technologies)}.`);
     push("");
   }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/types/content";
 import { Badge } from "@/components/ui/badge";
 import { WebsitePreview } from "@/components/website-preview";
@@ -25,7 +25,7 @@ export function ProjectCard({
       {/* Cover — live preview or gradient + grid placeholder. */}
       {project.liveUrl ? (
         <div className="relative">
-          <WebsitePreview url={project.liveUrl} />
+          <WebsitePreview url={project.liveUrl} priority={priority} />
           <span className="absolute top-5 left-5 text-2xl font-semibold tracking-tight text-white/95 drop-shadow-sm">
             {project.name}
           </span>

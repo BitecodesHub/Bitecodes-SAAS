@@ -61,9 +61,10 @@ export function LegalPage({
             ))}
           </div>
           <p className="border-border bg-card text-muted-foreground mt-12 rounded-xl border p-4 text-sm">
-            This document is a template provided for convenience and does not
-            constitute legal advice. Please have it reviewed by qualified
-            counsel before relying on it.
+            These website terms provide general information. A signed proposal,
+            statement of work, or service agreement controls the terms of a
+            specific engagement. Seek independent legal advice where
+            appropriate.
           </p>
         </div>
       </Section>

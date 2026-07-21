@@ -3,13 +3,11 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/lib/site";
 
-const trustLogos = [
-  "Sublime Care",
-  "ConceptServe",
-  "Saanvi",
-  "Vertex Media",
-  "Rivala Care",
-  "HireBound",
+const capabilities = [
+  "Product discovery",
+  "Senior engineering",
+  "Quality assurance",
+  "Launch & support",
 ];
 
 /**
@@ -64,13 +62,13 @@ export function Hero() {
 
         <div className="mt-16 w-full">
           <p className="text-muted-foreground text-xs font-medium tracking-[0.2em] uppercase">
-            Trusted by teams in 6 countries
+            One accountable team from idea to operation
           </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-70">
-            {trustLogos.map((name) => (
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 opacity-75">
+            {capabilities.map((name) => (
               <span
                 key={name}
-                className="text-base font-semibold tracking-tight sm:text-lg"
+                className="text-sm font-semibold tracking-tight sm:text-base"
               >
                 {name}
               </span>

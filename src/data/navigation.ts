@@ -205,8 +205,12 @@ export const mainNav: NavItem[] = [
     ],
   },
   {
-    title: "Blog",
-    href: "/blog",
+    title: "Pricing",
+    href: "/pricing",
+  },
+  {
+    title: "Tools",
+    href: "/tools",
   },
   {
     title: "Contact",
@@ -244,8 +248,21 @@ export const footerNav: FooterColumn[] = [
     heading: "Resources",
     links: [
       { title: "Pricing", href: "/pricing" },
+      { title: "Free Tools", href: "/tools" },
+      { title: "Website Audit", href: "/website-audit" },
+      { title: "AI Project Consultant", href: "/ai-project-consultant" },
+      { title: "Project Cost Calculator", href: "/project-cost-calculator" },
+      {
+        title: "Website Cost Calculator",
+        href: "/website-development-cost-calculator",
+      },
+      {
+        title: "Mobile App Cost Calculator",
+        href: "/mobile-app-cost-calculator",
+      },
       { title: "Blog", href: "/blog" },
       { title: "Careers", href: "/careers" },
+      { title: "FAQ", href: "/faq" },
       { title: "Contact", href: "/contact" },
     ],
   },
@@ -254,7 +271,9 @@ export const footerNav: FooterColumn[] = [
     links: [
       { title: "Privacy Policy", href: "/privacy" },
       { title: "Terms & Conditions", href: "/terms" },
+      { title: "Refund Policy", href: "/refund-policy" },
       { title: "Cookie Policy", href: "/cookies" },
+      { title: "Disclaimer", href: "/disclaimer" },
     ],
   },
 ];

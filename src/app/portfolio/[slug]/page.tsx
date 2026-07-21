@@ -90,21 +90,8 @@ export default async function ProjectDetailPage({
         </Reveal>
       </div>
 
-      {/* Results metrics */}
-      <Section spacing="sm">
-        <div className="container-page grid gap-6 sm:grid-cols-3">
-          {project.results.map((r) => (
-            <Reveal key={r.label}>
-              <div className="border-border bg-card rounded-2xl border p-6 text-center shadow-[var(--shadow-soft)]">
-                <p className="text-gradient text-3xl font-semibold tracking-tight">
-                  {r.metric}
-                </p>
-                <p className="text-muted-foreground mt-1 text-sm">{r.label}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </Section>
+      {/* Case-study facts remain descriptive until client-approved quantitative
+          results and their measurement methodology are available. */}
 
       {/* Challenge + Solution */}
       <Section spacing="sm">
@@ -172,39 +159,33 @@ export default async function ProjectDetailPage({
         </div>
       </Section>
 
-      {/* Live preview */}
+      {/* External client sites open only after an explicit user action. Avoiding
+          iframes prevents third-party code, cookies, and tracking on this page. */}
       {project.liveUrl && (
         <Section spacing="sm">
           <div className="container-page">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Live website</h2>
-              <a
-                href={project.liveUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-              >
-                Open in new tab
-                <ArrowRight className="size-4" />
-              </a>
-            </div>
-            <div className="border-border mt-5 overflow-hidden rounded-2xl border shadow-[var(--shadow-soft)]">
-              <div className="bg-muted/50 flex items-center gap-2 border-b px-4 py-2.5">
-                <div className="flex gap-1.5">
-                  <span className="size-2.5 rounded-full bg-red-400" />
-                  <span className="size-2.5 rounded-full bg-yellow-400" />
-                  <span className="size-2.5 rounded-full bg-green-400" />
-                </div>
-                <span className="text-muted-foreground ml-2 truncate text-xs">
-                  {project.liveUrl}
-                </span>
+            <div className="border-primary/20 bg-primary/5 flex flex-col gap-5 rounded-3xl border p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+              <div>
+                <h2 className="text-xl font-semibold">
+                  Explore the live website
+                </h2>
+                <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+                  The project opens on the client&apos;s domain in a new tab.
+                  Its content, availability, cookies, and privacy practices are
+                  controlled by that site.
+                </p>
               </div>
-              <iframe
-                src={project.liveUrl}
-                className="h-[600px] w-full"
-                title={`Live preview of ${project.liveUrl}`}
-                loading="lazy"
-              />
+              <Button asChild variant="gradient" className="shrink-0">
+                <a
+                  href={project.liveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  referrerPolicy="no-referrer"
+                >
+                  Visit live project
+                  <ArrowRight className="size-4" />
+                </a>
+              </Button>
             </div>
           </div>
         </Section>

@@ -13,6 +13,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/services", priority: 0.9 },
     { path: "/portfolio", priority: 0.9 },
     { path: "/pricing", priority: 0.8 },
+    { path: "/tools", priority: 0.9 },
+    { path: "/website-audit", priority: 0.9 },
+    { path: "/ai-project-consultant", priority: 0.9 },
+    { path: "/project-cost-calculator", priority: 0.9 },
+    { path: "/website-development-cost-calculator", priority: 0.9 },
+    { path: "/mobile-app-cost-calculator", priority: 0.9 },
+    { path: "/startup-mvp-cost-calculator", priority: 0.9 },
     { path: "/about", priority: 0.8 },
     { path: "/technologies", priority: 0.7 },
     { path: "/industries", priority: 0.7 },
@@ -20,9 +27,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/blog", priority: 0.7 },
     { path: "/careers", priority: 0.6 },
     { path: "/contact", priority: 0.8 },
+    { path: "/faq", priority: 0.7 },
     { path: "/privacy", priority: 0.3 },
     { path: "/terms", priority: 0.3 },
+    { path: "/refund-policy", priority: 0.3 },
     { path: "/cookies", priority: 0.3 },
+    { path: "/disclaimer", priority: 0.3 },
+    // Maintenance and offline are operational utility pages and intentionally
+    // excluded from the sitemap and search indexing.
     // Machine-readable GEO document — discoverable via sitemap for AI crawlers.
     { path: "/llms-full.txt", priority: 0.3 },
   ];

@@ -1,12 +1,14 @@
 import { Hero } from "@/components/sections/hero";
 import { ServicesSection } from "@/components/sections/services-section";
 import { WhyChooseSection } from "@/components/sections/why-choose-section";
+import { ToolsSection } from "@/components/sections/tools-section";
+import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
+import { BlogPreviewSection } from "@/components/sections/blog-preview-section";
 import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
 import { TechSection } from "@/components/sections/tech-section";
 import { IndustriesSection } from "@/components/sections/industries-section";
 import { ProcessSection } from "@/components/sections/process-section";
 import { FounderSection } from "@/components/sections/founder-section";
-import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { StatsSection } from "@/components/sections/stats-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { CtaSection } from "@/components/cta-section";
@@ -26,14 +28,16 @@ export default function HomePage() {
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
       <ServicesSection />
+      <ToolsSection />
       <WhyChooseSection />
       <FeaturedWorkSection />
       <StatsSection />
       <TechSection />
       <IndustriesSection />
       <ProcessSection />
+      <PricingPreviewSection />
+      <BlogPreviewSection />
       <FounderSection />
-      <TestimonialsSection />
       <FaqSection />
       <CtaSection />
     </>
