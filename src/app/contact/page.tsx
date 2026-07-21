@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Clock, Mail, MapPin, Phone } from "lucide-react";
+import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
@@ -74,8 +74,18 @@ export default function ContactPage() {
               <ContactItem icon={MapPin} label="Location">
                 {siteConfig.contact.address.full}
               </ContactItem>
-              <ContactItem icon={Clock} label="Response time">
-                Within one business day
+              <ContactItem icon={Clock} label="Office hours">
+                Monday–Friday · 10:00–18:00 IST
+              </ContactItem>
+              <ContactItem icon={MessageCircle} label="WhatsApp">
+                <a
+                  href={`https://wa.me/${siteConfig.contact.phoneHref.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  Message Bitecodes
+                </a>
               </ContactItem>
             </div>
 
@@ -97,19 +107,25 @@ export default function ContactPage() {
               </div>
             </div>
 
-            {/* Map placeholder — no third-party embed (privacy + performance). */}
-            <div className="border-border bg-card relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border">
+            {/* Map opens only after explicit interaction, avoiding a tracking embed. */}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${siteConfig.contact.address.city}, ${siteConfig.contact.address.region}, ${siteConfig.contact.address.country}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              referrerPolicy="no-referrer"
+              className="border-border bg-card group hover:border-primary/40 relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border transition-colors"
+            >
               <div className="bg-grid absolute inset-0 opacity-40" />
               <div className="relative flex flex-col items-center gap-2 text-center">
-                <MapPin className="text-primary size-7" />
+                <MapPin className="text-primary size-7 transition-transform group-hover:-translate-y-0.5" />
                 <p className="text-sm font-medium">
                   {siteConfig.contact.address.full}
                 </p>
                 <p className="text-muted-foreground text-xs">
-                  Map embed placeholder
+                  Open location in Google Maps
                 </p>
               </div>
-            </div>
+            </a>
           </Reveal>
 
           <Reveal direction="left">
@@ -121,6 +137,43 @@ export default function ContactPage() {
               <ContactForm />
             </Suspense>
           </Reveal>
+        </div>
+      </Section>
+      <Section className="border-border bg-secondary/35 border-t" spacing="sm">
+        <div className="container-page max-w-3xl">
+          <h2 className="text-center text-2xl font-semibold">
+            Before you send a brief
+          </h2>
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            {[
+              [
+                "What happens next?",
+                "We review the goal, scope, constraints, and timing, then reply with useful next steps within one business day.",
+              ],
+              [
+                "Do I need a complete specification?",
+                "No. A clear problem, intended users, must-have outcome, and rough timing are enough to begin discovery.",
+              ],
+              [
+                "Will the form save my enquiry?",
+                "Yes. A valid submission is stored for follow-up and triggers configured team notifications. You receive a reference on success.",
+              ],
+              [
+                "Can I request an NDA?",
+                "Yes. Mention it in your message and avoid sharing confidential details until an appropriate agreement is in place.",
+              ],
+            ].map(([question, answer]) => (
+              <div
+                key={question}
+                className="border-border bg-card rounded-2xl border p-5"
+              >
+                <h3 className="text-sm font-semibold">{question}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {answer}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </Section>
     </>

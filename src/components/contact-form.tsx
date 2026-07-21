@@ -4,35 +4,21 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { jobOpenings } from "@/data/careers";
+import {
+  contactBudgets,
+  contactFormSchema,
+  type ContactFormInput,
+  type ContactResponse,
+} from "@/lib/contact";
 import { cn } from "@/lib/utils";
 
-const budgets = [
-  "Under $5k",
-  "$5k – $15k",
-  "$15k – $50k",
-  "$50k+",
-  "Not sure yet",
-] as const;
-
-const contactSchema = z.object({
-  name: z.string().min(2, "Please enter your name."),
-  email: z.string().email("Please enter a valid email."),
-  company: z.string().optional(),
-  budget: z.string().optional(),
-  message: z
-    .string()
-    .min(10, "A little more detail helps us reply usefully.")
-    .max(2000, "That is a little long — please keep it under 2000 characters."),
-});
-
-type ContactValues = z.infer<typeof contactSchema>;
+type ContactValues = ContactFormInput;
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
@@ -44,23 +30,27 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 export function ContactForm() {
-  const [submitted, setSubmitted] = React.useState(false);
+  const [reference, setReference] = React.useState<string>();
+  const [submitError, setSubmitError] = React.useState<string>();
 
   // If arriving from a careers "Apply" link (/contact?role=slug), prefill the
   // message so the deep-link is meaningful rather than a silent no-op.
   const searchParams = useSearchParams();
   const roleSlug = searchParams.get("role");
+  const estimate = searchParams.get("estimate")?.slice(0, 1200);
   const role = jobOpenings.find((j) => j.slug === roleSlug);
   const defaultMessage = role
     ? `Hi Bitecodes team, I'd like to apply for the ${role.title} role. A little about me: `
-    : "";
+    : estimate
+      ? `Hi Bitecodes team, I used your cost calculator and would like a detailed proposal.\n\nEstimate: ${estimate}\n\nAdditional context: `
+      : "";
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<ContactValues>({
-    resolver: zodResolver(contactSchema),
+    resolver: zodResolver(contactFormSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -70,15 +60,37 @@ export function ContactForm() {
     },
   });
 
-  // Frontend-only: simulate a network round-trip. A backend can be wired in
-  // here later by sending `values` — the form's shape and validation are ready.
   const onSubmit = async (values: ContactValues) => {
-    void values;
-    await new Promise((r) => setTimeout(r, 900));
-    setSubmitted(true);
+    setSubmitError(undefined);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...values,
+          role: role?.slug ?? "",
+        }),
+      });
+      const result = (await response.json()) as ContactResponse;
+
+      if (!response.ok || !result.ok) {
+        throw new Error(
+          result.ok ? "Unable to send your message." : result.message,
+        );
+      }
+
+      setReference(result.reference);
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.",
+      );
+    }
   };
 
-  if (submitted) {
+  if (reference) {
     return (
       <div className="border-border bg-card flex flex-col items-center rounded-2xl border p-10 text-center shadow-[var(--shadow-soft)]">
         <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
@@ -88,8 +100,9 @@ export function ContactForm() {
           Thank you — message received.
         </h3>
         <p className="text-muted-foreground mt-2 max-w-sm text-sm">
-          We will get back to you within one business day. In the meantime, feel
-          free to explore our recent work.
+          We will get back to you within one business day. Keep reference{" "}
+          <strong className="text-foreground">{reference}</strong> for your
+          records.
         </p>
       </div>
     );
@@ -146,7 +159,7 @@ export function ContactForm() {
             {...register("budget")}
           >
             <option value="">Select a range</option>
-            {budgets.map((b) => (
+            {contactBudgets.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>
@@ -167,6 +180,24 @@ export function ContactForm() {
           <FieldError id="message-error" message={errors.message?.message} />
         </div>
       </div>
+      <div className="sr-only" aria-hidden="true">
+        <Label htmlFor="website">Website</Label>
+        <Input
+          id="website"
+          tabIndex={-1}
+          autoComplete="off"
+          {...register("website")}
+        />
+      </div>
+      {submitError ? (
+        <p
+          id="contact-submit-error"
+          role="alert"
+          className="bg-destructive/10 text-destructive mt-5 rounded-xl px-4 py-3 text-sm"
+        >
+          {submitError}
+        </p>
+      ) : null}
       <Button
         type="submit"
         variant="gradient"
