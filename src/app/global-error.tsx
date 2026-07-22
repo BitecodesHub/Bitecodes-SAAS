@@ -5,10 +5,12 @@ import Link from "next/link";
 
 export default function GlobalError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  // Re-fetches and re-renders the boundary's children; plain reset() only
+  // clears boundary state, which immediately re-throws server-render errors.
+  unstable_retry: () => void;
 }) {
   useEffect(() => {
     void error.digest;
@@ -82,7 +84,7 @@ export default function GlobalError({
             >
               <button
                 type="button"
-                onClick={reset}
+                onClick={() => unstable_retry()}
                 style={{
                   border: 0,
                   borderRadius: "999px",

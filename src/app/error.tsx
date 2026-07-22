@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 
 export default function ErrorPage({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  // Re-fetches and re-renders the boundary's children; plain reset() only
+  // clears boundary state, which immediately re-throws server-render errors.
+  unstable_retry: () => void;
 }) {
   useEffect(() => {
     // A production monitoring provider can capture this boundary later.
@@ -42,7 +44,12 @@ export default function ErrorPage({
             return home and continue browsing.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button type="button" variant="gradient" size="lg" onClick={reset}>
+            <Button
+              type="button"
+              variant="gradient"
+              size="lg"
+              onClick={() => unstable_retry()}
+            >
               <RefreshCw className="size-4" />
               Try again
             </Button>
