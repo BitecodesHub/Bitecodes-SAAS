@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rateLimit = consumeContactRateLimit(getClientKey(request));
+  const rateLimit = await consumeContactRateLimit(getClientKey(request));
   if (!rateLimit.allowed) {
     return json(
       {

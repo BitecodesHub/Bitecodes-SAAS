@@ -95,6 +95,35 @@ export function normalizeAuditUrl(input: string) {
   return url;
 }
 
+/**
+ * Why a hostname could not be resolved.
+ *
+ * The distinction is not pedantry. `NXDOMAIN` means the domain does not exist —
+ * real evidence a business's website is gone. A resolver timeout or SERVFAIL
+ * means *our* DNS is unhappy and says nothing about the domain. Collapsing the
+ * two lets a flaky resolver mass-label healthy prospects as "website down" and
+ * send them all an email saying so.
+ */
+export class DnsResolutionError extends Error {
+  constructor(
+    message: string,
+    /** True only when the authoritative answer was "no such domain". */
+    readonly domainMissing: boolean,
+  ) {
+    super(message);
+    this.name = "DnsResolutionError";
+  }
+}
+
+/** DNS error codes that genuinely mean "this domain does not exist". */
+const NXDOMAIN_CODES = new Set(["ENOTFOUND", "NOTFOUND", "ENODATA"]);
+
+function dnsErrorCode(error: unknown): string {
+  return typeof error === "object" && error !== null && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : "";
+}
+
 export async function assertPublicAuditUrl(url: URL) {
   const hostname = url.hostname;
   if (isIP(hostname)) {
@@ -102,13 +131,41 @@ export async function assertPublicAuditUrl(url: URL) {
     return [hostname];
   }
 
-  const [ipv4, ipv6] = await Promise.all([
-    resolve4(hostname).catch(() => []),
-    resolve6(hostname).catch(() => []),
+  // Errors are captured rather than swallowed, so a failure to resolve can be
+  // attributed to the domain or to our resolver.
+  const [ipv4Result, ipv6Result] = await Promise.all([
+    resolve4(hostname).then(
+      (addresses) => ({ addresses, error: null as unknown }),
+      (error: unknown) => ({ addresses: [] as string[], error }),
+    ),
+    resolve6(hostname).then(
+      (addresses) => ({ addresses, error: null as unknown }),
+      (error: unknown) => ({ addresses: [] as string[], error }),
+    ),
   ]);
-  const addresses = [...ipv4, ...ipv6];
-  if (!addresses.length)
-    throw new Error("The website hostname could not be resolved.");
+
+  const addresses = [...ipv4Result.addresses, ...ipv6Result.addresses];
+
+  if (!addresses.length) {
+    const codes = [
+      dnsErrorCode(ipv4Result.error),
+      dnsErrorCode(ipv6Result.error),
+    ].filter(Boolean);
+
+    // Only an unambiguous "no such domain" from every attempt counts. If any
+    // lookup failed for another reason — timeout, SERVFAIL, refused — the
+    // honest answer is "we do not know".
+    const domainMissing =
+      codes.length > 0 && codes.every((code) => NXDOMAIN_CODES.has(code));
+
+    throw new DnsResolutionError(
+      domainMissing
+        ? "The website hostname does not exist."
+        : `The website hostname could not be resolved (${codes.join(", ") || "no answer"}).`,
+      domainMissing,
+    );
+  }
+
   if (addresses.some((address) => !isPublicIp(address))) {
     throw new Error("Private or reserved network destinations are blocked.");
   }

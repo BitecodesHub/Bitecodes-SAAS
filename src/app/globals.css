@@ -53,6 +53,41 @@
   --brand-3: oklch(0.52 0.16 258); /* periwinkle   */
 
   --glow: oklch(0.45 0.2 282 / 0.16);
+
+  /*
+   * Chart palette (admin dashboard).
+   *
+   * The brand ramp (--brand-1/2/3) is three neighbouring indigos — a gradient
+   * ramp, not a categorical scale. Using it for chart series would be
+   * unreadable for a colourblind viewer, so charts get their own validated
+   * categorical order that *leads* with the brand indigo.
+   *
+   * Slot order is the colourblind-safety mechanism, not decoration. Verified
+   * against the real card surface with the data-viz validator:
+   *
+   *   node scripts/validate_palette.js "#4c36be,#eb6834,#1baf7a,#eda100,#e87ba4" \
+   *     --mode light --surface "#ffffff"
+   *
+   * Result: all checks pass. Worst adjacent CVD ΔE 9.1, worst adjacent
+   * normal-vision ΔE 19.6. Slots 3–5 fall below 3:1 against white, so charts
+   * using them MUST carry direct value labels or a table view — that relief is
+   * a requirement, not a preference. Slots 1–3 also clear the stricter
+   * all-pairs gate, so scatter-style charts cap at three series.
+   *
+   * Deliberately kept as hex: these are the exact values the validator
+   * approved, and restating them in oklch would hide that provenance.
+   */
+  --chart-1: #4c36be; /* brand indigo */
+  --chart-2: #eb6834; /* orange   */
+  --chart-3: #1baf7a; /* aqua     */
+  --chart-4: #eda100; /* yellow   */
+  --chart-5: #e87ba4; /* magenta  */
+
+  --chart-grid: oklch(0.93 0.004 281);
+  --chart-axis: oklch(0.86 0.006 281);
+  --chart-good: #0ca30c;
+  --chart-warning: #fab219;
+  --chart-critical: #d03b3b;
 }
 
 .dark {
@@ -90,6 +125,29 @@
   --brand-3: oklch(0.74 0.15 260);
 
   --glow: oklch(0.68 0.2 287 / 0.4);
+
+  /*
+   * Dark chart palette — the same five hues re-stepped for the dark card
+   * surface, not an automatic inversion. Note slot 1 is a darker step than
+   * --brand-1: the brand's dark indigo sits at L 0.689, above the dark
+   * lightness band, and failed validation. Verified with:
+   *
+   *   node scripts/validate_palette.js "#8873f7,#d95926,#199e70,#c98500,#d55181" \
+   *     --mode dark --surface "#14151f"
+   *
+   * Result: all checks pass, including 3:1 contrast on every slot.
+   */
+  --chart-1: #8873f7;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+
+  --chart-grid: oklch(1 0 0 / 8%);
+  --chart-axis: oklch(1 0 0 / 16%);
+  --chart-good: #0ca30c;
+  --chart-warning: #fab219;
+  --chart-critical: #d03b3b;
 }
 
 @theme inline {

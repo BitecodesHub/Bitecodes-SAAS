@@ -1,0 +1,8 @@
+# Typecheck and test before anything leaves the machine.
+#
+# pre-commit only runs lint-staged (ESLint + Prettier on changed files), so a
+# type error or a failing test could previously reach the remote unnoticed —
+# there was no CI either. Kept off pre-commit deliberately: a full typecheck on
+# every commit is slow enough to encourage --no-verify, which defeats the point.
+pnpm typecheck
+pnpm test

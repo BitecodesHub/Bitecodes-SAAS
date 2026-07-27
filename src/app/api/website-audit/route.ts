@@ -1,11 +1,13 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
+import { after } from "next/server";
+import { auditReports } from "@/lib/server/db/collections";
 import {
   websiteAuditInputSchema,
   type WebsiteAuditResponse,
 } from "@/lib/website-audit";
 import { consumeAuditRateLimit } from "@/lib/server/rate-limit";
-import { auditWebsite } from "@/lib/server/website-auditor";
+import { AuditError, auditWebsite } from "@/lib/server/website-auditor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const rateLimit = consumeAuditRateLimit(getClientKey(request));
+  const rateLimit = await consumeAuditRateLimit(getClientKey(request));
   if (!rateLimit.allowed) {
     return json(
       {
@@ -75,16 +77,57 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await auditWebsite(parsed.data.url);
+
+    // Every audit run is a signal of intent worth keeping: someone typed their
+    // own domain into a stranger's tool. Written after the response so the
+    // visitor never waits on the database, and never fatal.
+    after(async () => {
+      try {
+        const collection = await auditReports();
+        const now = new Date();
+        let hostname = "";
+        try {
+          hostname = new URL(result.finalUrl).hostname.toLowerCase();
+        } catch {
+          hostname = "";
+        }
+
+        await collection.insertOne({
+          requestId: randomUUID(),
+          auditedUrl: result.auditedUrl,
+          hostname,
+          result,
+          email: null,
+          source: "public-tool",
+          shareId: null,
+          status: "new",
+          notes: [],
+          createdAt: now,
+          updatedAt: now,
+        });
+      } catch (persistError) {
+        console.error(
+          "[website-audit] Could not persist the run:",
+          persistError instanceof Error ? persistError.message : persistError,
+        );
+      }
+    });
+
     return json({ ok: true, result }, 200);
   } catch (error) {
     const message =
       error instanceof Error
         ? error.message
         : "The website could not be audited.";
+    // Prefer the typed reason. The message regex remains as a fallback because
+    // `normalizeAuditUrl` rejects malformed URLs and non-standard ports with a
+    // plain Error before the auditor's own typed failures come into play.
     const blocked =
-      /blocked|private|reserved|credentials|ports|hostname|http and https/i.test(
-        message,
-      );
+      error instanceof AuditError
+        ? error.reason === "blocked"
+        : /blocked|private|reserved|credentials|ports|hostname|http and https/i.test(
+            message,
+          );
     return json(
       {
         ok: false,

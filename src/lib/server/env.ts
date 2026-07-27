@@ -20,6 +20,49 @@ const serverEnvSchema = z.object({
         .filter(Boolean),
     )
     .pipe(z.array(z.string().email()).min(1)),
+
+  // --- Added for the admin panel, automation, and outreach. ---
+  // Every variable below is OPTIONAL with a working default so that adding
+  // this code cannot break an existing deployment whose .env predates it.
+  // Features that genuinely require a value check for it themselves and
+  // degrade gracefully (see `isAutomationConfigured`).
+
+  /** Signs sessions, unsubscribe links, report links, and portal tokens. */
+  AUTH_SECRET: z.string().min(32).optional(),
+  /** Bearer token required by the job-runner endpoint. */
+  CRON_SECRET: z.string().min(16).optional(),
+  /** Absolute site origin for links inside emails. Falls back to siteConfig. */
+  SITE_URL: z.string().url().optional(),
+
+  /** Sender identity for cold outreach, kept separate from transactional mail. */
+  OUTREACH_FROM: z.string().trim().min(3).optional(),
+  OUTREACH_REPLY_TO: z.string().trim().min(3).optional(),
+  /** Postal address required in outreach footers by CAN-SPAM. */
+  OUTREACH_POSTAL_ADDRESS: z.string().trim().min(5).optional(),
+
+  /** Prospect discovery providers. Defaults are the public OSM endpoints. */
+  OVERPASS_ENDPOINT: z
+    .string()
+    .url()
+    .default("https://overpass-api.de/api/interpreter"),
+  NOMINATIM_ENDPOINT: z
+    .string()
+    .url()
+    .default("https://nominatim.openstreetmap.org"),
+  /** Opt-in only. Google's Places TOS restricts storing results. */
+  GOOGLE_PLACES_API_KEY: z.string().min(1).optional(),
+
+  /** Optional IMAP polling so sequences can stop automatically on a reply. */
+  IMAP_HOST: z.string().trim().min(1).optional(),
+  IMAP_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+  IMAP_USER: z.string().min(1).optional(),
+  IMAP_PASSWORD: z.string().min(1).optional(),
+
+  /** Key file served at /<key>.txt for IndexNow submissions. */
+  INDEXNOW_KEY: z
+    .string()
+    .regex(/^[a-zA-Z0-9-]{8,128}$/)
+    .optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -40,4 +83,77 @@ export function getServerEnv(): ServerEnv {
 
   parsedEnv = result.data;
   return parsedEnv;
+}
+
+/**
+ * Narrow readers below deliberately bypass `getServerEnv()`.
+ *
+ * `getServerEnv()` validates the whole schema and throws if *any* required
+ * variable is missing, which couples unrelated features together: without
+ * these, a missing SMTP password would break admin login. Each reader
+ * validates only what its own caller needs.
+ */
+
+/** The HMAC key for signed tokens and session signatures. */
+export function getSigningSecret(): string {
+  const secret = process.env.AUTH_SECRET?.trim();
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "AUTH_SECRET must be set to at least 32 characters. Generate one with: openssl rand -base64 32",
+    );
+  }
+  return secret;
+}
+
+export function hasSigningSecret(): boolean {
+  return (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32;
+}
+
+/** Absolute origin used for links inside emails and signed report URLs. */
+export function getSiteUrl(): string {
+  const configured = process.env.SITE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
+  return "https://bitecodes.com";
+}
+
+export function getCronSecret(): string | null {
+  const secret = process.env.CRON_SECRET?.trim();
+  return secret && secret.length >= 16 ? secret : null;
+}
+
+export function getOverpassEndpoint(): string {
+  return (
+    process.env.OVERPASS_ENDPOINT?.trim() ||
+    "https://overpass-api.de/api/interpreter"
+  );
+}
+
+export function getNominatimEndpoint(): string {
+  return (
+    process.env.NOMINATIM_ENDPOINT?.trim().replace(/\/+$/, "") ||
+    "https://nominatim.openstreetmap.org"
+  );
+}
+
+export function getGooglePlacesKey(): string | null {
+  return process.env.GOOGLE_PLACES_API_KEY?.trim() || null;
+}
+
+export function getIndexNowKey(): string | null {
+  const key = process.env.INDEXNOW_KEY?.trim();
+  return key && /^[a-zA-Z0-9-]{8,128}$/.test(key) ? key : null;
+}
+
+export function getImapConfig() {
+  const host = process.env.IMAP_HOST?.trim();
+  const user = process.env.IMAP_USER?.trim();
+  const password = process.env.IMAP_PASSWORD;
+  if (!host || !user || !password) return null;
+  return {
+    host,
+    user,
+    password,
+    port: Number(process.env.IMAP_PORT ?? 993),
+  };
 }

@@ -1,48 +1,19 @@
 import "server-only";
 
-import nodemailer, { type Transporter } from "nodemailer";
 import type { ContactInput } from "@/lib/contact";
 import { getServerEnv } from "@/lib/server/env";
+import { emailShell, escapeHtml } from "@/lib/email/template";
+import { getTransporter } from "@/lib/server/email/transport";
 
-let transporter: Transporter | undefined;
-
-function getTransporter() {
-  if (transporter) return transporter;
-
-  const env = getServerEnv();
-  transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_SECURE,
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASSWORD },
-    connectionTimeout: 10_000,
-    greetingTimeout: 10_000,
-    socketTimeout: 15_000,
-    pool: true,
-    maxConnections: 3,
-    maxMessages: 100,
-  });
-
-  return transporter;
-}
-
-function escapeHtml(value: string) {
-  return value.replace(
-    /[&<>'"]/g,
-    (character) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "'": "&#39;",
-        '"': "&quot;",
-      })[character]!,
-  );
-}
-
-function emailShell(content: string) {
-  return `<!doctype html><html lang="en"><body style="margin:0;background:#f6f5f2;color:#201f26;font-family:Arial,sans-serif"><div style="max-width:640px;margin:0 auto;padding:40px 20px"><div style="background:#fff;border:1px solid #e6e3eb;border-radius:20px;padding:32px"><p style="margin:0 0 24px;color:#5640b8;font-weight:700">BITECODES</p>${content}</div><p style="color:#6e6a77;font-size:12px;line-height:1.6;text-align:center">Software, engineered with intent.</p></div></body></html>`;
-}
+/**
+ * Contact-form notifications.
+ *
+ * Kept as a direct send rather than going through the queue: the visitor is
+ * waiting on the response, and the acknowledgement email is the receipt for an
+ * action they just took. The chrome and escaping now come from the shared
+ * `email/template` module so these two messages look identical to every other
+ * email the system sends.
+ */
 
 export async function sendContactEmails(
   enquiry: ContactInput,
@@ -64,7 +35,7 @@ export async function sendContactEmails(
       subject: `New Bitecodes enquiry — ${enquiry.name}`,
       text: `Reference: ${reference}\nName: ${enquiry.name}\nEmail: ${enquiry.email}\nCompany: ${enquiry.company || "Not provided"}\nBudget: ${enquiry.budget || "Not specified"}\n\n${enquiry.message}`,
       html: emailShell(
-        `<h1 style="font-size:24px">New project enquiry</h1><p><strong>Reference:</strong> ${escapeHtml(reference)}</p><p><strong>Name:</strong> ${name}<br><strong>Email:</strong> ${email}<br><strong>Company:</strong> ${company}<br><strong>Budget:</strong> ${budget}</p><p style="line-height:1.7">${message}</p>`,
+        `<h1 style="font-size:24px;margin:0 0 16px">New project enquiry</h1><p style="margin:0 0 16px"><strong>Reference:</strong> ${escapeHtml(reference)}</p><p style="margin:0 0 16px"><strong>Name:</strong> ${name}<br><strong>Email:</strong> ${email}<br><strong>Company:</strong> ${company}<br><strong>Budget:</strong> ${budget}</p><p style="line-height:1.7;margin:0">${message}</p>`,
       ),
     }),
     mailer.sendMail({
@@ -74,7 +45,7 @@ export async function sendContactEmails(
       subject: "We received your Bitecodes enquiry",
       text: `Hi ${enquiry.name},\n\nThank you for contacting Bitecodes. Your reference is ${reference}. We will review your message and respond within one business day.\n\nBitecodes`,
       html: emailShell(
-        `<h1 style="font-size:24px">Thanks, ${name}.</h1><p style="line-height:1.7">We received your enquiry and will review it carefully. A member of our team will respond within one business day.</p><p><strong>Your reference:</strong> ${escapeHtml(reference)}</p>`,
+        `<h1 style="font-size:24px;margin:0 0 16px">Thanks, ${name}.</h1><p style="line-height:1.7;margin:0 0 16px">We received your enquiry and will review it carefully. A member of our team will respond within one business day.</p><p style="margin:0"><strong>Your reference:</strong> ${escapeHtml(reference)}</p>`,
       ),
     }),
   ]);

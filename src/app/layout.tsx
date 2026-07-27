@@ -2,18 +2,23 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteConfig } from "@/lib/site";
-import {
-  organizationSchema,
-  websiteSchema,
-  FEED_ALTERNATE_TYPES,
-} from "@/lib/seo";
+import { FEED_ALTERNATE_TYPES } from "@/lib/seo";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SiteHeader } from "@/components/navigation/site-header";
-import { SiteFooter } from "@/components/navigation/site-footer";
-import { ScrollProgress } from "@/components/scroll-progress";
-import { BackToTop } from "@/components/back-to-top";
-import { JsonLd } from "@/components/json-ld";
-import { MotionProvider } from "@/components/motion/motion-provider";
+
+/**
+ * The root layout.
+ *
+ * Deliberately minimal: the document shell, fonts, and theme provider only.
+ * The public site's header, footer, and structured data live in
+ * `(site)/layout.tsx`, and the admin panel has its own chrome in
+ * `admin/layout.tsx`.
+ *
+ * That split exists because the marketing header and footer used to be here,
+ * which meant every route in the application inherited them — including the
+ * admin panel, where a "Get a quote" call to action in the header makes no
+ * sense. Route groups do not affect URLs, so `(site)` is purely a layout
+ * boundary and every public path is unchanged.
+ */
 
 // Inter — the publicly-available Google Fonts sans that is the standard
 // equivalent to Google Sans (which is proprietary / not on Google Fonts).
@@ -100,17 +105,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <JsonLd data={organizationSchema()} />
-          <JsonLd data={websiteSchema()} />
-          <ScrollProgress />
-          <MotionProvider>
-            <SiteHeader />
-            <main id="main" className="flex-1">
-              {children}
-            </main>
-            <SiteFooter />
-            <BackToTop />
-          </MotionProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

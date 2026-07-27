@@ -14,6 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "verify": "pnpm lint && pnpm typecheck && pnpm format:check && pnpm test && pnpm build",
+    "admin": "node --env-file-if-exists=.env.local --env-file-if-exists=.env.development.local scripts/admin.mjs",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -39,6 +41,7 @@
     "@radix-ui/react-tooltip": "^1.2.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.21.0",
     "mongodb": "^7.5.0",
     "motion": "^12.42.0",
@@ -48,12 +51,14 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.80.0",
+    "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",

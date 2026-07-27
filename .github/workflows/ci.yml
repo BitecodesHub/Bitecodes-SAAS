@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    services:
+      # A real MongoDB so the database integration suites run here even when a
+      # developer's machine has none. Without this they would only ever skip.
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Test-only values. Nothing here reaches a real service: the suites that
+      # need SMTP or OpenRouter stub the transport.
+      TEST_MONGODB_URI: mongodb://127.0.0.1:27017
+      MONGODB_URI: mongodb://127.0.0.1:27017
+      MONGODB_DB_NAME: bitecodes_ci
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_USER: ci
+      SMTP_PASSWORD: ci
+      SMTP_FROM: Bitecodes <ci@example.com>
+      CONTACT_NOTIFICATION_TO: ci@example.com
+      AUTH_SECRET: ci-secret-at-least-32-characters-long-0000
+      CRON_SECRET: ci-cron-secret-16-plus
+      SITE_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Test
+        run: pnpm test
+
+      - name: Assert database suites actually ran
+        # A silent regression in the harness would turn every database test
+        # into a skip and CI would still be green. Fail loudly instead.
+        run: |
+          pnpm test 2>&1 | tee /tmp/test-output.txt
+          if grep -q "TEST_MONGODB_URI is not set" /tmp/test-output.txt; then
+            echo "::error::Database integration suites were skipped in CI."
+            exit 1
+          fi
+
+      - name: Build
+        run: pnpm build

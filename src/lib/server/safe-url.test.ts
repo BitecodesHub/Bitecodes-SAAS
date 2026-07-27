@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isPublicIp, normalizeAuditUrl } from "@/lib/server/safe-url";
+import {
+  DnsResolutionError,
+  isPublicIp,
+  normalizeAuditUrl,
+} from "@/lib/server/safe-url";
 
 describe("normalizeAuditUrl", () => {
   it("defaults a hostname to HTTPS", () => {
@@ -47,4 +51,19 @@ describe("isPublicIp", () => {
       expect(isPublicIp(address)).toBe(true);
     },
   );
+});
+
+describe("DnsResolutionError", () => {
+  it("marks an authoritative NXDOMAIN as the domain being missing", () => {
+    const error = new DnsResolutionError("gone", true);
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe("DnsResolutionError");
+    expect(error.domainMissing).toBe(true);
+  });
+
+  it("marks a resolver failure as inconclusive", () => {
+    // The distinction that stops a flaky resolver mass-labelling healthy
+    // prospects as "website down".
+    expect(new DnsResolutionError("timeout", false).domainMissing).toBe(false);
+  });
 });

@@ -5,6 +5,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
+import { PostBody } from "@/components/blog/post-body";
 import { Badge } from "@/components/ui/badge";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
@@ -121,40 +122,9 @@ export default async function BlogPostPage({
           </div>
 
           <Reveal>
-            <article className="mt-8 space-y-6">
-              {post.body.map((block, i) => {
-                if (block.type === "h2") {
-                  return (
-                    <h2
-                      key={i}
-                      className="text-xl font-semibold tracking-tight sm:text-2xl"
-                    >
-                      {block.text}
-                    </h2>
-                  );
-                }
-                if (block.type === "ul") {
-                  return (
-                    <ul key={i} className="space-y-2">
-                      {block.items?.map((item) => (
-                        <li
-                          key={item}
-                          className="text-muted-foreground flex gap-3"
-                        >
-                          <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
-                          <span className="leading-relaxed">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                }
-                return (
-                  <p key={i} className="text-muted-foreground leading-relaxed">
-                    {block.text}
-                  </p>
-                );
-              })}
-            </article>
+            <div className="mt-8">
+              <PostBody blocks={post.body} />
+            </div>
           </Reveal>
 
           <div className="border-border mt-8 flex flex-wrap gap-2 border-t pt-6">
