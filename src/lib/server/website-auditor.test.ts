@@ -1,7 +1,10 @@
+import { createServer, get } from "node:http";
+import type { AddressInfo } from "node:net";
 import { describe, expect, it } from "vitest";
 import {
   AuditError,
   isSiteFailure,
+  pinnedAddressLookup,
   type AuditFailureReason,
 } from "@/lib/server/website-auditor";
 
@@ -70,5 +73,81 @@ describe("AuditError", () => {
 
   it("defaults the status code to null", () => {
     expect(new AuditError("boom", "timeout").statusCode).toBeNull();
+  });
+});
+
+describe("pinnedAddressLookup", () => {
+  /**
+   * The transport contract, pinned because breaking it is silent.
+   *
+   * Node requests `all` when it connects and then accepts only an array. The
+   * single-address form made it reject its own lookup with
+   * ERR_INVALID_IP_ADDRESS, so every reachable site failed the audit: the
+   * public tool returned 502 for every URL, and prospects with a working
+   * website were left permanently unclassified.
+   */
+  it("returns the array form Node requires when connecting", () => {
+    const calls: unknown[] = [];
+    pinnedAddressLookup("203.0.113.7")(
+      "example.test",
+      { all: true },
+      (...args: unknown[]) => calls.push(args),
+    );
+    expect(calls).toEqual([[null, [{ address: "203.0.113.7", family: 4 }]]]);
+  });
+
+  it("still supports the single-address form", () => {
+    const calls: unknown[] = [];
+    pinnedAddressLookup("203.0.113.7")(
+      "example.test",
+      {},
+      (...args: unknown[]) => calls.push(args),
+    );
+    expect(calls).toEqual([[null, "203.0.113.7", 4]]);
+  });
+
+  it("reports family 6 for an IPv6 address", () => {
+    const calls: unknown[] = [];
+    pinnedAddressLookup("2001:db8::1")(
+      "example.test",
+      { all: true },
+      (...args: unknown[]) => calls.push(args),
+    );
+    expect(calls).toEqual([[null, [{ address: "2001:db8::1", family: 6 }]]]);
+  });
+
+  it("connects through a real request, proving Node accepts the shape", async () => {
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { "Content-Type": "text/html" });
+      response.end("<html><body>ok</body></html>");
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    const { port } = server.address() as AddressInfo;
+
+    try {
+      const statusCode = await new Promise<number>((resolve, reject) => {
+        const request = get(
+          {
+            hostname: "audit-contract.test",
+            port,
+            path: "/",
+            // The production call site: a hostname that does not resolve,
+            // reachable only because the lookup pins the address.
+            lookup: pinnedAddressLookup("127.0.0.1"),
+          },
+          (response) => {
+            response.resume();
+            resolve(response.statusCode ?? 0);
+          },
+        );
+        request.on("error", reject);
+      });
+
+      expect(statusCode).toBe(200);
+    } finally {
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
   });
 });

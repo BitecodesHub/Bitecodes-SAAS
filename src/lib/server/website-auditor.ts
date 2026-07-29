@@ -139,6 +139,35 @@ interface FetchedPage {
   responseTimeMs: number;
 }
 
+/**
+ * A DNS lookup pinned to one already-validated address.
+ *
+ * The connection must reach exactly the address the SSRF guard checked, or a
+ * second DNS answer could re-point it at a private host after the check.
+ *
+ * Both callback shapes are required. Node asks for `all` when it connects and
+ * then rejects anything but an array, so the single-address form makes it fail
+ * its own lookup with ERR_INVALID_IP_ADDRESS — which reaches the auditor as
+ * reason `unknown` and leaves every reachable site unchecked.
+ */
+export function pinnedAddressLookup(address: string) {
+  const family = address.includes(":") ? 6 : 4;
+  return ((hostname, options, callback) => {
+    if (typeof options === "object" && options !== null && options.all) {
+      (callback as (e: null, a: { address: string; family: number }[]) => void)(
+        null,
+        [{ address, family }],
+      );
+      return;
+    }
+    (callback as (e: null, a: string, f: number) => void)(
+      null,
+      address,
+      family,
+    );
+  }) satisfies NonNullable<https.RequestOptions["lookup"]>;
+}
+
 function requestPage(
   url: URL,
   address: string,
@@ -159,8 +188,7 @@ function requestPage(
           // and `identity` made large healthy pages time out on a slow link.
           "Accept-Encoding": "gzip, deflate, br",
         },
-        lookup: (_hostname, _options, callback) =>
-          callback(null, address, address.includes(":") ? 6 : 4),
+        lookup: pinnedAddressLookup(address),
         servername: url.hostname,
         timeout: timeoutMs,
       },
