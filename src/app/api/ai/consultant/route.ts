@@ -9,7 +9,7 @@ import {
 import {
   createConsultantRecommendation,
   isAiConsultantConfigured,
-} from "@/lib/server/openrouter";
+} from "@/lib/server/ai-provider";
 import { consumeAiRateLimit } from "@/lib/server/rate-limit";
 import { createDeterministicConsultantQuote } from "@/lib/server/consultant-quote";
 

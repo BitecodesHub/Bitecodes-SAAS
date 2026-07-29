@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getAiProviderConfig } from "@/lib/server/ai-provider";
 import { pingDatabase } from "@/lib/server/db/collections";
 import { verifyTransport } from "@/lib/server/email/transport";
 import {
@@ -35,16 +36,16 @@ export interface HealthCheck {
 const PROBE_TIMEOUT_MS = 6_000;
 
 export async function runHealthChecks(): Promise<HealthCheck[]> {
-  const [database, smtp, openRouter, overpass, configuration] =
+  const [database, smtp, aiProvider, overpass, configuration] =
     await Promise.all([
       checkDatabase(),
       checkSmtp(),
-      checkOpenRouter(),
+      checkAiProvider(),
       checkOverpass(),
       checkConfiguration(),
     ]);
 
-  return [database, smtp, openRouter, overpass, ...configuration];
+  return [database, smtp, aiProvider, overpass, ...configuration];
 }
 
 async function checkDatabase(): Promise<HealthCheck> {
@@ -102,63 +103,98 @@ async function checkSmtp(): Promise<HealthCheck> {
       };
 }
 
-async function checkOpenRouter(): Promise<HealthCheck> {
-  if (!process.env.OPENROUTER_API_KEY?.trim()) {
+async function checkAiProvider(): Promise<HealthCheck> {
+  const config = getAiProviderConfig();
+  if (!config) {
     return {
-      name: "OpenRouter",
+      name: "AI provider",
       status: "not-configured",
       detail: "No API key configured.",
       remedy:
-        "Set OPENROUTER_API_KEY to enable the AI consultant, the chatbot, and AI drafting.",
+        "Set AI_API_KEY (and AI_BASE_URL/AI_MODEL for a non-OpenRouter provider) to enable the AI consultant, the chatbot, and AI drafting.",
     };
   }
 
+  const providerName = config.isOpenRouter
+    ? "OpenRouter"
+    : `AI provider (${new URL(config.baseUrl).hostname})`;
   const started = Date.now();
+
   try {
-    // The key endpoint reports quota and validity without spending a token.
-    const response = await fetch("https://openrouter.ai/api/v1/key", {
-      headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}` },
+    if (config.isOpenRouter) {
+      // The key endpoint reports quota and validity without spending a token.
+      const response = await fetch("https://openrouter.ai/api/v1/key", {
+        headers: { Authorization: `Bearer ${config.apiKey}` },
+        signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        return {
+          name: providerName,
+          status: "fail",
+          detail: `Provider returned ${response.status}.`,
+          latencyMs: Date.now() - started,
+          remedy:
+            response.status === 401
+              ? "The API key was rejected. Rotate it and update the key."
+              : "Check OpenRouter's status page.",
+        };
+      }
+
+      const payload = (await response.json()) as {
+        data?: { limit_remaining?: number | null; usage?: number };
+      };
+      const remaining = payload.data?.limit_remaining;
+
+      return {
+        name: providerName,
+        status:
+          remaining !== null && remaining !== undefined && remaining <= 0
+            ? "warn"
+            : "ok",
+        detail:
+          remaining === null || remaining === undefined
+            ? "Key valid. No spend limit set."
+            : `Key valid. ${remaining.toFixed(2)} credit remaining.`,
+        latencyMs: Date.now() - started,
+        remedy:
+          remaining !== null && remaining !== undefined && remaining <= 0
+            ? "Credit is exhausted, so AI features will fail. Top up the account."
+            : undefined,
+      };
+    }
+
+    // Generic OpenAI-compatible provider: the models listing validates both
+    // reachability and the key without spending a token.
+    const response = await fetch(`${config.baseUrl}/models`, {
+      headers: { Authorization: `Bearer ${config.apiKey}` },
       signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
       cache: "no-store",
     });
 
     if (!response.ok) {
       return {
-        name: "OpenRouter",
+        name: providerName,
         status: "fail",
         detail: `Provider returned ${response.status}.`,
         latencyMs: Date.now() - started,
         remedy:
-          response.status === 401
-            ? "The API key was rejected. Rotate it and update OPENROUTER_API_KEY."
-            : "Check OpenRouter's status page.",
+          response.status === 401 || response.status === 403
+            ? "The API key was rejected. Rotate it and update AI_API_KEY."
+            : "Check the provider's status page and AI_BASE_URL.",
       };
     }
 
-    const payload = (await response.json()) as {
-      data?: { limit_remaining?: number | null; usage?: number };
-    };
-    const remaining = payload.data?.limit_remaining;
-
     return {
-      name: "OpenRouter",
-      status:
-        remaining !== null && remaining !== undefined && remaining <= 0
-          ? "warn"
-          : "ok",
-      detail:
-        remaining === null || remaining === undefined
-          ? "Key valid. No spend limit set."
-          : `Key valid. ${remaining.toFixed(2)} credit remaining.`,
+      name: providerName,
+      status: "ok",
+      detail: `Key valid. Model: ${config.model}.`,
       latencyMs: Date.now() - started,
-      remedy:
-        remaining !== null && remaining !== undefined && remaining <= 0
-          ? "Credit is exhausted, so AI features will fail. Top up the account."
-          : undefined,
     };
   } catch (error) {
     return {
-      name: "OpenRouter",
+      name: providerName,
       status: "fail",
       detail: error instanceof Error ? error.message : "Unreachable.",
       latencyMs: Date.now() - started,

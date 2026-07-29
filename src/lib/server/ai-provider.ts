@@ -9,15 +9,63 @@ import {
 import { SERVICE_PRICING, convertPrice } from "@/lib/pricing";
 import { services } from "@/data/services";
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const REQUEST_TIMEOUT_MS = 25_000;
+/**
+ * OpenAI-compatible chat-completions client.
+ *
+ * Any provider that speaks the OpenAI wire format works: point AI_BASE_URL at
+ * its `/v1` root. OpenRouter-only request options (the `provider` routing
+ * block, attribution headers) are sent only when the base URL is actually
+ * OpenRouter, because other providers reject unknown fields when asked to
+ * validate parameters.
+ */
 
-function getAiConfig() {
-  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
+const DEFAULT_MODEL = "google/gemini-2.5-flash";
+// Generous ceiling: shared community endpoints (for example
+// integrate.api.nvidia.com) can queue a request for minutes under load.
+const DEFAULT_TIMEOUT_MS = 25_000;
+const MAX_TIMEOUT_MS = 300_000;
+
+export interface AiProviderConfig {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  timeoutMs: number;
+  isOpenRouter: boolean;
+}
+
+export function getAiProviderConfig(): AiProviderConfig | null {
+  const apiKey = (
+    process.env.AI_API_KEY ?? process.env.OPENROUTER_API_KEY
+  )?.trim();
   if (!apiKey) return null;
+
+  const baseUrl = (process.env.AI_BASE_URL?.trim() || DEFAULT_BASE_URL)
+    // A trailing slash would produce `//chat/completions`.
+    .replace(/\/+$/, "");
+
+  let hostname: string;
+  try {
+    hostname = new URL(baseUrl).hostname;
+  } catch {
+    return null;
+  }
+
+  const parsedTimeout = Number(process.env.AI_TIMEOUT_MS);
+  const timeoutMs =
+    Number.isFinite(parsedTimeout) && parsedTimeout > 0
+      ? Math.min(parsedTimeout, MAX_TIMEOUT_MS)
+      : DEFAULT_TIMEOUT_MS;
+
   return {
     apiKey,
-    model: process.env.OPENROUTER_MODEL?.trim() || "google/gemini-2.5-flash",
+    baseUrl,
+    model:
+      (process.env.AI_MODEL ?? process.env.OPENROUTER_MODEL)?.trim() ||
+      DEFAULT_MODEL,
+    timeoutMs,
+    isOpenRouter:
+      hostname === "openrouter.ai" || hostname.endsWith(".openrouter.ai"),
   };
 }
 
@@ -60,7 +108,7 @@ BUSINESS CATALOG:
 ${businessContext()}`;
 }
 
-interface OpenRouterResponse {
+interface ChatCompletionResponse {
   model?: string;
   choices?: Array<{
     finish_reason?: string | null;
@@ -71,26 +119,30 @@ interface OpenRouterResponse {
 }
 
 export function isAiConsultantConfigured() {
-  return Boolean(getAiConfig());
+  return Boolean(getAiProviderConfig());
 }
 
 export async function createConsultantRecommendation(
   input: ConsultantInput,
 ): Promise<{ recommendation: ConsultantRecommendation; model: string }> {
-  const config = getAiConfig();
+  const config = getAiProviderConfig();
   if (!config) throw new Error("NOT_CONFIGURED");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
 
   try {
-    const response = await fetch(OPENROUTER_URL, {
+    const response = await fetch(`${config.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${config.apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://bitecodes.com",
-        "X-Title": "Bitecodes AI Project Consultant",
+        ...(config.isOpenRouter
+          ? {
+              "HTTP-Referer": "https://bitecodes.com",
+              "X-Title": "Bitecodes AI Project Consultant",
+            }
+          : {}),
       },
       body: JSON.stringify({
         model: config.model,
@@ -109,12 +161,16 @@ export async function createConsultantRecommendation(
             schema: consultantJsonSchema,
           },
         },
-        provider: {
-          data_collection: "deny",
-          zdr: true,
-          require_parameters: true,
-          allow_fallbacks: false,
-        },
+        ...(config.isOpenRouter
+          ? {
+              provider: {
+                data_collection: "deny",
+                zdr: true,
+                require_parameters: true,
+                allow_fallbacks: false,
+              },
+            }
+          : {}),
         temperature: 0.2,
         max_tokens: 1800,
         stream: false,
@@ -123,7 +179,7 @@ export async function createConsultantRecommendation(
       cache: "no-store",
     });
 
-    const payload = (await response.json()) as OpenRouterResponse;
+    const payload = (await response.json()) as ChatCompletionResponse;
     if (!response.ok || payload.error) {
       throw new Error("PROVIDER_ERROR");
     }
