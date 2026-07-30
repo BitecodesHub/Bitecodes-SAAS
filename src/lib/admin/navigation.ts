@@ -147,8 +147,8 @@ export const ADMIN_NAV: AdminNavSection[] = [
         href: "/admin/settings",
         icon: "Settings",
         capability: "manage_settings",
-        enabled: false,
-        description: "Contact details, automation, and AI",
+        enabled: true,
+        description: "Contact details, sending limits, and automation",
       },
       {
         label: "Team",
