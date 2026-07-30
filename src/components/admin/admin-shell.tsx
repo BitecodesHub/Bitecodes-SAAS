@@ -88,12 +88,12 @@ export function AdminShell({
 
             <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
               {/*
-                When collapsed the labels are hidden by width, which would leave
-                icon-only rows with no accessible name for a screen reader that
-                relies on visible text. Rendering the full sidebar and letting
-                overflow clip it keeps every link named.
+                Collapsed hides the labels with `sr-only` rather than by width.
+                Every row keeps its accessible name, and nothing is left
+                half-rendered — clipping by width used to show "OVERVIE" and
+                "PIPELINI" against the edge of the rail.
               */}
-              <AdminSidebar capabilities={capabilities} />
+              <AdminSidebar capabilities={capabilities} collapsed={collapsed} />
             </div>
 
             <div className="border-border border-t p-2">

@@ -56,16 +56,26 @@ const ICONS: Record<string, LucideIcon> = {
 export function AdminSidebar({
   capabilities,
   onNavigate,
+  collapsed = false,
 }: {
   capabilities: Capability[];
   /** Called on link activation, so the mobile drawer can close itself. */
   onNavigate?: () => void;
+  /**
+   * Icon-only rail. Labels stay in the DOM as `sr-only` rather than being
+   * removed, so every row keeps an accessible name; hiding them this way also
+   * avoids the half-words that clipping by width left on screen.
+   */
+  collapsed?: boolean;
 }) {
   const pathname = usePathname();
   const active = findActiveNavItem(pathname);
 
   return (
-    <nav aria-label="Admin sections" className="space-y-6">
+    <nav
+      aria-label="Admin sections"
+      className={cn("space-y-6", collapsed && "space-y-2")}
+    >
       {ADMIN_NAV.map((section) => {
         const visible = section.items.filter((item) =>
           capabilities.includes(item.capability),
@@ -76,16 +86,22 @@ export function AdminSidebar({
 
         return (
           <div key={section.title}>
-            <h2 className="text-muted-foreground px-3 text-[11px] font-semibold tracking-wider uppercase">
+            <h2
+              className={cn(
+                "text-muted-foreground px-3 text-[11px] font-semibold tracking-wider uppercase",
+                collapsed && "sr-only",
+              )}
+            >
               {section.title}
             </h2>
-            <ul className="mt-2 space-y-0.5">
+            <ul className={cn("space-y-0.5", collapsed ? "mt-0" : "mt-2")}>
               {visible.map((item) => (
                 <li key={item.href}>
                   <NavRow
                     item={item}
                     isActive={active?.href === item.href}
                     onNavigate={onNavigate}
+                    collapsed={collapsed}
                   />
                 </li>
               ))}
@@ -101,14 +117,18 @@ function NavRow({
   item,
   isActive,
   onNavigate,
+  collapsed = false,
 }: {
   item: AdminNavItem;
   isActive: boolean;
   onNavigate?: () => void;
+  collapsed?: boolean;
 }) {
   const Icon = ICONS[item.icon] ?? LayoutDashboard;
-  const shared =
-    "flex min-h-10 items-center gap-2.5 rounded-xl px-3 text-sm transition-colors";
+  const shared = cn(
+    "flex min-h-10 items-center rounded-xl text-sm transition-colors",
+    collapsed ? "justify-center px-0" : "gap-2.5 px-3",
+  );
 
   if (!item.enabled) {
     // A planned section renders as a labelled, non-interactive row. Linking to
@@ -119,8 +139,15 @@ function NavRow({
         title={`${item.description} — not built yet`}
       >
         <Icon aria-hidden="true" className="size-4 shrink-0" />
-        <span className="truncate">{item.label}</span>
-        <span className="border-border text-muted-foreground/70 ml-auto rounded-full border px-1.5 py-0.5 text-[10px]">
+        <span className={cn(collapsed ? "sr-only" : "truncate")}>
+          {item.label}
+        </span>
+        <span
+          className={cn(
+            "border-border text-muted-foreground/70 ml-auto rounded-full border px-1.5 py-0.5 text-[10px]",
+            collapsed && "sr-only",
+          )}
+        >
           soon
         </span>
       </span>
@@ -132,6 +159,7 @@ function NavRow({
       href={item.href}
       onClick={onNavigate}
       aria-current={isActive ? "page" : undefined}
+      title={collapsed ? item.label : undefined}
       className={cn(
         shared,
         "focus-visible:ring-ring/40 focus-visible:ring-2 focus-visible:outline-none",
@@ -141,7 +169,9 @@ function NavRow({
       )}
     >
       <Icon aria-hidden="true" className="size-4 shrink-0" />
-      <span className="truncate">{item.label}</span>
+      <span className={cn(collapsed ? "sr-only" : "truncate")}>
+        {item.label}
+      </span>
     </Link>
   );
 }
