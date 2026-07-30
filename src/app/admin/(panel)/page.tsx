@@ -4,9 +4,11 @@ import { AlertTriangle } from "lucide-react";
 import { requireCapability } from "@/lib/server/auth/dal";
 import { getDashboardData } from "@/lib/server/admin/dashboard";
 import { runHealthChecks } from "@/lib/server/admin/health";
+import { getSetupState } from "@/lib/server/admin/setup";
 import { StatTile, LineChart, BarChart } from "@/components/ui/chart";
 import { HealthPanel } from "@/components/admin/health-panel";
 import { ActivityFeed } from "@/components/admin/activity-feed";
+import { SetupChecklist } from "@/components/admin/setup-checklist";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -25,7 +27,10 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {
   await requireCapability("view");
-  const data = await getDashboardData();
+  const [data, setup] = await Promise.all([
+    getDashboardData(),
+    getSetupState(),
+  ]);
 
   const queueEntries = Object.entries(data.queue)
     .filter(([, count]) => count > 0)
@@ -57,6 +62,8 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
       )}
+
+      <SetupChecklist state={setup} />
 
       {/* Exactly one hero figure per view. */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

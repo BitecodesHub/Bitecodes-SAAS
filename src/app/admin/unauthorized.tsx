@@ -27,7 +27,13 @@ export default function AdminUnauthorized() {
         </p>
         <div className="mt-6 flex justify-center">
           <Button asChild variant="gradient">
-            <Link href="/admin/login">
+            {/*
+              Via sign-out, not straight to the form. A session revoked
+              elsewhere leaves the cookie behind, and the proxy would bounce
+              /admin/login back here — clearing it first is what makes this
+              link work.
+            */}
+            <Link href="/admin/logout">
               <LogIn aria-hidden="true" />
               Sign in
             </Link>

@@ -18,9 +18,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE = "bc_admin";
 
-/** Reachable without a session: the sign-in page and password reset. */
+/** Reachable without a session: the sign-in page, password reset, and sign-out. */
 const PUBLIC_ADMIN_PATHS = [
   "/admin/login",
+  "/admin/logout",
   "/admin/forgot-password",
   "/admin/reset-password",
 ];
