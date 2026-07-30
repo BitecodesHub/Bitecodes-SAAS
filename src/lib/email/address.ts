@@ -139,13 +139,25 @@ export function matchesSuppression(
   return false;
 }
 
-/** Normalises a suppression entry, preserving the `@domain` form. */
+const DOMAIN_PATTERN = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+
+/**
+ * Normalises a suppression entry to either an address or the `@domain` form.
+ *
+ * A bare domain is accepted and gains the `@`, because the field asks for "an
+ * address or a whole domain" and an operator typing `example.com` means the
+ * domain. Requiring the `@` rejected exactly what the field's own placeholder
+ * suggested.
+ */
 export function normalizeSuppressionEntry(value: string): string | null {
   const trimmed = normalizeEmail(value);
   if (!trimmed) return null;
   if (trimmed.startsWith("@")) {
     const domain = trimmed.slice(1);
-    return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(domain) ? `@${domain}` : null;
+    return DOMAIN_PATTERN.test(domain) ? `@${domain}` : null;
+  }
+  if (!trimmed.includes("@")) {
+    return DOMAIN_PATTERN.test(trimmed) ? `@${trimmed}` : null;
   }
   return isDeliverableEmail(trimmed) ? trimmed : null;
 }

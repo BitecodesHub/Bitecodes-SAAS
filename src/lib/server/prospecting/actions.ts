@@ -317,6 +317,11 @@ export async function enrichProspectsAction(
         type: JOB_TYPES.prospectEnrich,
         payload: { prospectId },
         idempotencyKey: `enrich:${prospectId}`,
+        // The whole point of this action is to audit a website again, so a
+        // finished enrichment must not swallow the request. Without this the
+        // button reported success and did nothing for every prospect that had
+        // already been enriched, which is all of them.
+        requeueIfFinished: true,
       }),
     ),
   );

@@ -197,6 +197,15 @@ describe("normalizeSuppressionEntry", () => {
     );
   });
 
+  it("accepts a bare domain, which is what the field asks for", () => {
+    // The input's placeholder offers "someone@example.com or example.com", so
+    // the bare form has to work or the field contradicts itself.
+    expect(normalizeSuppressionEntry("Example.com")).toBe("@example.com");
+    expect(normalizeSuppressionEntry(" sub.example.co.uk ")).toBe(
+      "@sub.example.co.uk",
+    );
+  });
+
   it("rejects unusable entries so the list cannot be poisoned", () => {
     for (const value of ["", "  ", "@", "@nodot", "not-an-email", "a@b"]) {
       expect(normalizeSuppressionEntry(value), value).toBeNull();

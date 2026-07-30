@@ -41,6 +41,8 @@ export const JOB_TYPES = {
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
 
 const DEFAULT_MAX_ATTEMPTS = 5;
+/** Statuses a job never leaves on its own. */
+const TERMINAL_STATUSES = ["completed", "failed", "cancelled"] as const;
 /**
  * How long a claim is held. Long enough for the slowest handler (a website
  * audit allows 8s per request plus redirects) with a wide margin, short enough
@@ -87,8 +89,23 @@ export interface EnqueueOptions {
   /**
    * Deduplication key. A second enqueue with the same key while the first is
    * still pending is a no-op, which makes callers safe to retry.
+   *
+   * Note that the key also matches jobs that have already finished, so by
+   * default a key is spent for good once its job completes. That is deliberate
+   * for work that must never happen twice — an outbound email above all — and
+   * wrong for work an operator can legitimately ask for again, which is what
+   * `requeueIfFinished` is for.
    */
   idempotencyKey?: string;
+  /**
+   * Allows a fresh job when the key's previous job has already finished.
+   *
+   * Only for operator-triggered work that is safe to repeat, such as
+   * re-auditing a prospect's website. Deduplication against a job that is
+   * still queued or running is preserved either way, so double-clicking a
+   * button cannot queue the same work twice. Never set this for sends.
+   */
+  requeueIfFinished?: boolean;
 }
 
 export async function enqueueJob({
@@ -97,6 +114,7 @@ export async function enqueueJob({
   runAt = new Date(),
   maxAttempts = DEFAULT_MAX_ATTEMPTS,
   idempotencyKey,
+  requeueIfFinished = false,
 }: EnqueueOptions): Promise<string> {
   const collection = await jobs();
   const now = new Date();
@@ -121,6 +139,17 @@ export async function enqueueJob({
   if (!idempotencyKey) {
     const inserted = await collection.insertOne(document as JobDoc);
     return inserted.insertedId.toHexString();
+  }
+
+  if (requeueIfFinished) {
+    // Release the key from a job that has already finished, so the unique
+    // index cannot block the fresh one. Scoped to terminal states on purpose:
+    // a job that is still queued or running keeps its key, which is what makes
+    // a double-click a no-op rather than duplicate work.
+    await collection.updateOne(
+      { idempotencyKey, status: { $in: TERMINAL_STATUSES } },
+      { $set: { idempotencyKey: null, updatedAt: now } },
+    );
   }
 
   // Upsert on the key so a duplicate enqueue returns the existing job.
