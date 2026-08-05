@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/lib/site";
+import { brandMarkDataUri } from "@/lib/brand";
 
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -48,22 +49,8 @@ export function renderOgImage({
           position: "relative",
         }}
       >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 16,
-            background: "#4f46e5",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontSize: 26,
-            fontWeight: 700,
-          }}
-        >
-          {"</>"}
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element -- data URI inside a satori ImageResponse, not the DOM */}
+        <img src={brandMarkDataUri("#1a1a22")} width={56} height={56} alt="" />
         <div style={{ fontSize: 32, fontWeight: 600 }}>{siteConfig.name}</div>
       </div>
 

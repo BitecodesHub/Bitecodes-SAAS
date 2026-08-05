@@ -25,6 +25,7 @@ export const COLLECTIONS = {
   blogRevisions: "blog_revisions",
   prospects: "prospects",
   prospectSearches: "prospect_searches",
+  autopilotPresets: "autopilot_presets",
   emailTemplates: "email_templates",
   emailMessages: "email_messages",
   emailSequences: "email_sequences",
@@ -146,6 +147,11 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   [COLLECTIONS.prospectSearches]: [
     { key: { searchId: 1 }, unique: true },
     { key: { createdAt: -1 } },
+  ],
+  [COLLECTIONS.autopilotPresets]: [
+    { key: { presetId: 1 }, unique: true },
+    // The tick's due-preset query: enabled presets, least-recently run first.
+    { key: { enabled: 1, lastRunAt: 1 } },
   ],
 
   // Email engine.

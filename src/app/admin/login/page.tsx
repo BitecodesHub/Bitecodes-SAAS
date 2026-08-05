@@ -19,9 +19,9 @@ export const metadata: Metadata = {
 export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; reset?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, reset } = await searchParams;
 
   return (
     <main className="bg-mesh flex min-h-screen items-center justify-center px-4 py-16">
@@ -38,6 +38,15 @@ export default async function AdminLoginPage({
             This area is for Bitecodes staff.
           </p>
 
+          {reset === "done" && (
+            <p
+              role="status"
+              className="border-border bg-muted/40 mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+            >
+              Your password has been changed. Sign in with the new one.
+            </p>
+          )}
+
           <div className="mt-6">
             <LoginForm next={next} />
           </div>
@@ -47,7 +56,7 @@ export default async function AdminLoginPage({
               href="/admin/forgot-password"
               className="hover:text-foreground underline underline-offset-4"
             >
-              Forgotten your password?
+              Forgotten your password? Get a reset or one-click sign-in link
             </Link>
           </p>
         </div>

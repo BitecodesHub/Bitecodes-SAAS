@@ -1,6 +1,15 @@
 import Link from "next/link";
+import { useId } from "react";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site";
+import {
+  BRAND_BITE_CIRCLES,
+  BRAND_BODY_PATH,
+  BRAND_CRUMB,
+  BRAND_GLYPH_PATHS,
+  BRAND_GLYPH_STROKE_WIDTH,
+  BRAND_MARK_VIEWBOX,
+} from "@/lib/brand";
 
 interface LogoProps {
   className?: string;
@@ -9,42 +18,49 @@ interface LogoProps {
   href?: string | null;
 }
 
-/** Bitecodes brand mark + wordmark. Pure SVG, no external assets. */
+/**
+ * Bitecodes brand mark + wordmark. Pure SVG, no external assets.
+ *
+ * The mark fills with `currentColor` on a transparent background, so it is
+ * black on the light theme and white on the dark theme with no variants to
+ * maintain. Geometry lives in `src/lib/brand.ts`.
+ */
 export function Logo({ className, iconOnly = false, href = "/" }: LogoProps) {
+  // The mask id must be unique per instance: the header and footer both
+  // render a Logo, and duplicate SVG ids silently break one of them.
+  const maskId = useId();
+
   const content = (
     <span className={cn("flex items-center gap-2.5", className)}>
       <svg
-        viewBox="0 0 32 32"
+        viewBox={BRAND_MARK_VIEWBOX}
         className="size-8 shrink-0"
         role="img"
         aria-label={`${siteConfig.name} logo`}
       >
-        <defs>
-          <linearGradient id="bc-logo" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.66 0.2 286)" />
-            <stop offset="50%" stopColor="oklch(0.6 0.2 264)" />
-            <stop offset="100%" stopColor="oklch(0.68 0.16 222)" />
-          </linearGradient>
-        </defs>
-        <rect width="32" height="32" rx="9" fill="url(#bc-logo)" />
-        <path
-          d="M11.5 9.5 L7 16 l4.5 6.5"
-          fill="none"
-          stroke="white"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <mask id={maskId}>
+          <path d={BRAND_BODY_PATH} fill="#fff" />
+          {BRAND_BITE_CIRCLES.map((c) => (
+            <circle key={c.cx} cx={c.cx} cy={c.cy} r={c.r} fill="#000" />
+          ))}
+          <g stroke="#000" strokeWidth={BRAND_GLYPH_STROKE_WIDTH} fill="none">
+            {BRAND_GLYPH_PATHS.map((d) => (
+              <path key={d} d={d} />
+            ))}
+          </g>
+        </mask>
+        <rect
+          width="100"
+          height="100"
+          fill="currentColor"
+          mask={`url(#${maskId})`}
         />
-        <path
-          d="M20.5 9.5 L25 16 l-4.5 6.5"
-          fill="none"
-          stroke="white"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.85"
+        <circle
+          cx={BRAND_CRUMB.cx}
+          cy={BRAND_CRUMB.cy}
+          r={BRAND_CRUMB.r}
+          fill="currentColor"
         />
-        <circle cx="16" cy="16" r="1.6" fill="white" />
       </svg>
       {!iconOnly && (
         <span className="text-lg font-semibold tracking-tight">

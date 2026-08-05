@@ -56,6 +56,11 @@ export default async function SettingsPage() {
               settings.automation.blockConsentRequiredRegions,
             autoEnrich: settings.automation.autoEnrich,
             harvestEmails: settings.automation.harvestEmails,
+            autopilot: settings.automation.autopilot,
+            autopilotScoreThreshold:
+              settings.automation.autopilotScoreThreshold,
+            autopilotDailyEnrollCap:
+              settings.automation.autopilotDailyEnrollCap,
           },
           outreach: { senderName: settings.outreach.senderName },
         }}

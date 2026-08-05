@@ -1,12 +1,14 @@
 /**
  * Admin account management from the command line.
  *
- *   pnpm admin create  <email> [name] [role]
- *   pnpm admin reset   <email>
+ *   pnpm admin create       <email> [name] [role]
+ *   pnpm admin reset        <email>
+ *   pnpm admin set-email    <current-email> <new-email>
+ *   pnpm admin set-password <email>            (password read from stdin)
  *   pnpm admin list
- *   pnpm admin disable <email>
- *   pnpm admin enable  <email>
- *   pnpm admin unlock  <email>
+ *   pnpm admin disable      <email>
+ *   pnpm admin enable       <email>
+ *   pnpm admin unlock       <email>
  *
  * A CLI rather than a web signup page: the admin panel has no public
  * registration by design, so the first account has to be created out of band.
@@ -80,12 +82,14 @@ function usage() {
   console.log(`
   Bitecodes admin accounts
 
-    pnpm admin create  <email> [name] [role]   Create an account (role: ${ROLES.join(" | ")})
-    pnpm admin reset   <email>                 Issue a new password
-    pnpm admin list                            List accounts
-    pnpm admin disable <email>                 Block sign-in
-    pnpm admin enable  <email>                 Restore sign-in
-    pnpm admin unlock  <email>                 Clear a failed-attempt lockout
+    pnpm admin create       <email> [name] [role]   Create an account (role: ${ROLES.join(" | ")})
+    pnpm admin reset        <email>                 Issue a new random password
+    pnpm admin set-email    <current> <new>         Change an account's email
+    pnpm admin set-password <email>                 Set a chosen password (read from stdin)
+    pnpm admin list                                 List accounts
+    pnpm admin disable      <email>                 Block sign-in
+    pnpm admin enable       <email>                 Restore sign-in
+    pnpm admin unlock       <email>                 Clear a failed-attempt lockout
 `);
 }
 
@@ -208,6 +212,89 @@ async function reset([rawEmail]) {
   }
 }
 
+async function setEmail([rawCurrent, rawNext]) {
+  const current = normalizeEmail(rawCurrent);
+  const next = normalizeEmail(rawNext);
+  if (!current.includes("@") || !next.includes("@")) {
+    fail("Usage: pnpm admin set-email <current-email> <new-email>");
+  }
+
+  const { client, users } = await connect();
+  try {
+    const user = await users.findOne({ email: current });
+    if (!user) fail(`${current} not found.`);
+
+    const clash = await users.findOne({ email: next });
+    if (clash) fail(`${next} already belongs to another account.`);
+
+    await users.updateOne(
+      { email: current },
+      { $set: { email: next, updatedAt: new Date() } },
+    );
+
+    console.log(`\n  ✓ ${current} is now ${next}. Sign in with the new address.\n`);
+  } finally {
+    await client.close();
+  }
+}
+
+/**
+ * Sets a caller-chosen password, read from stdin rather than argv so it never
+ * lands in shell history or \`ps\` output. Piped stdin works too:
+ * \`printf 'secret\\n' | pnpm admin set-password <email>\`.
+ */
+async function setPassword([rawEmail]) {
+  const email = normalizeEmail(rawEmail);
+  if (!email.includes("@")) fail("Usage: pnpm admin set-password <email>");
+
+  const readline = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  let password;
+  try {
+    password = await readline.question("New password: ");
+  } finally {
+    readline.close();
+  }
+  if (!password || password.length < 8) {
+    fail("Password must be at least 8 characters.");
+  }
+
+  const { client, users, sessions } = await connect();
+  try {
+    const user = await users.findOne({ email });
+    if (!user) fail(`${email} not found.`);
+
+    await users.updateOne(
+      { email },
+      {
+        $set: {
+          passwordHash: await hashPassword(password),
+          failedAttempts: 0,
+          lockedUntil: null,
+          updatedAt: new Date(),
+        },
+        // Every existing session for this account stops validating.
+        $inc: { sessionEpoch: 1 },
+      },
+    );
+
+    const revoked = await sessions.updateMany(
+      { userId: user._id.toHexString(), revokedAt: null },
+      { $set: { revokedAt: new Date() } },
+    );
+
+    console.log(`
+  ✓ Password updated for ${email}
+
+    ${revoked.modifiedCount} active session(s) revoked. Sign in at /admin/login.
+`);
+  } finally {
+    await client.close();
+  }
+}
+
 async function list() {
   const { client, users } = await connect();
   try {
@@ -301,6 +388,8 @@ const [command, ...args] = process.argv.slice(2);
 const commands = {
   create,
   reset,
+  "set-email": setEmail,
+  "set-password": setPassword,
   list,
   disable: (a) => setStatus(a, "disabled"),
   enable: (a) => setStatus(a, "active"),

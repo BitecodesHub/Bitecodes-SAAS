@@ -38,6 +38,9 @@ export const SETTINGS_DEFAULTS = {
     blockConsentRequiredRegions: true,
     autoEnrich: true,
     harvestEmails: true,
+    autopilot: false,
+    autopilotScoreThreshold: 55,
+    autopilotDailyEnrollCap: 20,
   },
   ai: {
     model: "google/gemini-2.5-flash",
@@ -73,6 +76,9 @@ export interface ResolvedSettings {
     blockConsentRequiredRegions: boolean;
     autoEnrich: boolean;
     harvestEmails: boolean;
+    autopilot: boolean;
+    autopilotScoreThreshold: number;
+    autopilotDailyEnrollCap: number;
   };
   ai: { model: string; chatModel: string; chatEnabled: boolean };
   map: { tileUrl: string; tileAttribution: string };
@@ -232,9 +238,11 @@ export function flatten(
  */
 export function hasPlaceholderContactDetails(settings: ResolvedSettings) {
   const placeholders = [
+    // Legacy placeholders — only possible via a stale database override now
+    // that `siteConfig` carries the real addresses.
     settings.contact.email === "hello@bitecodes.com",
     settings.contact.salesEmail === "sales@bitecodes.com",
-    settings.contact.address.line1 === "Remote-first studio",
+    // Outreach footers legally require a postal address (CAN-SPAM).
     settings.contact.address.postal === "",
   ];
   return placeholders.some(Boolean);

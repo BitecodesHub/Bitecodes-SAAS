@@ -4,7 +4,9 @@ import { ExternalLink } from "lucide-react";
 import { requireCapability } from "@/lib/server/auth/dal";
 import { getSettings } from "@/lib/server/settings";
 import { listProspectSearches } from "@/lib/server/prospecting/repository";
+import { listAutopilotPresets } from "@/lib/server/autopilot";
 import { DiscoveryConsole } from "@/components/admin/discovery-console";
+import { AutopilotPanel } from "@/components/admin/autopilot-panel";
 import { OSM_ATTRIBUTION } from "@/lib/prospecting/categories";
 
 export const metadata: Metadata = { title: "Grab new customers" };
@@ -27,9 +29,10 @@ const DEFAULT_CENTER = { lat: 23.0225, lng: 72.5714 };
 export default async function DiscoverPage() {
   await requireCapability("manage_prospects");
 
-  const [settings, recentSearches] = await Promise.all([
+  const [settings, recentSearches, presets] = await Promise.all([
     getSettings(),
     listProspectSearches(6),
+    listAutopilotPresets(),
   ]);
 
   // Reopen where the operator last worked. Coming back to the same area is far
@@ -52,6 +55,11 @@ export default async function DiscoverPage() {
           then tagged with the reason it needs you.
         </p>
       </header>
+
+      <AutopilotPanel
+        presets={presets}
+        autopilotOn={settings.automation.autopilot}
+      />
 
       <DiscoveryConsole
         initialCenter={initialCenter}

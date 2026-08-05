@@ -1,5 +1,9 @@
 import { renderOgImage, OG_SIZE } from "@/lib/og";
-import { blogPosts, getPost } from "@/data/blog";
+import { blogPosts } from "@/data/blog";
+import { getPublishedPost } from "@/lib/server/blog/repository";
+
+// Dynamic so AI-published posts get a titled card, not the generic fallback.
+export const dynamic = "force-dynamic";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -15,7 +19,7 @@ export default async function Image({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(slug);
   return renderOgImage({
     eyebrow: post?.category ?? "Blog",
     title: post?.title ?? "Article",

@@ -10,6 +10,7 @@ import type {
   AnalyticsEventDoc,
   AuditLogDoc,
   AuditReportDoc,
+  AutopilotPresetDoc,
   BlogPostDoc,
   BlogRevisionDoc,
   ChatConversationDoc,
@@ -82,6 +83,8 @@ export const blogRevisions = () =>
 export const prospects = () => collection<ProspectDoc>(COLLECTIONS.prospects);
 export const prospectSearches = () =>
   collection<ProspectSearchDoc>(COLLECTIONS.prospectSearches);
+export const autopilotPresets = () =>
+  collection<AutopilotPresetDoc>(COLLECTIONS.autopilotPresets);
 
 export const emailTemplates = () =>
   collection<EmailTemplateDoc>(COLLECTIONS.emailTemplates);

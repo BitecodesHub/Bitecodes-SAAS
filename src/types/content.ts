@@ -91,11 +91,9 @@ export interface Project {
   technologies: string[];
   features: string[];
   results: { metric: string; label: string }[];
-  /** Accent gradient classes for the cover (Tailwind). */
-  accent: string;
   featured?: boolean;
-  /** Number of placeholder gallery frames to render. */
-  gallery: number;
+  /** Screenshot under /public, e.g. "/images/projects/prism.png". */
+  image?: string;
   liveUrl?: string;
 }
 

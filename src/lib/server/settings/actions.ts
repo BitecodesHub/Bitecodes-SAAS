@@ -54,6 +54,9 @@ const settingsSchema = z.object({
     blockConsentRequiredRegions: z.boolean(),
     autoEnrich: z.boolean(),
     harvestEmails: z.boolean(),
+    autopilot: z.boolean(),
+    autopilotScoreThreshold: z.number().int().min(0).max(100),
+    autopilotDailyEnrollCap: z.number().int().min(1).max(500),
   }),
   outreach: z.object({
     senderName: z.string().trim().min(1, "Say who the email is from.").max(80),

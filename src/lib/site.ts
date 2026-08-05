@@ -1,10 +1,6 @@
 /**
  * Central site configuration — the single source of truth for company
  * identity, contact details, and canonical URLs.
- *
- * TODO(client): Replace the placeholder contact values below with the real
- * Bitecodes email, phone, and office address before launch. They are
- * intentionally centralized here so the swap is a one-file change.
  */
 export const siteConfig = {
   name: "Bitecodes",
@@ -17,18 +13,19 @@ export const siteConfig = {
   founded: 2021,
   founder: "Ismail",
 
-  // --- Contact (PLACEHOLDERS — replace before launch) ---
   contact: {
-    email: "hello@bitecodes.com", // TODO(client)
-    salesEmail: "sales@bitecodes.com", // TODO(client)
+    email: "bitecodes.global@gmail.com",
+    salesEmail: "bitecodes.global@gmail.com",
     phone: "+91 94287 67709",
     phoneHref: "tel:+919428767709",
+    /** Same number as `phone`; wa.me requires digits only. */
+    whatsapp: "https://wa.me/919428767709",
     address: {
-      line1: "Remote-first studio", // TODO(client)
+      line1: "Remote-first studio",
       city: "Ahmedabad",
       region: "Gujarat",
       country: "India",
-      full: "Remote-first · Ahmedabad, India", // TODO(client)
+      full: "Remote-first · Ahmedabad, India",
     },
   },
 

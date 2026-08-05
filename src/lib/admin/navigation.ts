@@ -109,7 +109,7 @@ export const ADMIN_NAV: AdminNavSection[] = [
         href: "/admin/blog",
         icon: "PenLine",
         capability: "write_content",
-        enabled: false,
+        enabled: true,
         description: "Write and publish, with AI assistance",
         matchPrefix: true,
       },

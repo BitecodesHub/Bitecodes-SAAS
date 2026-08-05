@@ -142,12 +142,43 @@ export async function queueEmail(
       missingVariables: rendered.missing,
     });
 
-    if (!gate.allowed) {
+    if (!gate.allowed && gate.reason === "consent-required-region") {
+      // Consent-required jurisdictions (AU/UK/EU/CA) are held, not dropped:
+      // the message waits in the approval queue for an explicit human release,
+      // which is the defensible middle ground between auto-sending into a
+      // consent regime and silently discarding the prospect. Held messages
+      // must still pass every OTHER gate, so re-evaluate without the region
+      // block before granting the hold.
+      const otherwiseAllowed = evaluateOutreachGate({
+        email: to,
+        countryCode: input.countryCode ?? null,
+        suppressed,
+        deliverable: isDeliverableEmail(to),
+        neverContact: isNeverContactAddress(to),
+        domainSentToday,
+        globalSentToday,
+        perDomainDailyCap: settings.automation.perDomainDailyCap,
+        globalDailyCap: settings.automation.globalDailyCap,
+        blockConsentRequiredRegions: false,
+        hasPostalAddress: Boolean(postalAddress),
+        hasUnsubscribeUrl: Boolean(input.unsubscribeUrl),
+        missingVariables: rendered.missing,
+      });
+      if (otherwiseAllowed.allowed) {
+        status = "pending_approval";
+        detail =
+          "Held for manual release: this jurisdiction requires prior consent for cold email (GDPR/CASL/Spam Act/PECR).";
+      } else {
+        status = "skipped";
+        skipReason = otherwiseAllowed.reason;
+        detail = otherwiseAllowed.detail;
+      }
+    } else if (!gate.allowed) {
       status = "skipped";
       skipReason = gate.reason;
       detail = gate.detail;
     } else if (settings.automation.requireApproval && !input.skipApproval) {
-      // The default. A human confirms the batch before anything leaves.
+      // A human confirms the batch before anything leaves.
       status = "pending_approval";
     }
   } else {

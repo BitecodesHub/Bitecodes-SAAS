@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { siteConfig } from "@/lib/site";
+import { brandMarkDataUri } from "@/lib/brand";
 
 export const alt = `${siteConfig.name} — ${siteConfig.tagline}`;
 export const size = { width: 1200, height: 630 };
@@ -23,21 +24,7 @@ export default function OpenGraphImage() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 18,
-            background: "linear-gradient(135deg, #8b7cf6, #6366f1, #38bdf8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 34,
-            fontWeight: 700,
-          }}
-        >
-          {"</>"}
-        </div>
+        <img src={brandMarkDataUri("#ffffff")} width={64} height={64} alt="" />
         <div style={{ fontSize: 36, fontWeight: 600 }}>{siteConfig.name}</div>
       </div>
 

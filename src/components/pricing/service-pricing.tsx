@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Visible multi-currency "starting from" price block for a service detail
- * page. Renders ALL three currency prices server-side (this is a client
+ * page. Renders ALL currency prices server-side (this is a client
  * component but the initial markup includes every price, so SSR HTML contains
  * them — required for Google price rich results and AI-engine citation). The
  * switcher toggles which price is visually emphasized via state + classes; it

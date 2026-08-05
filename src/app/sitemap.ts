@@ -2,11 +2,16 @@ import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site";
 import { services } from "@/data/services";
 import { projects } from "@/data/projects";
-import { blogPosts } from "@/data/blog";
+import { getPublishedPosts } from "@/lib/server/blog/repository";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// Dynamic so newly published (including AI-published) posts appear without a
+// redeploy; the blog generator revalidates this path on publish.
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
   const now = new Date();
+  const blogPosts = await getPublishedPosts();
 
   const staticRoutes = [
     { path: "/", priority: 1 },
