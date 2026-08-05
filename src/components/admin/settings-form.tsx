@@ -84,8 +84,8 @@ export function SettingsForm({ initial, hasPlaceholders }: SettingsFormProps) {
           }
         />
         <ToggleRow
-          label="Skip consent-required regions"
-          description="Blocks recipients in the EU and Canada, where cold email needs prior consent."
+          label="Hold consent-required regions"
+          description="Recipients in the UK, EU, Australia, and Canada — where cold email needs prior consent — are prepared but held in the approval queue for your manual release rather than auto-sent."
           checked={automation.blockConsentRequiredRegions}
           onChange={(blockConsentRequiredRegions) =>
             setForm({
@@ -157,6 +157,53 @@ export function SettingsForm({ initial, hasPlaceholders }: SettingsFormProps) {
             setForm({ ...form, automation: { ...automation, harvestEmails } })
           }
         />
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Autopilot</h2>
+          <p className="text-muted-foreground text-sm">
+            The hands-off pipeline. When on, saved searches re-run on their
+            cadence and qualified customers are contacted automatically — within
+            the caps above and never into a held region without your release.
+          </p>
+        </div>
+
+        <ToggleRow
+          label="Run on autopilot"
+          description="Discover, check, and contact new customers without you. Leave off to keep everything manual."
+          checked={automation.autopilot}
+          onChange={(autopilot) =>
+            setForm({ ...form, automation: { ...automation, autopilot } })
+          }
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <NumberField
+            id="autopilotScoreThreshold"
+            label="Minimum score to contact"
+            hint="Only auto-contact customers scored at least this (0–100)."
+            value={automation.autopilotScoreThreshold}
+            onChange={(autopilotScoreThreshold) =>
+              setForm({
+                ...form,
+                automation: { ...automation, autopilotScoreThreshold },
+              })
+            }
+          />
+          <NumberField
+            id="autopilotDailyEnrollCap"
+            label="Daily auto-contact cap"
+            hint="Most new customers to start contacting per day. 1–500."
+            value={automation.autopilotDailyEnrollCap}
+            onChange={(autopilotDailyEnrollCap) =>
+              setForm({
+                ...form,
+                automation: { ...automation, autopilotDailyEnrollCap },
+              })
+            }
+          />
+        </div>
       </section>
 
       <section className="space-y-4">

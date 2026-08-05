@@ -162,12 +162,12 @@ export interface AdminSessionDoc {
   revokedAt: Date | null;
 }
 
-/** Single-use tokens for password reset and admin invitations. */
+/** Single-use tokens for password reset, magic links, and invitations. */
 export interface AdminTokenDoc {
   _id?: ObjectId;
   tokenHash: string;
   userId: string;
-  purpose: "password-reset" | "invite";
+  purpose: "password-reset" | "invite" | "login-link";
   createdAt: Date;
   expiresAt: Date;
   usedAt: Date | null;
@@ -263,12 +263,18 @@ export interface SiteSettingsDoc extends Timestamped {
     /** Per recipient-domain daily send cap. */
     perDomainDailyCap?: number;
     globalDailyCap?: number;
-    /** Blocks recipients in consent-required jurisdictions. Default true. */
+    /** Holds recipients in consent-required jurisdictions for manual release. */
     blockConsentRequiredRegions?: boolean;
     /** Automatically enrich prospects after discovery. Default true. */
     autoEnrich?: boolean;
     /** Harvest contact emails from prospect websites. Default true. */
     harvestEmails?: boolean;
+    /** Master switch for the hands-off pipeline. Default false. */
+    autopilot?: boolean;
+    /** Minimum classification score for automatic enrolment. */
+    autopilotScoreThreshold?: number;
+    /** Ceiling on automatic enrolments per UTC day. */
+    autopilotDailyEnrollCap?: number;
   };
   ai?: {
     model?: string;
@@ -452,6 +458,27 @@ export interface ProspectDoc extends Timestamped {
   enrichmentError: string | null;
   lastContactedAt: Date | null;
   contactCount: number;
+}
+
+/**
+ * A saved discovery search the autopilot re-runs on a cadence — the standing
+ * order that keeps the pipeline fed without anyone opening the map.
+ */
+export interface AutopilotPresetDoc extends Timestamped {
+  _id?: ObjectId;
+  presetId: string;
+  label: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  categories: string[];
+  /** Hours between automatic re-runs of this search. */
+  cadenceHours: number;
+  enabled: boolean;
+  lastRunAt: Date | null;
+  /** searchId of the most recent run, for drill-down from the console. */
+  lastSearchId: string | null;
+  createdById: string | null;
 }
 
 export interface ProspectSearchDoc extends Timestamped {

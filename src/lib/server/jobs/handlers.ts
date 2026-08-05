@@ -59,6 +59,44 @@ function ensureHandlersRegistered() {
       await import("@/lib/server/jobs/handlers/prospect-enrich");
     return handleProspectEnrich(payload, context);
   });
+
+  registerJobHandler(JOB_TYPES.autopilotTick, async (_payload, context) => {
+    const { runAutopilotTick } = await import("@/lib/server/autopilot");
+    const summary = await runAutopilotTick();
+    context.log(
+      summary.enabled
+        ? `Preset run: ${summary.presetRun ?? "none due"}; ${summary.enrolled}/${summary.candidates} candidate(s) enrolled.`
+        : "Autopilot is switched off.",
+    );
+    return summary as unknown as Record<string, unknown>;
+  });
+
+  registerJobHandler(JOB_TYPES.dailyDigest, async (payload, context) => {
+    const { handleDailyDigest } =
+      await import("@/lib/server/jobs/handlers/daily-digest");
+    return handleDailyDigest(payload, context);
+  });
+
+  registerJobHandler(JOB_TYPES.replyPoll, async (payload, context) => {
+    const { handleReplyPoll } =
+      await import("@/lib/server/jobs/handlers/reply-poll");
+    return handleReplyPoll(payload, context);
+  });
+
+  registerJobHandler(JOB_TYPES.blogGenerate, async (payload, context) => {
+    const { handleBlogGenerate } =
+      await import("@/lib/server/jobs/handlers/blog");
+    return handleBlogGenerate(payload, context);
+  });
+
+  registerJobHandler(
+    JOB_TYPES.blogPublishScheduled,
+    async (payload, context) => {
+      const { handleBlogPublishScheduled } =
+        await import("@/lib/server/jobs/handlers/blog");
+      return handleBlogPublishScheduled(payload, context);
+    },
+  );
 }
 
 /** Test seam: forget registrations so a suite can install its own. */

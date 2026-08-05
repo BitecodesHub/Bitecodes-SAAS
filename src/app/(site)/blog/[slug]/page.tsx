@@ -9,9 +9,17 @@ import { PostBody } from "@/components/blog/post-body";
 import { Badge } from "@/components/ui/badge";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
-import { blogPosts, getPost, relatedPosts } from "@/data/blog";
-import { createMetadata, breadcrumbSchema } from "@/lib/seo";
+import { blogPosts } from "@/data/blog";
+import {
+  getPublishedPost,
+  getRelatedPublishedPosts,
+} from "@/lib/server/blog/repository";
+import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
+
+// Dynamic so AI-published posts resolve without a redeploy; static posts are
+// still pre-known via generateStaticParams below.
+export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return blogPosts.map((p) => ({ slug: p.slug }));
@@ -23,11 +31,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(slug);
   if (!post) return createMetadata({ title: "Article not found" });
   const meta = createMetadata({
     title: post.title,
-    description: post.excerpt,
+    description: post.metaDescription || post.excerpt,
     path: `/blog/${post.slug}`,
   });
   // Blog posts are articles, not generic web pages.
@@ -57,10 +65,10 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const post = await getPublishedPost(slug);
   if (!post) notFound();
 
-  const related = relatedPosts(slug);
+  const related = await getRelatedPublishedPosts(slug);
 
   const articleSchema = {
     "@context": "https://schema.org",
@@ -97,6 +105,7 @@ export default async function BlogPostPage({
           { name: post.title, path: `/blog/${post.slug}` },
         ])}
       />
+      {post.faq && post.faq.length > 0 && <JsonLd data={faqSchema(post.faq)} />}
       <PageHeader
         eyebrow={post.category}
         title={post.title}
@@ -126,6 +135,42 @@ export default async function BlogPostPage({
               <PostBody blocks={post.body} />
             </div>
           </Reveal>
+
+          {post.faq && post.faq.length > 0 && (
+            <div className="border-border mt-10 border-t pt-8">
+              <h2 className="text-xl font-semibold tracking-tight">
+                Frequently asked
+              </h2>
+              <dl className="mt-5 space-y-5">
+                {post.faq.map((item) => (
+                  <div key={item.question}>
+                    <dt className="font-medium">{item.question}</dt>
+                    <dd className="text-muted-foreground mt-1.5 leading-relaxed">
+                      {item.answer}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
+
+          {post.internalLinks && post.internalLinks.length > 0 && (
+            <div className="border-border mt-8 border-t pt-6">
+              <p className="text-sm font-semibold">Explore next</p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {post.internalLinks.map((link) => (
+                  <li key={link.path}>
+                    <Link
+                      href={link.path}
+                      className="border-border hover:border-primary/40 hover:text-primary inline-flex rounded-full border px-3.5 py-1.5 text-sm transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="border-border mt-8 flex flex-wrap gap-2 border-t pt-6">
             {post.tags.map((tag) => (

@@ -19,9 +19,9 @@ import {
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
-  title: "Pricing — Software Development Rates (USD, INR, AUD)",
+  title: "Pricing — Software Development Rates (USD, INR, AUD, GBP)",
   description:
-    "Transparent starting-from pricing for Bitecodes software development services — websites, web apps, SaaS, APIs, AI, cloud, and DevOps. View rates in USD, INR, and AUD.",
+    "Transparent starting-from pricing for Bitecodes software development services — websites, web apps, SaaS, APIs, AI, cloud, and DevOps. View rates in USD, INR, AUD, and GBP.",
   path: "/pricing",
 });
 
@@ -65,7 +65,7 @@ export default function PricingPage() {
       <PageHeader
         eyebrow="Pricing"
         title="Software development pricing"
-        description="Transparent starting-from pricing for an India-based outsourced software studio. Every engagement is scoped to your needs — these are floors, not fixed quotes. All prices are shown in USD, INR, and AUD."
+        description="Transparent starting-from pricing for an India-based outsourced software studio. Every engagement is scoped to your needs — these are floors, not fixed quotes. All prices are shown in USD, INR, AUD, and GBP."
         breadcrumbs={[
           { name: "Home", href: "/" },
           { name: "Pricing", href: "/pricing" },
@@ -175,9 +175,9 @@ export default function PricingPage() {
           })}
 
           <p className="text-muted-foreground mx-auto max-w-2xl text-center text-sm leading-relaxed">
-            Prices are indicative starting points in USD, INR, and AUD using
-            build-time exchange rates (re-pinned quarterly). Final quotes are
-            fixed after a short discovery conversation. Bitecodes works on a
+            Prices are indicative starting points in USD, INR, AUD, and GBP
+            using build-time exchange rates (re-pinned quarterly). Final quotes
+            are fixed after a short discovery conversation. Bitecodes works on a
             fixed-scope or dedicated-capacity basis.
           </p>
         </div>

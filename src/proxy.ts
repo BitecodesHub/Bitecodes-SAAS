@@ -23,7 +23,7 @@ const PUBLIC_ADMIN_PATHS = [
   "/admin/login",
   "/admin/logout",
   "/admin/forgot-password",
-  "/admin/reset-password",
+  "/admin/reset",
 ];
 
 export function proxy(request: NextRequest) {

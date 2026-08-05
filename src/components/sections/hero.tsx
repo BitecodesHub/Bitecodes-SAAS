@@ -44,8 +44,12 @@ export function Hero() {
         <p className="text-muted-foreground mt-7 max-w-2xl text-lg leading-relaxed text-pretty sm:text-xl">
           <span className="text-foreground font-medium">{siteConfig.name}</span>{" "}
           is a software studio building high-performance websites, web &amp;
-          enterprise apps, SaaS, APIs, and AI automation — for startups and
-          enterprises worldwide.
+          enterprise apps, SaaS, APIs, and AI automation for startups and
+          enterprises across the{" "}
+          <span className="text-foreground font-medium">
+            US, UK, Australia &amp; India
+          </span>
+          .
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">

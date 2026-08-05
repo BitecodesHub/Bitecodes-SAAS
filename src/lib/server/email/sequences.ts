@@ -59,6 +59,7 @@ import type {
 export type StopReason =
   | "unsubscribed"
   | "clicked"
+  | "replied"
   | "prospect-advanced"
   | "sequence-disabled"
   | "no-template"

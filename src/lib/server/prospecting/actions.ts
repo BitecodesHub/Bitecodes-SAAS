@@ -494,6 +494,114 @@ export async function addProspectNoteAction(
   return { ok: true };
 }
 
+// ---------------------------------------------------------------------------
+// Autopilot
+// ---------------------------------------------------------------------------
+
+const presetSchema = areaSchema.extend({
+  label: z.string().trim().min(1).max(120),
+  cadenceHours: z
+    .number()
+    .int()
+    .min(6)
+    .max(24 * 14),
+});
+
+/**
+ * Saves the current map selection as a standing autopilot search.
+ */
+export async function createAutopilotPresetAction(input: {
+  label: string;
+  lat: number;
+  lng: number;
+  radiusMeters: number;
+  categories: string[];
+  cadenceHours: number;
+}): Promise<ActionResult<{ presetId: string }>> {
+  const session = await assertCapability("manage_prospects");
+
+  const parsed = presetSchema.safeParse(input);
+  if (!parsed.success) {
+    return failure(
+      "Choose an area, at least one category, a name, and a cadence of at least six hours.",
+    );
+  }
+
+  const categories = normalizeCategoryIds(parsed.data.categories);
+  if (categories.length === 0) {
+    return failure("Choose at least one business category.");
+  }
+
+  const { createAutopilotPreset } = await import("@/lib/server/autopilot");
+  const preset = await createAutopilotPreset({
+    label: parsed.data.label,
+    lat: parsed.data.lat,
+    lng: parsed.data.lng,
+    radiusMeters: clampRadius(parsed.data.radiusMeters),
+    categories,
+    cadenceHours: parsed.data.cadenceHours,
+    createdById: session.userId,
+  });
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.prospectDiscoveryStarted,
+    actorId: session.userId,
+    target: { type: "autopilot_preset", id: preset.presetId },
+    detail: { label: preset.label, cadenceHours: preset.cadenceHours },
+  });
+
+  revalidatePath("/admin/customers/discover");
+  return { ok: true, data: { presetId: preset.presetId } };
+}
+
+export async function setAutopilotPresetEnabledAction(
+  presetId: string,
+  enabled: boolean,
+): Promise<ActionResult> {
+  await assertCapability("manage_prospects");
+  const { setAutopilotPresetEnabled } = await import("@/lib/server/autopilot");
+  const changed = await setAutopilotPresetEnabled(presetId, enabled);
+  if (!changed) return failure("That preset no longer exists.");
+  revalidatePath("/admin/customers/discover");
+  return { ok: true };
+}
+
+export async function deleteAutopilotPresetAction(
+  presetId: string,
+): Promise<ActionResult> {
+  await assertCapability("manage_prospects");
+  const { deleteAutopilotPreset } = await import("@/lib/server/autopilot");
+  const deleted = await deleteAutopilotPreset(presetId);
+  if (!deleted) return failure("That preset no longer exists.");
+  revalidatePath("/admin/customers/discover");
+  return { ok: true };
+}
+
+/**
+ * "Grab clients now": one click runs a full autopilot pass immediately —
+ * due presets are re-searched and every eligible prospect is enrolled.
+ */
+export async function runAutopilotNowAction(): Promise<
+  ActionResult<{ queued: true }>
+> {
+  const session = await assertCapability("manage_prospects");
+
+  await enqueueJob({
+    type: JOB_TYPES.autopilotTick,
+    idempotencyKey: `autopilot-manual:${Date.now()}`,
+  });
+
+  await recordAudit({
+    action: AUDIT_ACTIONS.prospectDiscoveryStarted,
+    actorId: session.userId,
+    detail: { trigger: "autopilot-run-now" },
+  });
+
+  after(() => kickJobs(30_000));
+  revalidatePath("/admin/customers/discover");
+  return { ok: true, data: { queued: true } };
+}
+
 /**
  * Deletes prospects outright.
  *

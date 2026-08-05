@@ -1,5 +1,6 @@
 import { siteConfig } from "@/lib/site";
 import { blogPosts } from "@/data/blog";
+import type { BlogPost } from "@/types/content";
 
 /**
  * Shared feed generator for RSS 2.0 and Atom 1.0.
@@ -63,15 +64,15 @@ export interface FeedOptions {
 }
 
 /** Most recent post date as ISO 8601 (feed <updated> / RSS lastBuildDate). */
-function feedUpdatedIso(): string {
-  const times = blogPosts.map((p) => new Date(`${p.date}T12:00:00Z`).getTime());
+function feedUpdatedIso(posts: BlogPost[]): string {
+  const times = posts.map((p) => new Date(`${p.date}T12:00:00Z`).getTime());
   const latest = times.length ? Math.max(...times) : Date.now();
   return new Date(latest).toISOString();
 }
 
-/** Sorted (newest-first) + validated copy of blog posts. */
-function validatedPosts() {
-  const posts = [...blogPosts].sort(
+/** Sorted (newest-first) + validated copy of the given posts. */
+function validatedPosts(source: BlogPost[]) {
+  const posts = [...source].sort(
     (a, b) =>
       new Date(`${b.date}T12:00:00Z`).getTime() -
       new Date(`${a.date}T12:00:00Z`).getTime(),
@@ -83,11 +84,17 @@ function validatedPosts() {
   return posts;
 }
 
-/** Build the feed XML string for the requested format. */
-export function buildFeed(opts: FeedOptions): string {
+/**
+ * Build the feed XML string for the requested format.
+ *
+ * `opts.posts` lets a route pass the published set (static + database);
+ * without it the feed falls back to the compiled-in static posts, so a
+ * build-time or degraded read still produces a valid feed.
+ */
+export function buildFeed(opts: FeedOptions & { posts?: BlogPost[] }): string {
   assertAbsolute(opts.selfHref);
-  const updated = feedUpdatedIso();
-  const posts = validatedPosts();
+  const posts = validatedPosts(opts.posts ?? blogPosts);
+  const updated = feedUpdatedIso(posts);
   return opts.format === "rss"
     ? buildRss(opts.selfHref, updated, posts)
     : buildAtom(opts.selfHref, updated, posts);
@@ -118,7 +125,7 @@ function buildRss(
         `      <pubDate>${toRFC822(p.date)}</pubDate>`,
         `      <description>${xmlEscape(p.excerpt)}</description>`,
         `      <category>${xmlEscape(p.category)}</category>`,
-        `      <author>hello@bitecodes.com (${xmlEscape(p.author)})</author>`,
+        `      <author>${siteConfig.contact.email} (${xmlEscape(p.author)})</author>`,
         "    </item>",
       ].join("\n");
     })

@@ -13,7 +13,7 @@ import { JsonLd } from "@/components/json-ld";
 import { projects, getProject } from "@/data/projects";
 import { getTech } from "@/data/technologies";
 import { createMetadata, breadcrumbSchema } from "@/lib/seo";
-import { cn } from "@/lib/utils";
+import { ProjectCover } from "@/components/project-cover";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -70,19 +70,18 @@ export default async function ProjectDetailPage({
       {/* Cover */}
       <div className="container-page -mt-2">
         <Reveal>
-          <div
-            className={cn(
-              "border-border relative flex aspect-[21/9] items-end overflow-hidden rounded-3xl border bg-gradient-to-br p-8",
-              project.accent,
-            )}
-          >
-            <div className="bg-grid absolute inset-0 opacity-20" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-            <div className="relative flex flex-wrap items-center gap-3 text-white">
-              <Badge className="border-white/30 bg-white/15 text-white">
+          <div className="border-border relative overflow-hidden rounded-3xl border">
+            <ProjectCover
+              project={project}
+              priority
+              aspect="aspect-[21/9]"
+              sizes="(max-width: 1200px) 100vw, 1100px"
+            />
+            <div className="absolute bottom-8 left-8 z-30 flex flex-wrap items-center gap-3 text-white">
+              <Badge className="border-white/30 bg-white/15 text-white backdrop-blur-sm">
                 {project.client}
               </Badge>
-              <Badge className="border-white/30 bg-white/15 text-white">
+              <Badge className="border-white/30 bg-white/15 text-white backdrop-blur-sm">
                 {project.year}
               </Badge>
             </div>

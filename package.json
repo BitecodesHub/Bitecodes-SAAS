@@ -42,6 +42,7 @@
     "@radix-ui/react-tooltip": "^1.2.10",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "imapflow": "^1.6.5",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.21.0",
     "mongodb": "^7.5.0",

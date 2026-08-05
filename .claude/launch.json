@@ -2,6 +2,30 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "monitor-verify",
+      "runtimeExecutable": "/opt/homebrew/bin/npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/mac/Desktop/VishTrial-kpi",
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3210"
+      ],
+      "port": 3210,
+      "autoPort": true,
+      "env": {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+        "MONGODB_URI": "mongodb://127.0.0.1:27019",
+        "MONGODB_DB": "prism_monitor_verify",
+        "NEXTAUTH_SECRET": "MkUH1Am1ggTe2imP5YHPjiNkIdB4x7olbBD8qe9K3Es=",
+        "AUTH_SECRET": "MkUH1Am1ggTe2imP5YHPjiNkIdB4x7olbBD8qe9K3Es=",
+        "NEXTAUTH_URL": "http://localhost:3210",
+        "AUTH_TRUST_HOST": "true"
+      }
+    },
+    {
       "name": "bitecodes-dev",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],

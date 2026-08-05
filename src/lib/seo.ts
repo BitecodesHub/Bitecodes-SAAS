@@ -106,14 +106,33 @@ export function organizationSchema() {
       addressRegion: siteConfig.contact.address.region,
       addressCountry: siteConfig.contact.address.country,
     },
-    areaServed: "Worldwide",
+    // Explicit primary markets in addition to worldwide reach, so answer
+    // engines can match a country-scoped question ("software company in the
+    // UK") to Bitecodes rather than treating "Worldwide" as no signal.
+    areaServed: [
+      { "@type": "Country", name: "United States" },
+      { "@type": "Country", name: "United Kingdom" },
+      { "@type": "Country", name: "Australia" },
+      { "@type": "Country", name: "India" },
+      "Worldwide",
+    ],
     knowsAbout: technologies.map((t) => t.name),
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "sales",
-      email: siteConfig.contact.salesEmail,
-      availableLanguage: ["English"],
-    },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: siteConfig.contact.salesEmail,
+        telephone: siteConfig.contact.phone,
+        availableLanguage: ["English"],
+        areaServed: ["US", "GB", "AU", "IN"],
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        url: siteConfig.contact.whatsapp,
+        availableLanguage: ["English"],
+      },
+    ],
     sameAs: [
       siteConfig.social.github,
       siteConfig.social.linkedin,
@@ -128,7 +147,7 @@ export function serviceSchema(service: Service) {
   const serviceUrl = `${siteConfig.url}/services/${service.slug}`;
   const pricing = getPricing(service.slug);
 
-  // 3 Offer nodes (USD, INR, AUD) — allowed by Google: multiple Offer objects
+  // One Offer node per currency — allowed by Google: multiple Offer objects
   // under Service.offers. Each carries a priceCurrency so regional crawlers
   // and answer engines can pick the relevant one. The numeric price matches
   // the visible HTML rendered from src/lib/pricing.priceRows(slug).

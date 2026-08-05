@@ -41,9 +41,8 @@ export const projects: Project[] = [
       { metric: "2x", label: "Structured-data coverage" },
       { metric: "100%", label: "Reversible changes" },
     ],
-    accent: "from-violet-500 via-indigo-500 to-blue-500",
     featured: true,
-    gallery: 4,
+    image: "/images/projects/prism.png",
     liveUrl: "https://prism.sublimecare.com.au",
   },
   {
@@ -73,9 +72,7 @@ export const projects: Project[] = [
       { metric: "Real-time", label: "Occupancy visibility" },
       { metric: "Multi-site", label: "Scalable operations" },
     ],
-    accent: "from-sky-500 via-cyan-500 to-teal-500",
     featured: false,
-    gallery: 3,
   },
   {
     slug: "smart-ai-park",
@@ -111,9 +108,7 @@ export const projects: Project[] = [
       { metric: "Predictive", label: "Occupancy planning" },
       { metric: "Lower", label: "Operating overhead" },
     ],
-    accent: "from-emerald-500 via-teal-500 to-cyan-500",
     featured: false,
-    gallery: 4,
   },
   {
     slug: "bitecodes-academy",
@@ -142,9 +137,7 @@ export const projects: Project[] = [
       { metric: "Mobile-first", label: "Learning experience" },
       { metric: "Scalable", label: "To many learners" },
     ],
-    accent: "from-amber-500 via-orange-500 to-rose-500",
     featured: false,
-    gallery: 3,
   },
   {
     slug: "conceptserve-technologies",
@@ -172,9 +165,8 @@ export const projects: Project[] = [
       { metric: "Senior", label: "Engineering, on demand" },
       { metric: "Multiple", label: "Products supported" },
     ],
-    accent: "from-blue-500 via-indigo-500 to-violet-500",
     featured: true,
-    gallery: 3,
+    image: "/images/projects/conceptserve.png",
     liveUrl: "https://conceptserve.com",
   },
   {
@@ -204,9 +196,8 @@ export const projects: Project[] = [
       { metric: "Fewer", label: "Manual errors" },
       { metric: "Audit-ready", label: "Billing records" },
     ],
-    accent: "from-teal-500 via-emerald-500 to-green-500",
     featured: true,
-    gallery: 3,
+    image: "/images/projects/sublimecare.png",
     liveUrl: "https://sublimecare.com.au",
   },
   {
@@ -235,9 +226,7 @@ export const projects: Project[] = [
       { metric: "Fast", label: "Media-heavy pages" },
       { metric: "Improved", label: "Discoverability" },
     ],
-    accent: "from-rose-500 via-pink-500 to-fuchsia-500",
     featured: false,
-    gallery: 4,
   },
   {
     slug: "vertex-media-house",
@@ -265,9 +254,7 @@ export const projects: Project[] = [
       { metric: "Faster", label: "Page loads" },
       { metric: "More", label: "Qualified leads" },
     ],
-    accent: "from-orange-500 via-amber-500 to-yellow-500",
     featured: false,
-    gallery: 3,
   },
   {
     slug: "rivala-care",
@@ -295,9 +282,7 @@ export const projects: Project[] = [
       { metric: "Accessible", label: "To all users" },
       { metric: "Clear", label: "Service discovery" },
     ],
-    accent: "from-cyan-500 via-sky-500 to-blue-500",
     featured: false,
-    gallery: 3,
   },
   {
     slug: "hirebound",
@@ -325,9 +310,7 @@ export const projects: Project[] = [
       { metric: "Faster", label: "Time to shortlist" },
       { metric: "Fewer", label: "Lost candidates" },
     ],
-    accent: "from-indigo-500 via-purple-500 to-pink-500",
     featured: false,
-    gallery: 3,
   },
 ];
 

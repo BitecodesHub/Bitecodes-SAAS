@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { Logo } from "@/components/logo";
 import {
   GithubIcon,
@@ -40,6 +40,22 @@ export function SiteFooter() {
               >
                 <Mail className="size-4" />
                 {siteConfig.contact.email}
+              </a>
+              <a
+                href={siteConfig.contact.phoneHref}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+              >
+                <Phone className="size-4" />
+                {siteConfig.contact.phone}
+              </a>
+              <a
+                href={siteConfig.contact.whatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+              >
+                <MessageCircle className="size-4" />
+                WhatsApp us
               </a>
               <p className="text-muted-foreground flex items-center gap-2">
                 <MapPin className="size-4" />

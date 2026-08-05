@@ -1,13 +1,16 @@
 import { buildFeed } from "@/lib/feed";
+import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { siteConfig } from "@/lib/site";
 
-// Atom 1.0 feed, generated at build time.
-export const dynamic = "force-static";
+// Atom 1.0 feed, regenerated on demand so new posts appear without a redeploy.
+export const dynamic = "force-dynamic";
 
-export function GET() {
+export async function GET() {
+  const posts = await getPublishedPosts();
   const xml = buildFeed({
     format: "atom",
     selfHref: `${siteConfig.url}/atom.xml`,
+    posts,
   });
 
   return new Response(xml, {

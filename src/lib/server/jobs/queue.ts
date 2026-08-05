@@ -28,8 +28,12 @@ export const JOB_TYPES = {
   emailSend: "email.send",
   /** Advance every active sequence enrolment that is due. */
   sequenceTick: "sequence.tick",
+  /** Run due autopilot presets and auto-enrol qualified prospects. */
+  autopilotTick: "autopilot.tick",
   /** Publish scheduled blog posts whose time has arrived. */
   blogPublishScheduled: "blog.publish-scheduled",
+  /** Draft, and (per settings) auto-publish, one AI blog post. */
+  blogGenerate: "blog.generate",
   /** Notify search engines that a URL changed. */
   searchPing: "search.ping",
   /** Send the owner a daily summary. */

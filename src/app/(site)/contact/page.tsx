@@ -79,12 +79,12 @@ export default function ContactPage() {
               </ContactItem>
               <ContactItem icon={MessageCircle} label="WhatsApp">
                 <a
-                  href={`https://wa.me/${siteConfig.contact.phoneHref.replace(/\D/g, "")}`}
+                  href={siteConfig.contact.whatsapp}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary transition-colors"
                 >
-                  Message Bitecodes
+                  {siteConfig.contact.phone}
                 </a>
               </ContactItem>
             </div>

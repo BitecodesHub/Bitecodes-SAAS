@@ -163,6 +163,8 @@ export const RATE_LIMITS = {
   /** Brute-force guard, on top of the per-account lockout. */
   adminLogin: { max: 10, windowMs: HOUR_MS },
   passwordReset: { max: 5, windowMs: HOUR_MS },
+  /** Magic links are credentials; requesting them is capped like resets. */
+  loginLink: { max: 5, windowMs: HOUR_MS },
   portalLogin: { max: 8, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
   unsubscribe: { max: 30, windowMs: HOUR_MS },

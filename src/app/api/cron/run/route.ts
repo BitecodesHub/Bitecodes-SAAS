@@ -59,16 +59,67 @@ function authorize(
  */
 async function enqueueRecurringWork(now = new Date()): Promise<void> {
   const minuteBucket = Math.floor(now.getTime() / 60_000);
-  try {
-    await enqueueJob({
-      type: JOB_TYPES.sequenceTick,
-      idempotencyKey: `sequence-tick:${minuteBucket}`,
+  // 15-minute bucket for the pollers: fine-grained enough for replies and
+  // autopilot cadence, coarse enough not to hammer IMAP or Overpass.
+  const quarterHourBucket = Math.floor(now.getTime() / 900_000);
+  const dayBucket = now.toISOString().slice(0, 10);
+
+  const ticks: Array<{
+    type: (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
+    key: string;
+  }> = [
+    { type: JOB_TYPES.sequenceTick, key: `sequence-tick:${minuteBucket}` },
+    {
+      type: JOB_TYPES.autopilotTick,
+      key: `autopilot-tick:${quarterHourBucket}`,
+    },
+    { type: JOB_TYPES.replyPoll, key: `reply-poll:${quarterHourBucket}` },
+    {
+      type: JOB_TYPES.blogPublishScheduled,
+      key: `blog-publish:${quarterHourBucket}`,
+    },
+  ];
+
+  // The digest fires on the first cron pass after 04:00 UTC (09:30 IST), once
+  // per day thanks to the date-keyed idempotency key.
+  if (now.getUTCHours() >= 4) {
+    ticks.push({
+      type: JOB_TYPES.dailyDigest,
+      key: `daily-digest:${dayBucket}`,
     });
-  } catch (error) {
-    console.error(
-      "[cron] Could not enqueue the sequence tick:",
-      error instanceof Error ? error.message : error,
+  }
+
+  // Two AI posts a week: Tuesday and Friday, after 05:00 UTC. The date-keyed
+  // idempotency key makes it fire once on each of those days regardless of how
+  // often cron runs. The handler no-ops when the AI provider is unconfigured.
+  const weekday = now.getUTCDay(); // 0 Sun … 2 Tue … 5 Fri
+  if ((weekday === 2 || weekday === 5) && now.getUTCHours() >= 5) {
+    const dayOfYear = Math.floor(
+      (now.getTime() - Date.UTC(now.getUTCFullYear(), 0, 0)) / 86_400_000,
     );
+    try {
+      await enqueueJob({
+        type: JOB_TYPES.blogGenerate,
+        payload: { dayOfYear },
+        idempotencyKey: `blog-generate:${dayBucket}`,
+      });
+    } catch (error) {
+      console.error(
+        "[cron] Could not enqueue blog generation:",
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  for (const tick of ticks) {
+    try {
+      await enqueueJob({ type: tick.type, idempotencyKey: tick.key });
+    } catch (error) {
+      console.error(
+        `[cron] Could not enqueue ${tick.type}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
   }
 }
 

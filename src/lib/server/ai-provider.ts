@@ -122,6 +122,92 @@ export function isAiConsultantConfigured() {
   return Boolean(getAiProviderConfig());
 }
 
+/**
+ * A general JSON-schema-constrained completion, reused by any feature that
+ * needs structured model output (the blog generator, for one). Returns the
+ * raw parsed JSON; the caller validates it against its own Zod schema, which
+ * is the real guard — a provider that ignores `response_format` still cannot
+ * slip past the caller's parse.
+ */
+export async function createStructuredCompletion(input: {
+  system: string;
+  user: string;
+  schema: Record<string, unknown>;
+  schemaName: string;
+  maxTokens?: number;
+  temperature?: number;
+}): Promise<{ json: unknown; model: string }> {
+  const config = getAiProviderConfig();
+  if (!config) throw new Error("NOT_CONFIGURED");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), config.timeoutMs);
+
+  try {
+    const response = await fetch(`${config.baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+        ...(config.isOpenRouter
+          ? {
+              "HTTP-Referer": "https://bitecodes.com",
+              "X-Title": "Bitecodes Content Engine",
+            }
+          : {}),
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: "system", content: input.system },
+          { role: "user", content: input.user },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: input.schemaName,
+            strict: true,
+            schema: input.schema,
+          },
+        },
+        ...(config.isOpenRouter
+          ? {
+              provider: {
+                data_collection: "deny",
+                require_parameters: true,
+                allow_fallbacks: true,
+              },
+            }
+          : {}),
+        temperature: input.temperature ?? 0.6,
+        max_tokens: input.maxTokens ?? 3000,
+        stream: false,
+      }),
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    const payload = (await response.json()) as ChatCompletionResponse;
+    if (!response.ok || payload.error) throw new Error("PROVIDER_ERROR");
+
+    const choice = payload.choices?.[0];
+    if (!choice?.message?.content || choice.finish_reason === "error") {
+      throw new Error("INVALID_PROVIDER_RESPONSE");
+    }
+
+    try {
+      return {
+        json: JSON.parse(choice.message.content),
+        model: payload.model || config.model,
+      };
+    } catch {
+      throw new Error("INVALID_PROVIDER_RESPONSE");
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function createConsultantRecommendation(
   input: ConsultantInput,
 ): Promise<{ recommendation: ConsultantRecommendation; model: string }> {

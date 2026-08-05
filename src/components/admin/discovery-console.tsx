@@ -10,6 +10,7 @@ import {
   MapPin,
   Radar,
   Search,
+  Zap,
 } from "lucide-react";
 import { DiscoveryMap } from "@/components/admin/discovery-map";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
 import { RADIUS_LIMITS } from "@/lib/prospecting/overpass-query";
 import { zoomForRadius, type LatLng } from "@/lib/prospecting/tiles";
 import {
+  createAutopilotPresetAction,
   describeAreaAction,
   getDiscoveryProgressAction,
   previewAreaAction,
@@ -222,6 +224,30 @@ export function DiscoveryConsole({
         pendingEnrichment: 0,
         classified: 0,
       });
+    });
+  }, [center, radiusMeters, categories, areaLabel]);
+
+  const [savingPreset, startSavePreset] = useTransition();
+  const [presetMessage, setPresetMessage] = useState<string | null>(null);
+
+  const handleSavePreset = useCallback(() => {
+    setPresetMessage(null);
+    startSavePreset(async () => {
+      const result = await createAutopilotPresetAction({
+        lat: center.lat,
+        lng: center.lng,
+        radiusMeters,
+        categories,
+        label:
+          areaLabel || `${center.lat.toFixed(3)}, ${center.lng.toFixed(3)}`,
+        // Twice a week keeps a single area fresh without re-hammering Overpass.
+        cadenceHours: 72,
+      });
+      setPresetMessage(
+        result.ok
+          ? "Saved. Autopilot will re-run this search every 3 days — manage it in the Autopilot panel above."
+          : result.error,
+      );
     });
   }, [center, radiusMeters, categories, areaLabel]);
 
@@ -479,14 +505,35 @@ export function DiscoveryConsole({
           </p>
         )}
 
-        <Button type="button" onClick={handleRun} disabled={runDisabled}>
-          {starting ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Radar className="size-4" />
-          )}
-          Grab these customers
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" onClick={handleRun} disabled={runDisabled}>
+            {starting ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Radar className="size-4" />
+            )}
+            Grab these customers
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSavePreset}
+            disabled={runDisabled || savingPreset}
+          >
+            {savingPreset ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Zap className="size-4" />
+            )}
+            Save as autopilot search
+          </Button>
+        </div>
+
+        {presetMessage && (
+          <p className="border-border bg-muted/40 rounded-xl border p-3 text-sm leading-relaxed">
+            {presetMessage}
+          </p>
+        )}
 
         {progress && <ProgressPanel progress={progress} searchId={searchId} />}
       </section>

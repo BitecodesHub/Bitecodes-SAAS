@@ -39,7 +39,7 @@ export const calculatorPages: CalculatorPageConfig[] = [
       {
         question: "How much does a professional website cost in India?",
         answer:
-          "A focused business website can begin around ₹90,000, while custom eCommerce, portals, integrations, content workflows, and advanced product experiences increase the investment. The calculator shows a planning range based on your selected scope.",
+          "A focused business website can begin around ₹18,000, while custom eCommerce, portals, integrations, content workflows, and advanced product experiences increase the investment. The calculator shows a planning range based on your selected scope.",
       },
       {
         question: "Does the website estimate include hosting and content?",
@@ -79,7 +79,7 @@ export const calculatorPages: CalculatorPageConfig[] = [
       {
         question: "How much does mobile app development cost in India?",
         answer:
-          "A professional mobile MVP commonly starts around ₹6.5 lakh before scope multipliers. Multiple platforms, real-time features, payments, integrations, compliance, and operational dashboards can materially increase the range.",
+          "A professional mobile MVP commonly starts around ₹1.3 lakh before scope multipliers. Multiple platforms, real-time features, payments, integrations, compliance, and operational dashboards can materially increase the range.",
       },
       {
         question: "Is cross-platform development less expensive?",
@@ -119,7 +119,7 @@ export const calculatorPages: CalculatorPageConfig[] = [
       {
         question: "How much should a startup budget for an MVP in India?",
         answer:
-          "A professionally designed and engineered SaaS MVP often begins around ₹7 lakh before complexity, platform, feature, urgency, and support adjustments. A narrow validation product can cost less; regulated or operationally complex products cost more.",
+          "A professionally designed and engineered SaaS MVP often begins around ₹1.4 lakh before complexity, platform, feature, urgency, and support adjustments. A narrow validation product can cost less; regulated or operationally complex products cost more.",
       },
       {
         question: "What should an MVP include?",
