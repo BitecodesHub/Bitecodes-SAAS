@@ -67,6 +67,13 @@ export const AUDIT_ACTIONS = {
   userEnabled: "user.enabled",
 
   chatKnowledgeUpdated: "chat.knowledge.updated",
+
+  chatbotCreated: "chatbot.created",
+  chatbotUpdated: "chatbot.updated",
+  chatbotDeleted: "chatbot.deleted",
+  chatbotApiKeyCreated: "chatbot.apikey.created",
+  chatbotApiKeyRevoked: "chatbot.apikey.revoked",
+  chatbotModelUpdated: "chatbot.model.updated",
   chatResolved: "chat.resolved",
 } as const;
 

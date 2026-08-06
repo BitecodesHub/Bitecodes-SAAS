@@ -114,6 +114,15 @@ export const ADMIN_NAV: AdminNavSection[] = [
         matchPrefix: true,
       },
       {
+        label: "Chatbots",
+        href: "/admin/chatbots",
+        icon: "MessagesSquare",
+        capability: "manage_chatbots",
+        enabled: true,
+        description: "Embeddable AI chatbots and their embed snippets",
+        matchPrefix: true,
+      },
+      {
         label: "SEO",
         href: "/admin/seo",
         icon: "Search",
