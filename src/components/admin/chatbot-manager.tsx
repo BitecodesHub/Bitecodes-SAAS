@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Bot,
@@ -202,7 +203,12 @@ export function ChatbotManager({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium">
-                    {bot.name}
+                    <Link
+                      href={`/admin/chatbots/${bot.chatbotId}`}
+                      className="hover:text-primary"
+                    >
+                      {bot.name}
+                    </Link>
                     <Badge
                       variant={bot.status === "active" ? "secondary" : "muted"}
                     >

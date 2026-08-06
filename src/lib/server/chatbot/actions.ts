@@ -17,6 +17,9 @@ import {
   setModelEnabled,
   upsertModel,
 } from "@/lib/server/chatbot/models";
+import { deleteSource, ingestContent } from "@/lib/server/knowledge/repository";
+import { getChatbot } from "@/lib/server/chatbot/repository";
+import type { KnowledgeFormat } from "@/lib/chatbot/extract";
 
 /**
  * Server Actions for chatbot management in the admin panel.
@@ -226,5 +229,82 @@ export async function setDefaultModelAction(
   const ok = await setDefaultModel(key);
   if (!ok) return fail("That model no longer exists.");
   revalidatePath("/admin/chatbots/models");
+  return { ok: true };
+}
+
+// --- Knowledge base ---------------------------------------------------------
+
+const FORMATS = ["txt", "md", "html", "json", "csv"] as const;
+
+const knowledgeSchema = z.object({
+  chatbotId: z.string().min(1),
+  type: z.enum(["file", "manual", "faq"]),
+  format: z.enum(FORMATS),
+  origin: z.string().trim().min(1).max(200),
+  content: z.string().min(1).max(500_000),
+});
+
+/**
+ * Adds a knowledge source (pasted text, an uploaded text file's contents, or
+ * FAQ markdown) and ingests it synchronously — extraction and chunking are
+ * cheap. Ownership is re-verified against the chatbot before anything is
+ * written. Binary formats and URL crawling are handled by later slices.
+ */
+export async function addKnowledgeSourceAction(input: {
+  chatbotId: string;
+  type: "file" | "manual" | "faq";
+  format: KnowledgeFormat;
+  origin: string;
+  content: string;
+}): Promise<ChatbotActionResult<{ sourceId: string; chunkCount: number }>> {
+  const session = await assertCapability("manage_chatbots");
+  const parsed = knowledgeSchema.safeParse(input);
+  if (!parsed.success) {
+    return fail("Add a name and some content (txt, md, html, json, or csv).");
+  }
+
+  // Re-verify the chatbot belongs to this owner before ingesting into it.
+  const bot = await getChatbot(session.userId, parsed.data.chatbotId);
+  if (!bot) return fail("That chatbot no longer exists.");
+
+  const result = await ingestContent({
+    ownerId: session.userId,
+    chatbotId: parsed.data.chatbotId,
+    type: parsed.data.type,
+    format: parsed.data.format,
+    origin: parsed.data.origin,
+    content: parsed.data.content,
+    title: parsed.data.origin,
+  });
+
+  revalidatePath(`/admin/chatbots/${parsed.data.chatbotId}`);
+
+  if (!result.ok) {
+    return fail(
+      result.reason === "unsupported"
+        ? "That format needs a parser we have not enabled yet."
+        : "The content could not be indexed. Check it and try again.",
+    );
+  }
+  await recordAudit({
+    action: AUDIT_ACTIONS.chatbotUpdated,
+    actorId: session.userId,
+    target: { type: "chatbot", id: parsed.data.chatbotId },
+    detail: { knowledge: "added", chunks: result.chunkCount },
+  });
+  return {
+    ok: true,
+    data: { sourceId: result.sourceId, chunkCount: result.chunkCount },
+  };
+}
+
+export async function deleteKnowledgeSourceAction(
+  chatbotId: string,
+  sourceId: string,
+): Promise<ChatbotActionResult> {
+  const session = await assertCapability("manage_chatbots");
+  const ok = await deleteSource(session.userId, chatbotId, sourceId);
+  if (!ok) return fail("That source no longer exists.");
+  revalidatePath(`/admin/chatbots/${chatbotId}`);
   return { ok: true };
 }

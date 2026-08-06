@@ -14,20 +14,28 @@ export default async function AdminChatbotsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Chatbots</h1>
-        <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-          Create an embeddable AI chatbot, set the domains it may run on, and
-          copy its one-line snippet. Training, models, and analytics build on
-          this — see the product page at{" "}
-          <Link
-            href="/ai-chatbot"
-            className="text-primary underline-offset-2 hover:underline"
-          >
-            /ai-chatbot
-          </Link>
-          .
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Chatbots</h1>
+          <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
+            Create an embeddable AI chatbot, set the domains it may run on, and
+            copy its one-line snippet. Open a bot to add its knowledge base —
+            see the product page at{" "}
+            <Link
+              href="/ai-chatbot"
+              className="text-primary underline-offset-2 hover:underline"
+            >
+              /ai-chatbot
+            </Link>
+            .
+          </p>
+        </div>
+        <Link
+          href="/admin/chatbots/models"
+          className="text-primary text-sm underline-offset-2 hover:underline"
+        >
+          Manage AI models →
+        </Link>
       </header>
 
       <ChatbotManager
