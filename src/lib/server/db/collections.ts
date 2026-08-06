@@ -14,10 +14,14 @@ import type {
   ChatbotApiKeyDoc,
   ChatbotDoc,
   ChatbotModelDoc,
+  BillingEventDoc,
+  BillingOrderDoc,
+  FormDoc,
+  FormSubmissionDoc,
   KnowledgeChunkDoc,
   KnowledgeSourceDoc,
-  TokenBalanceDoc,
-  TokenLedgerDoc,
+  WalletBalanceDoc,
+  WalletLedgerDoc,
   BlogPostDoc,
   BlogRevisionDoc,
   ChatConversationDoc,
@@ -126,10 +130,22 @@ export const chatbotApiKeys = () =>
   collection<ChatbotApiKeyDoc>(COLLECTIONS.chatbotApiKeys);
 export const chatbotModels = () =>
   collection<ChatbotModelDoc>(COLLECTIONS.chatbotModels);
-export const chatbotTokenLedger = () =>
-  collection<TokenLedgerDoc>(COLLECTIONS.chatbotTokenLedger);
-export const chatbotBalances = () =>
-  collection<TokenBalanceDoc>(COLLECTIONS.chatbotBalances);
+// Prepaid credits, shared by every metered product.
+export const walletLedger = () =>
+  collection<WalletLedgerDoc>(COLLECTIONS.walletLedger);
+export const walletBalances = () =>
+  collection<WalletBalanceDoc>(COLLECTIONS.walletBalances);
+
+// Forms SaaS.
+export const forms = () => collection<FormDoc>(COLLECTIONS.forms);
+export const formSubmissions = () =>
+  collection<FormSubmissionDoc>(COLLECTIONS.formSubmissions);
+
+// Billing.
+export const billingOrders = () =>
+  collection<BillingOrderDoc>(COLLECTIONS.billingOrders);
+export const billingEvents = () =>
+  collection<BillingEventDoc>(COLLECTIONS.billingEvents);
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

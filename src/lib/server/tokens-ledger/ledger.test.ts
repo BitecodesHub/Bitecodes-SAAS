@@ -12,10 +12,10 @@ describeWithDatabase("token ledger", () => {
   const OWNER = "owner-1";
 
   beforeEach(async () => {
-    const { chatbotBalances, chatbotTokenLedger } =
+    const { walletBalances, walletLedger } =
       await import("@/lib/server/db/collections");
-    await (await chatbotBalances()).deleteMany({});
-    await (await chatbotTokenLedger()).deleteMany({});
+    await (await walletBalances()).deleteMany({});
+    await (await walletLedger()).deleteMany({});
   });
 
   it("starts at zero", async () => {
@@ -50,7 +50,7 @@ describeWithDatabase("token ledger", () => {
     const deductRow = rows.find((r) => r.kind === "deduct");
     expect(deductRow?.delta).toBe(-300);
     expect(deductRow?.balanceAfter).toBe(700);
-    expect(deductRow?.messageId).toBe("m1");
+    expect(deductRow?.refId).toBe("m1");
   });
 
   it("refuses to overspend", async () => {

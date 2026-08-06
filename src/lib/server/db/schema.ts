@@ -43,8 +43,15 @@ export const COLLECTIONS = {
   chatbotKnowledgeChunks: "chatbot_knowledge_chunks",
   chatbotApiKeys: "chatbot_api_keys",
   chatbotModels: "chatbot_models",
-  chatbotTokenLedger: "chatbot_token_ledger",
-  chatbotBalances: "chatbot_balances",
+  // Prepaid credits, shared by every metered product (chatbot, forms).
+  walletLedger: "wallet_ledger",
+  walletBalances: "wallet_balances",
+  // Forms SaaS
+  forms: "forms",
+  formSubmissions: "form_submissions",
+  // Billing
+  billingOrders: "billing_orders",
+  billingEvents: "billing_events",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -243,13 +250,38 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { ownerId: 1, createdAt: -1 } },
   ],
   [COLLECTIONS.chatbotModels]: [{ key: { key: 1 }, unique: true }],
-  [COLLECTIONS.chatbotTokenLedger]: [
-    // Balance read: latest row for an owner.
-    { key: { ownerId: 1, createdAt: -1 } },
-    { key: { messageId: 1 }, sparse: true },
+  [COLLECTIONS.walletLedger]: [
+    // The usage/billing history read: one owner's rows for one product.
+    { key: { ownerId: 1, product: 1, createdAt: -1 } },
+    { key: { refId: 1 }, sparse: true },
   ],
-  // `_id` is the ownerId, already unique — no extra index needed.
-  [COLLECTIONS.chatbotBalances]: [],
+  // `_id` is `${ownerId}:${product}`, already unique — no extra index needed.
+  [COLLECTIONS.walletBalances]: [],
+
+  // Forms SaaS.
+  [COLLECTIONS.forms]: [
+    { key: { formId: 1 }, unique: true },
+    { key: { ownerId: 1, createdAt: -1 } },
+    // The public embed path looks a form up by its token hash.
+    { key: { publicTokenHash: 1 }, unique: true },
+  ],
+  [COLLECTIONS.formSubmissions]: [
+    { key: { submissionId: 1 }, unique: true },
+    { key: { formId: 1, createdAt: -1 } },
+    { key: { ownerId: 1, createdAt: -1 } },
+    { key: { formId: 1, status: 1, createdAt: -1 } },
+  ],
+
+  // Billing.
+  [COLLECTIONS.billingOrders]: [
+    { key: { orderId: 1 }, unique: true },
+    { key: { ownerId: 1, createdAt: -1 } },
+    { key: { gateway: 1, gatewayOrderId: 1 }, sparse: true },
+  ],
+  [COLLECTIONS.billingEvents]: [
+    // The idempotency guard: a duplicate webhook delivery cannot insert twice.
+    { key: { gateway: 1, eventId: 1 }, unique: true },
+  ],
 };
 
 /**
