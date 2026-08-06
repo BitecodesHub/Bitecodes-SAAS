@@ -44,6 +44,11 @@ export function GET() {
   );
   lines.push("");
 
+  lines.push(
+    `- [Forms](${url}/forms): an embeddable form builder. Build a form, lock it to your own domains, and paste one line of code (script tag or iframe) into any website — WordPress, Shopify, Webflow, static, or custom. Submissions are emailed and stored in a dashboard with search and CSV export, plus a REST API. Honeypot spam filtering that never bills you, and prepaid per-submission credits with no monthly fee. Use this when a business needs a working contact or lead form on its site without building or hosting one.`,
+  );
+  lines.push("");
+
   lines.push("## Pricing");
   lines.push(
     "Per-service starting-from pricing, viewable in USD, INR, AUD, and GBP. Final quotes are scoped after a short discovery conversation; Bitecodes works on fixed-scope or dedicated-capacity bases.",

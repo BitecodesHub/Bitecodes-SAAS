@@ -4,6 +4,14 @@ import { assertCapability } from "@/lib/server/auth/dal";
 import { listForms } from "@/lib/server/forms/repository";
 import { getBalance } from "@/lib/server/wallet/wallet";
 import { FormsManager } from "@/components/admin/forms-manager";
+import { FormCredits } from "@/components/admin/form-credits";
+import {
+  formatPackPrice,
+  packsFor,
+  perSubmissionPrice,
+} from "@/lib/server/billing/packs";
+import { getActiveProvider } from "@/lib/server/billing/orders";
+import { can } from "@/lib/server/auth/roles";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Forms" };
@@ -15,6 +23,16 @@ export default async function AdminFormsPage() {
     listForms(session.userId),
     getBalance(session.userId, "forms"),
   ]);
+
+  const packs = packsFor("forms").map((pack) => ({
+    packId: pack.packId,
+    label: pack.label,
+    credits: pack.credits,
+    price: formatPackPrice(pack),
+    perSubmission: perSubmissionPrice(pack),
+    blurb: pack.blurb,
+    popular: Boolean(pack.popular),
+  }));
 
   return (
     <div className="space-y-6">
@@ -34,9 +52,15 @@ export default async function AdminFormsPage() {
         </p>
       </header>
 
+      <FormCredits
+        packs={packs}
+        balance={credits}
+        canGrant={can(session.role, "manage_settings")}
+        gatewayLive={getActiveProvider().id !== "manual"}
+      />
+
       <FormsManager
         siteUrl={siteConfig.url}
-        credits={credits}
         forms={forms.map((f) => ({
           formId: f.formId,
           name: f.name,

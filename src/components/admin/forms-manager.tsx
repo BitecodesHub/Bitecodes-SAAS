@@ -44,11 +44,9 @@ export interface FormRow {
 export function FormsManager({
   forms,
   siteUrl,
-  credits,
 }: {
   forms: FormRow[];
   siteUrl: string;
-  credits: number;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -158,22 +156,6 @@ export function FormsManager({
 
   return (
     <div className="space-y-6">
-      <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold">Submission credits</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              One credit per accepted submission. At zero, forms politely
-              decline and you are emailed.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-semibold tabular-nums">{credits}</p>
-            <p className="text-muted-foreground text-xs">remaining</p>
-          </div>
-        </div>
-      </section>
-
       <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
         <h2 className="flex items-center gap-2 text-base font-semibold">
           <Plus className="text-primary size-4" />

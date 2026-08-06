@@ -161,6 +161,23 @@ export function getGooglePlacesKey(): string | null {
   return process.env.GOOGLE_PLACES_API_KEY?.trim() || null;
 }
 
+/**
+ * Razorpay credentials. All three are required before live checkout is offered;
+ * until then the billing module falls back to its manual provider, so the
+ * product ships and sells without a gateway configured.
+ */
+export function getRazorpayConfig(): {
+  keyId: string;
+  keySecret: string;
+  webhookSecret: string;
+} | null {
+  const keyId = process.env.RAZORPAY_KEY_ID?.trim();
+  const keySecret = process.env.RAZORPAY_KEY_SECRET?.trim();
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET?.trim();
+  if (!keyId || !keySecret || !webhookSecret) return null;
+  return { keyId, keySecret, webhookSecret };
+}
+
 export function getIndexNowKey(): string | null {
   const key = process.env.INDEXNOW_KEY?.trim();
   return key && /^[a-zA-Z0-9-]{8,128}$/.test(key) ? key : null;
