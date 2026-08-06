@@ -123,6 +123,15 @@ export const ADMIN_NAV: AdminNavSection[] = [
         matchPrefix: true,
       },
       {
+        label: "Forms",
+        href: "/admin/forms",
+        icon: "ClipboardList",
+        capability: "manage_forms",
+        enabled: true,
+        description: "Embeddable forms, submissions, and credits",
+        matchPrefix: true,
+      },
+      {
         label: "SEO",
         href: "/admin/seo",
         icon: "Search",

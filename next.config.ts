@@ -15,8 +15,19 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
 ];
+
+/**
+ * Clickjacking protection, applied to every route **except** the hosted form
+ * embed.
+ *
+ * `/form/:formId` exists precisely to be iframed by a customer's own website,
+ * so a blanket `SAMEORIGIN` would break the product. It is safe to exempt: the
+ * page renders one form the embedder already owns a token for, holds no session,
+ * and performs no authenticated action, so there is nothing for a hostile framer
+ * to hijack.
+ */
+const frameGuardHeader = { key: "X-Frame-Options", value: "SAMEORIGIN" };
 
 /**
  * Routes that must never appear in a search index.
@@ -40,6 +51,8 @@ const noIndexPaths = [
   "/portal/:path*",
   "/onboarding/:path*",
   "/e/:path*",
+  // The hosted form embed: a customer's form, not Bitecodes content.
+  "/form/:path*",
 ];
 
 const nextConfig: NextConfig = {
@@ -71,6 +84,17 @@ const nextConfig: NextConfig = {
     return [
       // Security + privacy headers apply to every route, including HTML.
       { source: "/:path*", headers: securityHeaders },
+      // Frame protection everywhere the embed does not live.
+      { source: "/:path((?!form/).*)", headers: [frameGuardHeader] },
+      // The embed instead declares that any site may frame it. `frame-ancestors`
+      // also takes precedence over X-Frame-Options in modern browsers, so this
+      // is belt-and-braces with the exclusion above.
+      {
+        source: "/form/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors *" },
+        ],
+      },
       ...noIndexPaths.map((source) => ({
         source,
         headers: [
