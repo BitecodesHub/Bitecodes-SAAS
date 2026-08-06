@@ -11,6 +11,13 @@ import type {
   AuditLogDoc,
   AuditReportDoc,
   AutopilotPresetDoc,
+  ChatbotApiKeyDoc,
+  ChatbotDoc,
+  ChatbotModelDoc,
+  KnowledgeChunkDoc,
+  KnowledgeSourceDoc,
+  TokenBalanceDoc,
+  TokenLedgerDoc,
   BlogPostDoc,
   BlogRevisionDoc,
   ChatConversationDoc,
@@ -108,6 +115,21 @@ export const projects = () => collection<ProjectDoc>(COLLECTIONS.projects);
 export const meetings = () => collection<MeetingDoc>(COLLECTIONS.meetings);
 export const portalSessions = () =>
   collection<PortalSessionDoc>(COLLECTIONS.portalSessions);
+
+// AI Chatbot SaaS.
+export const chatbots = () => collection<ChatbotDoc>(COLLECTIONS.chatbots);
+export const chatbotKnowledgeSources = () =>
+  collection<KnowledgeSourceDoc>(COLLECTIONS.chatbotKnowledgeSources);
+export const chatbotKnowledgeChunks = () =>
+  collection<KnowledgeChunkDoc>(COLLECTIONS.chatbotKnowledgeChunks);
+export const chatbotApiKeys = () =>
+  collection<ChatbotApiKeyDoc>(COLLECTIONS.chatbotApiKeys);
+export const chatbotModels = () =>
+  collection<ChatbotModelDoc>(COLLECTIONS.chatbotModels);
+export const chatbotTokenLedger = () =>
+  collection<TokenLedgerDoc>(COLLECTIONS.chatbotTokenLedger);
+export const chatbotBalances = () =>
+  collection<TokenBalanceDoc>(COLLECTIONS.chatbotBalances);
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

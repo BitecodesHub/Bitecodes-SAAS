@@ -37,6 +37,14 @@ export const COLLECTIONS = {
   projects: "projects",
   meetings: "meetings",
   portalSessions: "portal_sessions",
+  // AI Chatbot SaaS
+  chatbots: "chatbots",
+  chatbotKnowledgeSources: "chatbot_knowledge_sources",
+  chatbotKnowledgeChunks: "chatbot_knowledge_chunks",
+  chatbotApiKeys: "chatbot_api_keys",
+  chatbotModels: "chatbot_models",
+  chatbotTokenLedger: "chatbot_token_ledger",
+  chatbotBalances: "chatbot_balances",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -210,6 +218,38 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { projectId: 1 } },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
+
+  // AI Chatbot SaaS.
+  [COLLECTIONS.chatbots]: [
+    { key: { chatbotId: 1 }, unique: true },
+    { key: { ownerId: 1, createdAt: -1 } },
+    // Widget auth looks a bot up by its public token hash.
+    { key: { publicTokenHash: 1 }, unique: true },
+  ],
+  [COLLECTIONS.chatbotKnowledgeSources]: [
+    { key: { chatbotId: 1, createdAt: -1 } },
+    { key: { ownerId: 1 } },
+    { key: { status: 1 } },
+  ],
+  [COLLECTIONS.chatbotKnowledgeChunks]: [
+    { key: { chatbotId: 1, sourceId: 1, ord: 1 } },
+    { key: { sourceId: 1 } },
+    { key: { ownerId: 1 } },
+    // NB: the vector index on `embedding` is an Atlas Search index, created in
+    // the Atlas UI/API, not here (createIndexes cannot declare $vectorSearch).
+  ],
+  [COLLECTIONS.chatbotApiKeys]: [
+    { key: { keyHash: 1 }, unique: true },
+    { key: { ownerId: 1, createdAt: -1 } },
+  ],
+  [COLLECTIONS.chatbotModels]: [{ key: { key: 1 }, unique: true }],
+  [COLLECTIONS.chatbotTokenLedger]: [
+    // Balance read: latest row for an owner.
+    { key: { ownerId: 1, createdAt: -1 } },
+    { key: { messageId: 1 }, sparse: true },
+  ],
+  // `_id` is the ownerId, already unique — no extra index needed.
+  [COLLECTIONS.chatbotBalances]: [],
 };
 
 /**

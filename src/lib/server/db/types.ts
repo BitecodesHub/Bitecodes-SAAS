@@ -722,3 +722,158 @@ export interface PortalSessionDoc {
   expiresAt: Date;
   revokedAt: Date | null;
 }
+
+// ---------------------------------------------------------------------------
+// AI Chatbot SaaS
+//
+// Multi-tenant: every document carries `ownerId` (the customer). The widget's
+// public path is scoped by `chatbotId` + a public token that grants chat only.
+// See docs/ai-chatbot-saas-architecture.md.
+// ---------------------------------------------------------------------------
+
+export type ChatbotStatus = "active" | "paused";
+
+/** Public-safe appearance/behaviour, resolved for the embeddable widget. */
+export interface ChatbotAppearance {
+  theme: "light" | "dark" | "auto";
+  avatar: string | null;
+  logo: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  position: "bottom-right" | "bottom-left";
+  size: "compact" | "regular" | "large";
+  displayMode: "bubble" | "popup" | "fullscreen" | "embedded";
+  welcomeMessage: string;
+  placeholder: string;
+  typingAnimation: boolean;
+  branding: boolean;
+  language: string;
+  timezone: string;
+  suggestedQuestions: string[];
+  starterPrompts: string[];
+}
+
+export interface ChatbotDoc extends Timestamped {
+  _id?: ObjectId;
+  chatbotId: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  websiteName: string | null;
+  status: ChatbotStatus;
+  /** Domains the widget may run on. Supports `*.company.com` wildcards. */
+  allowedDomains: string[];
+  appearance: ChatbotAppearance;
+  /** Key of the model this bot uses; must be an admin-enabled model. */
+  modelKey: string | null;
+  /** Active system-prompt version content (denormalised for the hot path). */
+  systemPrompt: string;
+  /** SHA-256 of the public widget token. The token itself is never stored. */
+  publicTokenHash: string;
+}
+
+export type KnowledgeSourceType = "file" | "url" | "sitemap" | "manual" | "faq";
+
+export type KnowledgeStatus = "queued" | "processing" | "indexed" | "failed";
+
+export interface KnowledgeSourceDoc extends Timestamped {
+  _id?: ObjectId;
+  ownerId: string;
+  chatbotId: string;
+  type: KnowledgeSourceType;
+  /** Filename, URL, or a short label for manual entries. */
+  origin: string;
+  status: KnowledgeStatus;
+  bytes: number;
+  chunkCount: number;
+  error: string | null;
+}
+
+export interface KnowledgeChunkDoc {
+  _id?: ObjectId;
+  ownerId: string;
+  chatbotId: string;
+  sourceId: string;
+  /** Order within the source. */
+  ord: number;
+  text: string;
+  tokenCount: number;
+  /** Embedding vector. Indexed by Atlas Vector Search in production. */
+  embedding: number[];
+  meta: { title: string | null; url: string | null };
+  createdAt: Date;
+}
+
+/** Server-to-server API keys a customer creates. */
+export interface ChatbotApiKeyDoc extends Timestamped {
+  _id?: ObjectId;
+  ownerId: string;
+  name: string;
+  /** SHA-256 of the secret. Only the hash is stored. */
+  keyHash: string;
+  /** First chars shown in the UI, e.g. `sk_live_a1b2…`. */
+  prefix: string;
+  scopes: string[];
+  allowedDomains: string[];
+  lastUsedAt: Date | null;
+  expiresAt: Date | null;
+  status: "active" | "revoked";
+}
+
+/** Admin-managed catalogue of AI models available to customers. */
+export interface ChatbotModelDoc extends Timestamped {
+  _id?: ObjectId;
+  key: string;
+  label: string;
+  provider: string;
+  /** Cost per 1M tokens, in the platform's accounting currency. */
+  inCostPerMTok: number;
+  outCostPerMTok: number;
+  maxContext: number;
+  maxOutput: number;
+  tempMin: number;
+  tempMax: number;
+  enabled: boolean;
+  /** Plans this model is available on; empty means all plans. */
+  planIds: string[];
+  isDefault: boolean;
+}
+
+/**
+ * Fast, authoritative per-owner balance counter. Mutated only by an atomic
+ * conditional `$inc`, which is what makes concurrent deductions race-safe; the
+ * ledger below is the immutable audit journal that explains every change.
+ */
+export interface TokenBalanceDoc {
+  /** The ownerId. */
+  _id: string;
+  balance: number;
+  updatedAt: Date;
+}
+
+export type TokenLedgerKind =
+  | "purchase"
+  | "deduct"
+  | "bonus"
+  | "refund"
+  | "expiry";
+
+/**
+ * Append-only token accounting. Never mutated — the balance is the most recent
+ * row's `balanceAfter`. This is the spend circuit-breaker: a drained balance
+ * stops all AI requests.
+ */
+export interface TokenLedgerDoc {
+  _id?: ObjectId;
+  ownerId: string;
+  /** Signed: positive credits, negative debits. */
+  delta: number;
+  kind: TokenLedgerKind;
+  balanceAfter: number;
+  chatbotId: string | null;
+  messageId: string | null;
+  /** Set on `purchase` rows so a daily job can expire unused packs. */
+  expiresAt: Date | null;
+  note: string | null;
+  createdAt: Date;
+}
