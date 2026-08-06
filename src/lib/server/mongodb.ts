@@ -1,7 +1,7 @@
 import "server-only";
 
 import { MongoClient, type Db } from "mongodb";
-import { getServerEnv } from "@/lib/server/env";
+import { getMongoDbName, getMongoUri } from "@/lib/server/env";
 import { createDeclaredIndexes } from "@/lib/server/db/schema";
 
 declare global {
@@ -10,8 +10,7 @@ declare global {
 }
 
 function createClientPromise() {
-  const { MONGODB_URI } = getServerEnv();
-  const client = new MongoClient(MONGODB_URI, {
+  const client = new MongoClient(getMongoUri(), {
     appName: "BitecodesWebsite",
     connectTimeoutMS: 10_000,
     serverSelectionTimeoutMS: 10_000,
@@ -34,9 +33,8 @@ function getClientPromise(): Promise<MongoClient> {
 }
 
 export async function getDatabase(): Promise<Db> {
-  const { MONGODB_DB_NAME } = getServerEnv();
   const client = await getClientPromise();
-  const database = client.db(MONGODB_DB_NAME);
+  const database = client.db(getMongoDbName());
 
   await ensureIndexes(database);
   return database;

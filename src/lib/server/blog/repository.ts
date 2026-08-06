@@ -41,25 +41,36 @@ export function toPublicPost(doc: BlogPostDoc): BlogPost {
  * by date), then any static post whose slug a database post has not taken over.
  */
 export async function getPublishedPosts(): Promise<BlogPost[]> {
-  const collection = await blogPostDocs();
-  const dbDocs = await collection
-    .find({ status: "published" })
-    .sort({ date: -1 })
-    .toArray();
+  try {
+    const collection = await blogPostDocs();
+    const dbDocs = await collection
+      .find({ status: "published" })
+      .sort({ date: -1 })
+      .toArray();
 
-  const dbPosts = dbDocs.map(toPublicPost);
-  const dbSlugs = new Set(dbPosts.map((p) => p.slug));
-  const survivingStatic = staticPosts.filter((p) => !dbSlugs.has(p.slug));
+    const dbPosts = dbDocs.map(toPublicPost);
+    const dbSlugs = new Set(dbPosts.map((p) => p.slug));
+    const survivingStatic = staticPosts.filter((p) => !dbSlugs.has(p.slug));
 
-  return [...dbPosts, ...survivingStatic].sort((a, b) =>
-    a.date < b.date ? 1 : -1,
-  );
+    return [...dbPosts, ...survivingStatic].sort((a, b) =>
+      a.date < b.date ? 1 : -1,
+    );
+  } catch {
+    // The blog, sitemap, and feeds are core SEO surfaces. If the database is
+    // unreachable, serve the compiled-in static posts rather than a 500 — the
+    // public site must never depend on the database being up.
+    return [...staticPosts].sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
 }
 
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {
-  const collection = await blogPostDocs();
-  const doc = await collection.findOne({ slug, status: "published" });
-  if (doc) return toPublicPost(doc);
+  try {
+    const collection = await blogPostDocs();
+    const doc = await collection.findOne({ slug, status: "published" });
+    if (doc) return toPublicPost(doc);
+  } catch {
+    // Fall through to the static set on a database failure.
+  }
   return staticPosts.find((p) => p.slug === slug) ?? null;
 }
 

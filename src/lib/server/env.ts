@@ -94,6 +94,27 @@ export function getServerEnv(): ServerEnv {
  * validates only what its own caller needs.
  */
 
+/**
+ * Database connection details, read narrowly.
+ *
+ * The public site needs only MongoDB, not SMTP or contact configuration, so the
+ * connection must not depend on the full-schema `getServerEnv()`. Without this,
+ * a deployment missing an unrelated variable (say `CONTACT_NOTIFICATION_TO`)
+ * would fail every database read — including the static-feeling public routes
+ * that render the blog, sitemap, and feeds.
+ */
+export function getMongoUri(): string {
+  const uri = process.env.MONGODB_URI?.trim();
+  if (!uri) {
+    throw new Error("MONGODB_URI must be set to connect to the database.");
+  }
+  return uri;
+}
+
+export function getMongoDbName(): string {
+  return process.env.MONGODB_DB_NAME?.trim() || "bitecodes";
+}
+
 /** The HMAC key for signed tokens and session signatures. */
 export function getSigningSecret(): string {
   const secret = process.env.AUTH_SECRET?.trim();
