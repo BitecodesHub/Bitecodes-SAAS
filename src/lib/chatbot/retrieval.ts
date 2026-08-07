@@ -223,6 +223,47 @@ export function scoreChunks<T extends RetrievableChunk>(
 }
 
 /**
+ * Drops chunks that only trail the best match.
+ *
+ * `scoreChunks` returns anything with a non-zero score, which is right for
+ * ranking but wrong for citation: a question like "what does Bitecodes do" also
+ * weakly matches every page that happens to mention the company, and listing
+ * those as sources tells the visitor the answer came from documents it did not.
+ * Keeping chunks within `minRatio` of the top score is a relative cut, so it
+ * adapts to how strong the best match actually was.
+ */
+export function filterRelevant<T extends RetrievableChunk>(
+  ranked: readonly ScoredChunk<T>[],
+  minRatio = 0.4,
+): ScoredChunk<T>[] {
+  if (ranked.length === 0) return [];
+  const best = ranked[0].score;
+  return ranked.filter((entry) => entry.score >= best * minRatio);
+}
+
+/**
+ * How much of the question the retrieved set actually accounts for, as 0..1
+ * across the union of matched terms.
+ *
+ * This is the honest grounding signal. "Did anything match at all" is not: a
+ * visitor asking "do you sell used motorcycles?" matches the single word "sell"
+ * in a sales paragraph, which previously reported the answer as grounded when
+ * the knowledge base said nothing about motorcycles.
+ */
+export function coverage<T extends RetrievableChunk>(
+  question: string,
+  ranked: readonly ScoredChunk<T>[],
+): number {
+  const terms = new Set(tokenize(question));
+  if (terms.size === 0) return 0;
+  const matched = new Set<string>();
+  for (const entry of ranked) {
+    for (const term of entry.matched) if (terms.has(term)) matched.add(term);
+  }
+  return matched.size / terms.size;
+}
+
+/**
  * Assembles ranked chunks into a context block, stopping before `maxChars` so
  * the prompt cannot exceed the model's window. Each block is labelled with its
  * source so the model can cite it and the operator can see what was used.

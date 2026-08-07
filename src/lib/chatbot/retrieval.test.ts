@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildContext,
+  coverage,
+  filterRelevant,
   scoreChunks,
   stem,
   tokenize,
@@ -121,5 +123,56 @@ describe("buildContext", () => {
 
   it("returns an empty context for no ranked chunks", () => {
     expect(buildContext([])).toEqual({ context: "", used: 0, sources: [] });
+  });
+});
+
+describe("filterRelevant", () => {
+  const entry = (score: number, title: string) => ({
+    chunk: { text: title, meta: { title, url: null } },
+    score,
+    matched: ["x"],
+  });
+
+  it("keeps strong matches and drops trailing ones", () => {
+    const kept = filterRelevant([
+      entry(10, "bullseye"),
+      entry(6, "close"),
+      entry(1, "incidental"),
+    ]);
+    expect(kept.map((k) => k.chunk.meta.title)).toEqual(["bullseye", "close"]);
+  });
+
+  it("keeps everything when all matches are comparable", () => {
+    expect(filterRelevant([entry(10, "a"), entry(9, "b")])).toHaveLength(2);
+  });
+
+  it("handles an empty ranking", () => {
+    expect(filterRelevant([])).toEqual([]);
+  });
+});
+
+describe("coverage", () => {
+  const chunks = [
+    { text: "Refunds are available within 30 days of purchase." },
+    { text: "Bitecodes sells an embeddable AI chatbot for websites." },
+  ];
+
+  it("is high when the retrieved set accounts for the question", () => {
+    const ranked = scoreChunks("What is your refund policy?", chunks);
+    // "refund" and "policy" -> "refund" matches; the question is largely covered.
+    expect(coverage("What is your refund policy?", ranked)).toBeGreaterThan(
+      0.4,
+    );
+  });
+
+  it("is low when only an incidental word matched", () => {
+    // The live bug: "sell" matches, motorcycles are nowhere in the knowledge.
+    const ranked = scoreChunks("Do you sell used motorcycles?", chunks);
+    expect(coverage("Do you sell used motorcycles?", ranked)).toBeLessThan(0.5);
+  });
+
+  it("is zero for no ranking and for a question of only stop words", () => {
+    expect(coverage("anything", [])).toBe(0);
+    expect(coverage("is it the a", scoreChunks("is it the a", chunks))).toBe(0);
   });
 });
