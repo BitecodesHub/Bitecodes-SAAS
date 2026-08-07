@@ -82,6 +82,17 @@ export interface ChatRequest {
   origin: string | null;
   ip: string | null;
   history?: { role: "user" | "assistant"; content: string }[];
+  /**
+   * The bot, when the caller has already resolved it.
+   *
+   * The route handler must look the bot up before calling in, because a refusal
+   * still needs the bot's allowlist to emit correct CORS headers. Passing that
+   * result through saves a second identical query — which, with the database in
+   * a different region from the function, was a real round trip on every single
+   * message. `undefined` means "not resolved, look it up"; `null` means
+   * "resolved, and there is no such bot", and is not re-queried.
+   */
+  resolvedBot?: ChatbotDoc | null;
 }
 
 function systemPrompt(bot: ChatbotDoc, context: string): string {
@@ -120,7 +131,10 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
   }
 
   // 1. Resolve the bot. One answer covers missing, wrong-token, and paused.
-  const bot = await getChatbotForWidget(request.chatbotId, request.publicToken);
+  const bot =
+    request.resolvedBot !== undefined
+      ? request.resolvedBot
+      : await getChatbotForWidget(request.chatbotId, request.publicToken);
   if (!bot) return { kind: "not-available" };
 
   // 2. Origin allowlist, fail-closed.

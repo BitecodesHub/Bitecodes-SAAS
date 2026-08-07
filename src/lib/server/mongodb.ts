@@ -43,11 +43,24 @@ export async function getDatabase(): Promise<Db> {
 /**
  * Creates every index declared in `db/schema.ts`, once per process.
  *
- * The promise is cached on `global` so the work happens on the first query
- * and never again, and so a dev-server hot reload does not re-run it.
+ * The promise is cached on `global` so the work happens on the first query and
+ * never again, and so a dev-server hot reload does not re-run it.
+ *
+ * **Unique indexes are awaited; the rest are not.** On a cold serverless
+ * instance this used to block the visitor's very first request behind one
+ * `createIndexes` call per collection — roughly forty round trips to the
+ * database before a single byte of their page was read. Non-unique indexes only
+ * affect how fast a query runs, and a query issued a few milliseconds before its
+ * index lands is merely slower, so waiting for them buys the first visitor
+ * nothing. Unique indexes are different in kind: correctness depends on them
+ * existing. The billing webhook uses a unique insert as its idempotency lock, so
+ * a duplicate delivery arriving before that index exists would credit an account
+ * twice. Those are worth the wait.
  */
 async function ensureIndexes(database: Db) {
-  global.__bitecodesIndexesPromise ??= createDeclaredIndexes(database);
+  global.__bitecodesIndexesPromise ??= createDeclaredIndexes(database, {
+    awaitNonUnique: false,
+  });
   return global.__bitecodesIndexesPromise;
 }
 

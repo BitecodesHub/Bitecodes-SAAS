@@ -211,6 +211,9 @@ export async function POST(request: NextRequest) {
         request.headers.get("x-real-ip") ||
         null,
       history,
+      // Already fetched above for the CORS headers; reuse it rather than
+      // paying for the same query twice on every message.
+      resolvedBot: bot,
     });
   } catch (error) {
     console.error(

@@ -18,10 +18,15 @@ export default async function ChatbotDetailPage({
 }) {
   const session = await assertCapability("manage_chatbots");
   const { id } = await params;
-  const bot = await getChatbot(session.userId, id);
-  if (!bot) notFound();
 
-  const sources = await listSources(session.userId, id);
+  // Issued together rather than in sequence. Both are scoped to this owner, so
+  // the sources query cannot leak another tenant's data if the bot turns out not
+  // to exist — the ownership check is in the query, not in this ordering.
+  const [bot, sources] = await Promise.all([
+    getChatbot(session.userId, id),
+    listSources(session.userId, id),
+  ]);
+  if (!bot) notFound();
 
   return (
     <div className="space-y-6">
