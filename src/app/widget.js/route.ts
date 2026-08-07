@@ -80,6 +80,10 @@ export function GET() {
   var sendBtn = panel.querySelector(".ft button");
   var conversationId = null;
   var greeted = false;
+  // Prior turns, so a follow-up like "and how long does that take?" makes
+  // sense. Only the recent tail is sent; the server trims it again and the
+  // prompt budget is bounded there, not trusted from here.
+  var history = [];
 
   function addMsg(who, text) {
     var el = document.createElement("div");
@@ -113,7 +117,7 @@ export function GET() {
           publicToken: token,
           conversationId: conversationId,
           message: text,
-          stream: true
+          history: history.slice(-6)
         })
       });
       if (!res.ok) {
@@ -141,9 +145,15 @@ export function GET() {
           try {
             var payload = JSON.parse(m[1]);
             if (payload.delta) { out.textContent += payload.delta; log.scrollTop = log.scrollHeight; }
+            if (payload.message && !out.textContent) { out.textContent = payload.message; }
           } catch (e) { /* ignore keep-alive lines */ }
         }
       }
+      if (!out.textContent) {
+        out.textContent = "Sorry, I could not answer that. Please try again.";
+      }
+      history.push({ role: "user", content: text });
+      history.push({ role: "assistant", content: out.textContent });
     } catch (e) {
       out.textContent = "Sorry, the assistant is unreachable right now.";
     }

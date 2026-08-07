@@ -11,19 +11,38 @@ import type { ChatbotModelDoc } from "@/lib/server/db/types";
  * the default. Customers only ever see enabled models.
  */
 
-/** Seeded on first use so the catalogue is never empty. Costs are per 1M tokens. */
+/**
+ * Seeded on first use so the catalogue is never empty. Costs are per 1M tokens.
+ *
+ * These are NVIDIA NIM model ids, and the shortlist is **measured, not
+ * assumed**: on `integrate.api.nvidia.com` many models sit behind a long queue
+ * on the free tier. Time-to-first-byte, sampled repeatedly:
+ *
+ *   meta/llama-3.1-8b-instruct        ~0.7s   ← default: best instruction
+ *                                              following, which is what keeps
+ *                                              answers inside the knowledge base
+ *   nvidia/nemotron-mini-4b-instruct  ~0.6s   fastest, lighter quality
+ *   nvidia/nvidia-nemotron-nano-9b-v2 ~0.5s   reasoning model; emits
+ *                                              reasoning_content, so it is off
+ *                                              by default for a chat widget
+ *   openai/gpt-oss-120b               ~60s    unusable interactively — do not
+ *                                              re-add without re-measuring
+ *
+ * Costs are nominal: NVIDIA's hosted tier is free at this volume, so these
+ * values exist to meter customer usage, not to reflect a supplier invoice.
+ */
 export const DEFAULT_MODELS: Omit<
   ChatbotModelDoc,
   "_id" | "createdAt" | "updatedAt"
 >[] = [
   {
-    key: "openai/gpt-5-mini",
-    label: "GPT-5 Mini",
-    provider: "openai",
-    inCostPerMTok: 0.25,
-    outCostPerMTok: 2,
+    key: "meta/llama-3.1-8b-instruct",
+    label: "Llama 3.1 8B",
+    provider: "nvidia",
+    inCostPerMTok: 0.2,
+    outCostPerMTok: 0.6,
     maxContext: 128000,
-    maxOutput: 4096,
+    maxOutput: 900,
     tempMin: 0,
     tempMax: 1.5,
     enabled: true,
@@ -31,48 +50,93 @@ export const DEFAULT_MODELS: Omit<
     isDefault: true,
   },
   {
-    key: "anthropic/claude-haiku",
-    label: "Claude Haiku",
-    provider: "anthropic",
-    inCostPerMTok: 0.8,
-    outCostPerMTok: 4,
-    maxContext: 200000,
-    maxOutput: 4096,
+    key: "nvidia/nemotron-mini-4b-instruct",
+    label: "Nemotron Mini 4B",
+    provider: "nvidia",
+    inCostPerMTok: 0.1,
+    outCostPerMTok: 0.3,
+    maxContext: 4096,
+    maxOutput: 900,
     tempMin: 0,
-    tempMax: 1,
+    tempMax: 1.5,
     enabled: true,
     planIds: [],
     isDefault: false,
   },
   {
-    key: "google/gemini-2.5-flash",
-    label: "Gemini 2.5 Flash",
-    provider: "google",
-    inCostPerMTok: 0.3,
-    outCostPerMTok: 2.5,
-    maxContext: 1000000,
-    maxOutput: 8192,
+    key: "nvidia/nvidia-nemotron-nano-9b-v2",
+    label: "Nemotron Nano 9B (reasoning)",
+    provider: "nvidia",
+    inCostPerMTok: 0.2,
+    outCostPerMTok: 0.6,
+    maxContext: 128000,
+    maxOutput: 900,
     tempMin: 0,
-    tempMax: 2,
-    enabled: true,
+    tempMax: 1,
+    // Off by default: it streams a reasoning channel a visitor should not see.
+    enabled: false,
     planIds: [],
     isDefault: false,
   },
 ];
 
+/**
+ * Placeholder model ids shipped in an earlier revision of this catalogue.
+ *
+ * They are OpenRouter-style names and do not exist on the configured NVIDIA
+ * endpoint, so a chatbot defaulting to one of them fails with a provider 404.
+ * They are removed on seed rather than left disabled: leaving a broken id in the
+ * picker invites an operator to select it. Safe to delete — they were never
+ * reachable on this deployment, so no customer can be relying on one.
+ */
+const LEGACY_MODEL_KEYS = [
+  "openai/gpt-5-mini",
+  "anthropic/claude-haiku",
+  "google/gemini-2.5-flash",
+];
+
 let seeded = false;
 
-/** Inserts the default catalogue once if the collection is empty. */
+/**
+ * Reconciles the catalogue with the shipped defaults. Idempotent, and safe to
+ * call on every read.
+ *
+ * Deliberately not "insert only when empty": that left an already-seeded
+ * deployment stuck with whichever defaults existed the first time it ran, which
+ * is how the unreachable placeholder ids survived. Instead each default is
+ * upserted with `$setOnInsert`, so a new model is added while an operator's own
+ * edits to cost, limits, or the enabled flag are never overwritten.
+ */
 export async function ensureSeededModels(): Promise<void> {
   if (seeded) return;
   const collection = await chatbotModels();
-  const count = await collection.countDocuments({}, { limit: 1 });
-  if (count === 0) {
-    const now = new Date();
-    await collection.insertMany(
-      DEFAULT_MODELS.map((m) => ({ ...m, createdAt: now, updatedAt: now })),
+  const now = new Date();
+
+  await collection.deleteMany({ key: { $in: LEGACY_MODEL_KEYS } });
+
+  for (const model of DEFAULT_MODELS) {
+    await collection.updateOne(
+      { key: model.key },
+      { $setOnInsert: { ...model, createdAt: now, updatedAt: now } },
+      { upsert: true },
     );
   }
+
+  // If removing the legacy entries took the default with them, restore one so
+  // the chat gateway always has a model to call.
+  const hasDefault = await collection.findOne({
+    isDefault: true,
+    enabled: true,
+  });
+  if (!hasDefault) {
+    const fallback =
+      DEFAULT_MODELS.find((m) => m.isDefault) ?? DEFAULT_MODELS[0];
+    await collection.updateOne(
+      { key: fallback.key },
+      { $set: { isDefault: true, enabled: true, updatedAt: now } },
+    );
+  }
+
   seeded = true;
 }
 
@@ -92,6 +156,20 @@ export async function listEnabledModels(): Promise<ChatbotModelDoc[]> {
 export async function getModel(key: string): Promise<ChatbotModelDoc | null> {
   const collection = await chatbotModels();
   return collection.findOne({ key });
+}
+
+/**
+ * The platform default, for callers that have no per-bot choice to honour.
+ * Falls back to any enabled model so a mis-set `isDefault` cannot leave the
+ * chat gateway with nothing to call.
+ */
+export async function getDefaultModel(): Promise<ChatbotModelDoc | null> {
+  await ensureSeededModels();
+  const collection = await chatbotModels();
+  return (
+    (await collection.findOne({ isDefault: true, enabled: true })) ??
+    (await collection.findOne({ enabled: true }))
+  );
 }
 
 export async function upsertModel(
