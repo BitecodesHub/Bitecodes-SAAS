@@ -292,18 +292,47 @@ export const INDEXES: Record<string, IndexDescription[]> = {
  * built (for example because legacy documents contain duplicates) must not
  * take the public website down; the affected query simply runs unindexed until
  * the data is fixed.
+ *
+ * With `awaitNonUnique: false` the caller waits only for indexes whose absence
+ * would be a *correctness* problem, and the remainder are built in the
+ * background. See the note in `mongodb.ts` for why that split is drawn where it
+ * is. The background work is deliberately detached rather than dangling: any
+ * rejection is caught, because an unhandled promise rejection would take the
+ * whole serverless invocation down.
  */
-export async function createDeclaredIndexes(database: Db): Promise<void> {
-  await Promise.all(
-    Object.entries(INDEXES).map(async ([collection, specs]) => {
-      try {
-        await database.collection(collection).createIndexes(specs);
-      } catch (error) {
-        console.error(
-          `[db] Failed to create indexes for ${collection}:`,
-          error instanceof Error ? error.message : error,
-        );
-      }
-    }),
-  );
+export async function createDeclaredIndexes(
+  database: Db,
+  options: { awaitNonUnique?: boolean } = {},
+): Promise<void> {
+  const { awaitNonUnique = true } = options;
+
+  const build = async (collection: string, specs: IndexDescription[]) => {
+    if (specs.length === 0) return;
+    try {
+      await database.collection(collection).createIndexes(specs);
+    } catch (error) {
+      console.error(
+        `[db] Failed to create indexes for ${collection}:`,
+        error instanceof Error ? error.message : error,
+      );
+    }
+  };
+
+  const blocking: Promise<void>[] = [];
+  const background: Promise<void>[] = [];
+
+  for (const [collection, specs] of Object.entries(INDEXES)) {
+    if (awaitNonUnique) {
+      blocking.push(build(collection, specs));
+      continue;
+    }
+    const unique = specs.filter((spec) => spec.unique);
+    const rest = specs.filter((spec) => !spec.unique);
+    if (unique.length) blocking.push(build(collection, unique));
+    if (rest.length) background.push(build(collection, rest));
+  }
+
+  // Detached, but never unhandled.
+  void Promise.all(background).catch(() => undefined);
+  await Promise.all(blocking);
 }
