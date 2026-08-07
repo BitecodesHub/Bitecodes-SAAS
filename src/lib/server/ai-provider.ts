@@ -123,6 +123,150 @@ export function isAiConsultantConfigured() {
 }
 
 /**
+ * Streams a chat completion, yielding text deltas as they arrive.
+ *
+ * Two provider quirks are handled here rather than at the call sites:
+ *
+ *  1. **NVIDIA requires `Accept: text/event-stream` when `stream: true`.**
+ *     Without it `integrate.api.nvidia.com` answers 404 for a model that
+ *     demonstrably exists — measured, not guessed. Sending the header
+ *     unconditionally is harmless on OpenAI-compatible providers.
+ *  2. **Reasoning models emit `reasoning_content` before `content`.** Only
+ *     `content` is yielded, so a model that thinks out loud does not leak its
+ *     scratchpad to a website visitor.
+ *
+ * Usage is reported by the provider in a final chunk when available; callers
+ * that must bill a request fall back to an estimate when it is absent.
+ */
+export interface StreamedCompletion {
+  /** Text deltas, in order. */
+  stream: AsyncGenerator<string, void, unknown>;
+  /** Resolves once the stream ends, with whatever usage the provider reported. */
+  usage: () => { inputTokens: number; outputTokens: number };
+  model: string;
+}
+
+export async function streamChatCompletion(input: {
+  system: string;
+  messages: { role: "user" | "assistant"; content: string }[];
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  signal?: AbortSignal;
+}): Promise<StreamedCompletion> {
+  const config = getAiProviderConfig();
+  if (!config) throw new Error("NOT_CONFIGURED");
+
+  const model = input.model?.trim() || config.model;
+
+  const response = await fetch(`${config.baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+      // Required by NVIDIA for streaming; ignored elsewhere. See note above.
+      Accept: "text/event-stream",
+      ...(config.isOpenRouter
+        ? {
+            "HTTP-Referer": "https://bitecodes.com",
+            "X-Title": "Bitecodes Chatbot",
+          }
+        : {}),
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "system", content: input.system }, ...input.messages],
+      temperature: input.temperature ?? 0.3,
+      max_tokens: input.maxTokens ?? 700,
+      stream: true,
+      ...(config.isOpenRouter
+        ? { provider: { data_collection: "deny", allow_fallbacks: true } }
+        : {}),
+    }),
+    signal: input.signal,
+    cache: "no-store",
+  });
+
+  if (!response.ok || !response.body) {
+    throw new Error(
+      response.status === 401 || response.status === 403
+        ? "PROVIDER_AUTH"
+        : "PROVIDER_ERROR",
+    );
+  }
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let charCount = 0;
+  const promptChars =
+    input.system.length +
+    input.messages.reduce((sum, m) => sum + m.content.length, 0);
+
+  const body = response.body;
+
+  async function* iterate(): AsyncGenerator<string, void, unknown> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        // SSE frames are separated by a blank line.
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() ?? "";
+
+        for (const frame of frames) {
+          for (const line of frame.split("\n")) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const payload = trimmed.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+
+            let parsed: {
+              choices?: { delta?: { content?: string | null } }[];
+              usage?: { prompt_tokens?: number; completion_tokens?: number };
+            };
+            try {
+              parsed = JSON.parse(payload);
+            } catch {
+              // A partial frame; the next read completes it.
+              continue;
+            }
+
+            if (parsed.usage) {
+              inputTokens = parsed.usage.prompt_tokens ?? inputTokens;
+              outputTokens = parsed.usage.completion_tokens ?? outputTokens;
+            }
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              charCount += delta.length;
+              yield delta;
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  return {
+    stream: iterate(),
+    model,
+    usage: () => ({
+      // Fall back to the ~4-chars-per-token heuristic when the provider is
+      // silent about usage, so a request is never billed as zero.
+      inputTokens: inputTokens || Math.ceil(promptChars / 4),
+      outputTokens: outputTokens || Math.ceil(charCount / 4),
+    }),
+  };
+}
+
+/**
  * A general JSON-schema-constrained completion, reused by any feature that
  * needs structured model output (the blog generator, for one). Returns the
  * raw parsed JSON; the caller validates it against its own Zod schema, which
