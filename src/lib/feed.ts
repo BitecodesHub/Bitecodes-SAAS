@@ -46,12 +46,15 @@ function assertDate(dateIso: string, slug: string): void {
   }
 }
 
-/** Throw if a URL is not an absolute bitecodes.com URL. */
+/**
+ * Throw if a URL is not absolute and on our own canonical origin.
+ *
+ * Derived from `siteConfig.url` rather than hardcoded, so changing the canonical
+ * host cannot leave this check asserting the old one and failing every feed.
+ */
 function assertAbsolute(url: string): void {
-  if (!/^https:\/\/bitecodes\.com(\/|$)/.test(url)) {
-    throw new Error(
-      `Expected absolute https://bitecodes.com URL, got "${url}"`,
-    );
+  if (url !== BASE && !url.startsWith(`${BASE}/`)) {
+    throw new Error(`Expected absolute ${BASE} URL, got "${url}"`);
   }
 }
 

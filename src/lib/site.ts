@@ -6,7 +6,14 @@ export const siteConfig = {
   name: "Bitecodes",
   legalName: "Bitecodes",
   // Used for metadataBase, canonical URLs, sitemap, and Open Graph.
-  url: "https://bitecodes.com",
+  //
+  // Must be the host that is actually served. The apex answers 308 to `www`, so
+  // an apex value here made every one of the 62 URLs in the sitemap a redirect,
+  // and pointed each canonical tag at a URL that is not the one serving the
+  // page. `www` is the canonical host because it is the one already indexed —
+  // flipping the redirect the other way would be a larger change than this, and
+  // would force re-indexing.
+  url: "https://www.bitecodes.com",
   tagline: "Software, engineered with intent.",
   description:
     "Bitecodes is a software outsourcing studio building high-performance websites, web & enterprise applications, SaaS platforms, APIs, and AI automation for startups and enterprises worldwide.",
