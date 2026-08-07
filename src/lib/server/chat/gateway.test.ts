@@ -231,6 +231,38 @@ describeWithDatabase("chat gateway", () => {
     expect(outcome.grounded).toBe(false);
   });
 
+  it("still answers a broad opener made only of stop words", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    await addKnowledge("Bitecodes builds websites and automation software.");
+
+    // Every word here is a stop word, so retrieval has nothing to match on.
+    // Observed on live: the assistant replied that it had no information to
+    // share, with a full knowledge base sitting behind it.
+    const outcome = await handleChat(
+      baseRequest({ message: "What do you do?" }),
+    );
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+
+    // The knowledge still reaches the model...
+    expect(capturedSystem).toContain("Bitecodes builds websites");
+    // ...and it must NOT be told the assistant is unconfigured.
+    expect(capturedSystem).not.toContain("nothing is stored");
+    // ...but nothing actually matched, so the operator sees that honestly.
+    expect(outcome.grounded).toBe(false);
+  });
+
+  it("tells the model plainly when no knowledge exists at all", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    // No knowledge ingested.
+
+    const outcome = await handleChat(baseRequest());
+    expect(outcome.kind).toBe("ok");
+    expect(capturedSystem).toContain("nothing is stored");
+  });
+
   it("is not fooled into reporting grounded by one incidental word", async () => {
     const { handleChat } = await import("@/lib/server/chat/gateway");
     await fund(1_000);
