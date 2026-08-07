@@ -24,12 +24,22 @@ import { Checkbox } from "@/components/ui/checkbox";
  *
  * The preview is built from the values literally embedded in
  * `src/app/widget.js/route.ts` (see `WIDGET`), not from values that make the
- * result look good. Today the shipped widget honours NONE of these settings —
- * it hardcodes its CSS and there is no public config endpoint for chatbots to
- * fetch appearance from — so every control carries its own warning and the
- * preview can be flipped to "Deployed widget" to show what a visitor actually
- * gets. An editor whose preview flatters the outcome would have the operator
- * shipping a brand colour that never appears on their site.
+ * result look good. An editor whose preview flatters the outcome would have the
+ * operator shipping a brand colour that never appears on their site.
+ *
+ * When this was written the widget honoured NONE of these settings — it
+ * hardcoded its CSS and there was no config endpoint to read appearance from —
+ * so every control carried a warning. Both now exist
+ * (`/api/v1/chatbots/[id]/config`), and theme, primary colour, position, size,
+ * welcome message, placeholder, logo, avatar, typing indicator and branding are
+ * all applied by the deployed widget. Those warnings were removed when that
+ * landed, because a warning that understates the product does real harm: an
+ * operator who reads "stored and ignored" will not set their brand colour at all.
+ *
+ * Two remain unimplemented and still say so: `secondaryColor`, which nothing
+ * reads, and `displayMode` beyond `bubble`. Keep that list honest in both
+ * directions — delete an entry the day a field starts working, add one back the
+ * day it stops.
  */
 
 /** The subset this editor owns. A full `ChatbotAppearance` satisfies it. */
@@ -111,7 +121,7 @@ const SIZES: Record<
 > = {
   compact: { bubble: 48, w: 320, h: 440 },
   regular: { bubble: WIDGET.bubble, w: WIDGET.panelW, h: WIDGET.panelH },
-  large: { bubble: 64, w: 400, h: 600 },
+  large: { bubble: 64, w: 420, h: 620 },
 };
 
 /** Height of the fake host page in the preview, in CSS pixels. */
@@ -124,23 +134,24 @@ const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
  * `widget.js/route.ts`, and phrased as what the visitor gets instead so the
  * operator can decide whether the setting is worth filling in yet.
  */
-const WARNINGS: Record<keyof EditableAppearance, string> = {
-  theme:
-    "The widget only follows the visitor's own OS setting (prefers-color-scheme). A forced light or dark is stored and ignored.",
-  avatar: "The widget renders no avatar, on any message.",
-  logo: `The widget renders no logo. Its header is the fixed text “${WIDGET.headerText}”.`,
-  primaryColor: `The widget hardcodes ${WIDGET.accent} for the bubble, header, visitor message and Send button.`,
+/**
+ * Warnings for settings the deployed widget still does not read.
+ *
+ * This map used to cover every field, because when this editor was written the
+ * widget hardcoded its CSS and there was no config endpoint to read appearance
+ * from. Both now exist, so most of those warnings became false — and a warning
+ * that understates the product is as harmful as one that overstates it: an
+ * operator reading "stored and ignored" will not bother setting their brand
+ * colour at all.
+ *
+ * Only these three remain. Keep this map honest: if a field starts working,
+ * delete its entry the same day, and if one stops working, add it back.
+ */
+const WARNINGS: Partial<Record<keyof EditableAppearance, string>> = {
   secondaryColor:
-    "Nothing in the product reads this yet — not the widget, not the chat API. It is stored only.",
-  position: `The widget is pinned bottom-right (bottom:${WIDGET.offset}px;right:${WIDGET.offset}px).`,
-  size: `The widget has one size: a ${WIDGET.panelW}×${WIDGET.panelH} panel and a ${WIDGET.bubble}px bubble, i.e. “regular”.`,
+    "Nothing reads this yet — not the widget, not the chat API. It is stored only.",
   displayMode:
-    "Only bubble exists. Popup, fullscreen and embedded have no implementation at all.",
-  welcomeMessage: `The widget greets every visitor with the fixed “${WIDGET.greeting}”.`,
-  placeholder: `The widget input is hardcoded to “${WIDGET.placeholder}”.`,
-  typingAnimation:
-    "The widget shows no typing indicator; the answer streams straight into an empty bubble.",
-  branding: "The widget renders no “Powered by” row whether this is on or off.",
+    "Only the bubble exists. Popup, fullscreen and embedded have no implementation.",
 };
 
 interface Draft extends Omit<EditableAppearance, "avatar" | "logo"> {
@@ -353,7 +364,6 @@ export function ChatbotAppearanceEditor({
               valid={primaryValid}
               fallback={saved.primaryColor}
               onChange={(v) => set("primaryColor", v)}
-              warning={WARNINGS.primaryColor}
             />
             <ColorField
               id="ap-secondary"
@@ -362,7 +372,7 @@ export function ChatbotAppearanceEditor({
               valid={secondaryValid}
               fallback={saved.secondaryColor}
               onChange={(v) => set("secondaryColor", v)}
-              warning={WARNINGS.secondaryColor}
+              warning={WARNINGS.secondaryColor!}
             />
           </div>
         </section>
@@ -381,7 +391,6 @@ export function ChatbotAppearanceEditor({
                 <option value="dark">Dark</option>
                 <option value="auto">Auto (follow visitor)</option>
               </Select>
-              <FieldWarning text={WARNINGS.theme} />
             </div>
 
             <div className="space-y-1.5">
@@ -396,7 +405,6 @@ export function ChatbotAppearanceEditor({
                 <option value="bottom-right">Bottom right</option>
                 <option value="bottom-left">Bottom left</option>
               </Select>
-              <FieldWarning text={WARNINGS.position} />
             </div>
 
             <div className="space-y-1.5">
@@ -407,16 +415,15 @@ export function ChatbotAppearanceEditor({
                 onChange={(e) => set("size", e.target.value as Draft["size"])}
               >
                 <option value="compact">
-                  Compact — {SIZES.compact.w}×{SIZES.compact.h} (proposed)
+                  Compact — {SIZES.compact.w}×{SIZES.compact.h}
                 </option>
                 <option value="regular">
-                  Regular — {SIZES.regular.w}×{SIZES.regular.h} (shipped)
+                  Regular — {SIZES.regular.w}×{SIZES.regular.h}
                 </option>
                 <option value="large">
-                  Large — {SIZES.large.w}×{SIZES.large.h} (proposed)
+                  Large — {SIZES.large.w}×{SIZES.large.h}
                 </option>
               </Select>
-              <FieldWarning text={WARNINGS.size} />
             </div>
 
             <div className="space-y-1.5">
@@ -433,7 +440,7 @@ export function ChatbotAppearanceEditor({
                 <option value="fullscreen">Fullscreen (not built)</option>
                 <option value="embedded">Embedded (not built)</option>
               </Select>
-              <FieldWarning text={WARNINGS.displayMode} />
+              <FieldWarning text={WARNINGS.displayMode!} />
             </div>
           </div>
         </section>
@@ -450,7 +457,6 @@ export function ChatbotAppearanceEditor({
                 onChange={(e) => set("welcomeMessage", e.target.value)}
                 placeholder={WIDGET.greeting}
               />
-              <FieldWarning text={WARNINGS.welcomeMessage} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ap-placeholder">Input placeholder</Label>
@@ -461,7 +467,6 @@ export function ChatbotAppearanceEditor({
                 onChange={(e) => set("placeholder", e.target.value)}
                 placeholder={WIDGET.placeholder}
               />
-              <FieldWarning text={WARNINGS.placeholder} />
             </div>
           </div>
         </section>
@@ -483,7 +488,6 @@ export function ChatbotAppearanceEditor({
                 onChange={(e) => set("avatar", e.target.value)}
                 placeholder="https://example.com/avatar.png"
               />
-              <FieldWarning text={WARNINGS.avatar} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="ap-logo">Logo URL</Label>
@@ -495,7 +499,6 @@ export function ChatbotAppearanceEditor({
                 onChange={(e) => set("logo", e.target.value)}
                 placeholder="https://example.com/logo.svg"
               />
-              <FieldWarning text={WARNINGS.logo} />
             </div>
           </div>
         </section>
@@ -510,7 +513,6 @@ export function ChatbotAppearanceEditor({
                 checked={draft.typingAnimation}
                 onChange={(e) => set("typingAnimation", e.target.checked)}
               />
-              <FieldWarning text={WARNINGS.typingAnimation} indent />
             </div>
             <div className="space-y-1.5">
               <Checkbox
@@ -519,7 +521,6 @@ export function ChatbotAppearanceEditor({
                 checked={draft.branding}
                 onChange={(e) => set("branding", e.target.checked)}
               />
-              <FieldWarning text={WARNINGS.branding} indent />
             </div>
           </div>
         </section>
@@ -839,7 +840,8 @@ function ColorField({
   valid: boolean;
   fallback: string;
   onChange: (value: string) => void;
-  warning: string;
+  /** Only for a field the widget still ignores. */
+  warning?: string;
 }) {
   const swatch = valid
     ? value.trim()
@@ -875,7 +877,7 @@ function ColorField({
           Not a hex colour. Use #rgb or #rrggbb — this will not be saved.
         </p>
       )}
-      <FieldWarning text={warning} />
+      {warning ? <FieldWarning text={warning} /> : null}
     </div>
   );
 }

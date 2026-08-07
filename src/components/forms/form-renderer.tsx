@@ -5,6 +5,29 @@ import type { FormAppearance, FormField } from "@/lib/server/db/types";
 import { isNavigableHttpUrl } from "@/lib/navigable-url";
 
 /**
+ * The autocomplete token for a field, so browsers and password managers can fill
+ * it. Without one a visitor retypes their name, email and phone by hand on every
+ * form — worst on mobile, and this is a lead-capture product where an abandoned
+ * form is a lost customer.
+ *
+ * Derived from the field type and its name, because a form owner labels fields in
+ * their own words and only the type is reliable.
+ */
+function autoCompleteFor(type: string, name: string): string | undefined {
+  if (type === "email") return "email";
+  if (type === "phone") return "tel";
+  const n = name.toLowerCase();
+  if (/(^|_)(first|given)/.test(n)) return "given-name";
+  if (/(^|_)(last|family|surname)/.test(n)) return "family-name";
+  if (/name/.test(n)) return "name";
+  if (/compan|organi/.test(n)) return "organization";
+  if (/city|town/.test(n)) return "address-level2";
+  if (/country/.test(n)) return "country-name";
+  if (/(zip|post)/.test(n)) return "postal-code";
+  return undefined;
+}
+
+/**
  * Renders one customer form and posts it to the public submit endpoint.
  *
  * Used by the hosted page at `/form/[formId]` (the iframe target). The embedded
@@ -195,6 +218,7 @@ export function FormRenderer({
                 required={field.required}
                 placeholder={field.placeholder ?? undefined}
                 maxLength={field.maxLength ?? undefined}
+                autoComplete={autoCompleteFor(field.type, field.name)}
                 value={String(values[field.name] ?? "")}
                 onChange={(e) => set(field.name, e.target.value)}
                 className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"

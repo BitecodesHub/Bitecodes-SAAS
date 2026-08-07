@@ -282,13 +282,55 @@ export function GET() {
   // prompt budget is bounded there, not trusted from here.
   var history = [];
 
+  // Only an image URL may become an img src. This runs on a customer's page and
+  // the value is whatever an operator typed into the dashboard.
+  function imageOk(u) {
+    return !!u && /^(https?:|data:image[/])/i.test(u);
+  }
+
   function addMsg(who, text) {
     var el = document.createElement("div");
     el.className = "msg " + who;
     el.textContent = text;
+
+    // An avatar beside the assistant's replies, when one is configured. The CSS
+    // for this existed before the markup did, so the setting saved and changed
+    // nothing — which the dashboard was warning operators about.
+    if (who === "bot" && imageOk(look.avatar)) {
+      var row = document.createElement("div");
+      row.className = "row";
+      var img = document.createElement("img");
+      img.src = look.avatar;
+      img.alt = "";
+      row.appendChild(img);
+      row.appendChild(el);
+      log.appendChild(row);
+      log.scrollTop = log.scrollHeight;
+      return el;
+    }
+
     log.appendChild(el);
     log.scrollTop = log.scrollHeight;
     return el;
+  }
+
+  /**
+   * Three bouncing dots while the first token is still on its way.
+   *
+   * Answers take a second or two, and an empty bubble reads as a hang. Removed by
+   * the caller as soon as any text arrives, so it never overlaps the reply.
+   */
+  function showTyping(el) {
+    if (!look.typingAnimation) return;
+    el.classList.add("dots");
+    el.innerHTML = "<span></span><span></span><span></span>";
+  }
+
+  function clearTyping(el) {
+    if (el.classList.contains("dots")) {
+      el.classList.remove("dots");
+      el.textContent = "";
+    }
   }
 
   bubble.addEventListener("click", function () {
@@ -305,6 +347,7 @@ export function GET() {
     input.value = "";
     addMsg("user", text);
     var out = addMsg("bot", "");
+    showTyping(out);
     try {
       // The id and token go in the QUERY STRING as well as the body, and this is
       // load-bearing rather than redundant.
@@ -338,6 +381,7 @@ export function GET() {
         })
       });
       if (!res.ok) {
+        clearTyping(out);
         if (res.status === 403) console.error("[bitecodes-chat] " + explainFailure());
         out.textContent =
           res.status === 402 ? "This assistant is out of credits right now."
@@ -363,8 +407,8 @@ export function GET() {
           if (!m) continue;
           try {
             var payload = JSON.parse(m[1]);
-            if (payload.delta) { out.textContent += payload.delta; log.scrollTop = log.scrollHeight; }
-            if (payload.message && !out.textContent) { out.textContent = payload.message; }
+            if (payload.delta) { clearTyping(out); out.textContent += payload.delta; log.scrollTop = log.scrollHeight; }
+            if (payload.message && !out.textContent) { clearTyping(out); out.textContent = payload.message; }
           } catch (e) { /* ignore keep-alive lines */ }
         }
       }
@@ -380,6 +424,7 @@ export function GET() {
       // this script see any of it. The console gets the real reason; the visitor
       // gets something true but not alarming, because a misconfigured allowlist
       // is the site owner's problem to fix, not theirs to decipher.
+      clearTyping(out);
       reportFailure();
       out.textContent =
         location.protocol === "file:"
