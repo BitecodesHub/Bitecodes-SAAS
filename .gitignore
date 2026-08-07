@@ -45,4 +45,6 @@ next-env.d.ts
 # node_modules. Never meant to be committed; one slipped in via `git add -A`.
 /.*.mjs
 # Dot-prefixed scratch tests, used to probe behaviour during investigation.
+# Same class of slip as the .mjs rule above: throwaway, never committed.
+# Also excluded from vitest collection — see vitest.config.ts.
 **/.*.test.ts

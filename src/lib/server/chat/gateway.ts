@@ -9,7 +9,7 @@ import {
   buildContext,
   coverage,
   filterRelevant,
-  scoreChunks,
+  selectForContext,
 } from "@/lib/chatbot/retrieval";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { deduct, getBalance } from "@/lib/server/tokens-ledger/ledger";
@@ -51,11 +51,13 @@ const MIN_BALANCE_TO_START = 50;
 const MIN_COVERAGE_FOR_GROUNDED = 0.5;
 
 /**
- * Chunks handed to the model when a question matched nothing but knowledge does
- * exist. Small on purpose: this is a best guess at an overview, not a retrieval
- * result, and it should not crowd out the prompt.
+ * Character budget for the no-match fallback.
+ *
+ * Matches the normal context budget: when retrieval found nothing there is no
+ * ranking to trust, so the only sensible choice is to hand over as much of the
+ * knowledge base as fits and let the model locate the answer.
  */
-const OVERVIEW_FALLBACK_CHUNKS = 3;
+const FALLBACK_CONTEXT_CHARS = 6_000;
 
 const MAX_MESSAGE_CHARS = 2_000;
 const MAX_CHUNKS_SCANNED = 800;
@@ -132,9 +134,9 @@ KNOWLEDGE:
 ${
   context ||
   // Only reachable when the owner genuinely has no knowledge stored: a question
-  // that merely matches nothing now falls back to the opening chunks. Saying
-  // "nothing has been added" when a knowledge base exists tells the visitor the
-  // site is unconfigured, which is both wrong and off-putting.
+  // that merely matches nothing now falls back to as much of the knowledge base
+  // as fits. Saying "nothing has been added" when a knowledge base exists tells
+  // the visitor the site is unconfigured, which is both wrong and off-putting.
   "(nothing is stored for this assistant yet — say you cannot help with specifics and offer to pass the question to a person)"
 }`;
 }
@@ -188,14 +190,15 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
     .limit(MAX_CHUNKS_SCANNED)
     .toArray();
 
-  // Four rather than six: every extra chunk is prompt tokens the owner pays for
-  // and latency the visitor waits through, and measurements on live showed the
-  // tail chunks contributing noise rather than answers.
-  let ranked = filterRelevant(scoreChunks(message, chunks, 4));
+  // Everything that matched, bounded by the context budget rather than by an
+  // arbitrary count. A fixed top-four discarded the pricing chunk on a question
+  // that asked about pricing — see the note on `selectForContext`.
+  let ranked = selectForContext(message, chunks);
 
   // Grounded means the retrieved set accounts for most of what was asked, not
   // merely that some word matched somewhere. Computed before the fallback below,
-  // because a fallback is by definition not a match.
+  // because a fallback is by definition not a match, and measured against the
+  // visitor's own words rather than the expanded synonym set.
   const grounded = coverage(message, ranked) >= MIN_COVERAGE_FOR_GROUNDED;
 
   // "What do you do?" consists entirely of stop words, so it tokenizes to
@@ -208,14 +211,35 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
   // opening chunks, which is where an overview normally sits. `grounded` stays
   // false: the operator should see that nothing actually matched.
   if (ranked.length === 0 && chunks.length > 0) {
-    ranked = chunks.slice(0, OVERVIEW_FALLBACK_CHUNKS).map((chunk) => ({
-      chunk,
-      score: 0,
-      matched: [],
-    }));
+    // As much of the knowledge base as the budget allows, in document order.
+    //
+    // Previously this took the first three chunks, which assumed an overview
+    // lives at the top. Measured against the live corpus that assumption fails:
+    // "What is your process?" matches nothing, because the text says "progress"
+    // and "discovery" but never "process" — and the chunk that answers it sits
+    // eighth, so the visitor was told we had no information about our own
+    // process. When nothing matched, guessing three chunks is strictly worse than
+    // supplying everything that fits and letting the model find the answer.
+    //
+    // This is where lexical retrieval reaches its limit: no stemming or synonym
+    // list bridges an arbitrary vocabulary gap. Embeddings would; until then, a
+    // knowledge base that fits the budget never needs to lose to one.
+    let used = 0;
+    ranked = [];
+    for (const chunk of chunks) {
+      if (used + chunk.text.length > FALLBACK_CONTEXT_CHARS) continue;
+      used += chunk.text.length;
+      ranked.push({ chunk, score: 0, matched: [] });
+    }
   }
 
-  const { context, sources } = buildContext(ranked);
+  // What the model may READ and what we CLAIM it used are different questions.
+  // The context is generous, because withholding a chunk is how the assistant came
+  // to deny holding a price it holds. The citation list stays narrow, because
+  // naming eight documents for a one-line answer tells the visitor it drew on
+  // documents it did not.
+  const { context } = buildContext(ranked);
+  const { sources } = buildContext(filterRelevant(ranked));
 
   // Resolve which model to use, in order of preference:
   //   the bot's own choice, if it is still enabled → the catalogue default →
