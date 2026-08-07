@@ -36,9 +36,13 @@ export interface SetupState {
 }
 
 export async function getSetupState(): Promise<SetupState> {
-  const settings = await getSettingsFresh();
-
-  const [prospectCount, sentCount, teamCount] = await Promise.all([
+  // Settings joins the same batch rather than being awaited ahead of it. None of
+  // the three counts read it, so waiting for it first added a round trip to the
+  // dashboard for no reason. `getSettingsFresh` (not the cached `getSettings`) is
+  // kept on purpose: this checklist tells the operator whether a postal address
+  // is set, and a stale "not set" here is a compliance answer, not a label.
+  const [settings, prospectCount, sentCount, teamCount] = await Promise.all([
+    getSettingsFresh(),
     count(async () => (await prospects()).countDocuments()),
     count(async () =>
       (await emailMessages()).countDocuments({ status: "sent" }),
