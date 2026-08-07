@@ -13,27 +13,67 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
+/**
+ * Buy prepaid credits for a metered product.
+ *
+ * One component for both products rather than two near-copies: the wallet, the
+ * order flow, and the grant action are all already product-generic, so the only
+ * thing that actually differs is the noun. Duplicating the panel would mean
+ * every future billing change had to be made twice, and the second copy is the
+ * one that gets forgotten.
+ *
+ * When no gateway is configured the action returns payment instructions instead
+ * of a redirect. Those are shown verbatim rather than pretending checkout
+ * succeeded.
+ */
+
+export type CreditProduct = "forms" | "chatbot";
+
 export interface PackCard {
   packId: string;
   label: string;
   credits: number;
   price: string;
-  perSubmission: string;
+  /** Pre-formatted "works out at" figure, already in the product's own unit. */
+  perUnit: string;
   blurb: string;
   popular: boolean;
 }
 
-/**
- * Buy submission credits. When no gateway is configured the action returns
- * payment instructions instead of a redirect, which is surfaced here verbatim
- * rather than pretending checkout succeeded.
- */
-export function FormCredits({
+const COPY: Record<
+  CreditProduct,
+  {
+    heading: string;
+    explainer: string;
+    /** Pluralised unit shown on a pack card, e.g. "2,500 submissions". */
+    unit: string;
+    grantDefault: string;
+  }
+> = {
+  forms: {
+    heading: "Submission credits",
+    explainer:
+      "One credit per accepted submission. Spam caught by the honeypot costs nothing.",
+    unit: "submissions",
+    grantDefault: "500",
+  },
+  chatbot: {
+    heading: "Chat tokens",
+    explainer:
+      "Tokens cover both the question and the answer, so a longer reply costs more. A refusal costs a few tokens; nothing is charged when a visitor is turned away.",
+    unit: "tokens",
+    grantDefault: "250000",
+  },
+};
+
+export function CreditsPanel({
+  product,
   packs,
   balance,
   canGrant,
   gatewayLive,
 }: {
+  product: CreditProduct;
   packs: PackCard[];
   balance: number;
   canGrant: boolean;
@@ -43,7 +83,8 @@ export function FormCredits({
   const { toast } = useToast();
   const [pending, start] = useTransition();
   const [instructions, setInstructions] = useState<string | null>(null);
-  const [grantAmount, setGrantAmount] = useState("500");
+  const copy = COPY[product];
+  const [grantAmount, setGrantAmount] = useState(copy.grantDefault);
 
   function buy(packId: string) {
     setInstructions(null);
@@ -70,14 +111,14 @@ export function FormCredits({
     if (!Number.isInteger(amount) || amount < 1) return;
     start(async () => {
       const result = await grantSelfCreditsAction(
-        "forms",
+        product,
         amount,
         "admin grant",
       );
       if (result.ok) {
         toast({
-          title: `${amount} credits added`,
-          description: `Balance is now ${result.data.balance}.`,
+          title: `${amount.toLocaleString()} added`,
+          description: `Balance is now ${result.data.balance.toLocaleString()}.`,
           variant: "success",
         });
         router.refresh();
@@ -96,14 +137,15 @@ export function FormCredits({
       <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold">Submission credits</h2>
-            <p className="text-muted-foreground mt-1 text-sm">
-              One credit per accepted submission. Spam caught by the honeypot
-              costs nothing.
+            <h2 className="text-base font-semibold">{copy.heading}</h2>
+            <p className="text-muted-foreground mt-1 max-w-xl text-sm leading-relaxed">
+              {copy.explainer}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-semibold tabular-nums">{balance}</p>
+            <p className="text-2xl font-semibold tabular-nums">
+              {balance.toLocaleString()}
+            </p>
             <p className="text-muted-foreground text-xs">remaining</p>
           </div>
         </div>
@@ -134,8 +176,7 @@ export function FormCredits({
                 {pack.price}
               </p>
               <p className="text-muted-foreground text-xs">
-                {pack.credits.toLocaleString()} submissions ·{" "}
-                {pack.perSubmission} each
+                {pack.credits.toLocaleString()} {copy.unit} · {pack.perUnit}
               </p>
               <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
                 {pack.blurb}
@@ -171,7 +212,7 @@ export function FormCredits({
         <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
           <h2 className="flex items-center gap-2 text-base font-semibold">
             <Gift className="text-primary size-4" />
-            Add credits manually
+            Add {copy.unit} manually
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
             For settling a direct payment, or topping up your own account while
@@ -179,14 +220,14 @@ export function FormCredits({
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-2">
             <div className="space-y-1.5">
-              <Label htmlFor="grant-amount">Credits</Label>
+              <Label htmlFor={`grant-${product}`}>Amount</Label>
               <Input
-                id="grant-amount"
+                id={`grant-${product}`}
                 type="number"
                 min={1}
                 value={grantAmount}
                 onChange={(e) => setGrantAmount(e.target.value)}
-                className="w-32"
+                className="w-36"
               />
             </div>
             <Button onClick={grant} disabled={pending} variant="outline">

@@ -58,6 +58,44 @@ export const CREDIT_PACKS: CreditPack[] = [
     currency: "INR",
     blurb: "For agencies running forms across many client sites.",
   },
+
+  // Chatbot packs are denominated in **tokens**, not messages, because that is
+  // what the provider bills and what the wallet debits — quoting messages would
+  // be a promise the meter cannot keep, since a long answer costs more than a
+  // short one.
+  //
+  // The message estimates below come from measured live traffic on this
+  // deployment: a grounded answer cost 268, 489, and 759 tokens across three
+  // real questions, so ~500 per message is a fair working average. That average
+  // is what the blurbs describe, and it is deliberately described as roughly.
+  {
+    packId: "chatbot-starter",
+    product: "chatbot",
+    label: "Starter",
+    credits: 250_000,
+    amount: 49_900, // ₹499
+    currency: "INR",
+    blurb: "Roughly 500 answers. For one site with steady questions.",
+  },
+  {
+    packId: "chatbot-growth",
+    product: "chatbot",
+    label: "Growth",
+    credits: 1_250_000,
+    amount: 149_900, // ₹1,499
+    currency: "INR",
+    blurb: "Roughly 2,500 answers. For a busy site.",
+    popular: true,
+  },
+  {
+    packId: "chatbot-scale",
+    product: "chatbot",
+    label: "Scale",
+    credits: 6_250_000,
+    amount: 499_900, // ₹4,999
+    currency: "INR",
+    blurb: "Roughly 12,500 answers. For agencies running several assistants.",
+  },
 ];
 
 export function getPack(packId: string): CreditPack | undefined {
@@ -84,4 +122,22 @@ export function perSubmissionPrice(pack: CreditPack): string {
     currency: pack.currency,
     maximumFractionDigits: 2,
   }).format(pack.amount / 100 / pack.credits);
+}
+
+/**
+ * The "works out at" line, in whatever unit the product is actually sold in.
+ *
+ * A per-credit figure is meaningless for the chatbot: a token pack divides down
+ * to ₹0.002, which rounds to ₹0.00 on the card and tells a buyer nothing. Tokens
+ * are therefore quoted per thousand, which lands in a range a person can reason
+ * about, while submissions stay per one.
+ */
+export function perUnitPrice(pack: CreditPack): string {
+  const unit = pack.product === "chatbot" ? 1_000 : 1;
+  const money = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: pack.currency,
+    maximumFractionDigits: 2,
+  }).format((pack.amount / 100 / pack.credits) * unit);
+  return pack.product === "chatbot" ? `${money} / 1k tokens` : money;
 }

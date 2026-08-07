@@ -4,11 +4,11 @@ import { assertCapability } from "@/lib/server/auth/dal";
 import { listForms } from "@/lib/server/forms/repository";
 import { getBalance } from "@/lib/server/wallet/wallet";
 import { FormsManager } from "@/components/admin/forms-manager";
-import { FormCredits } from "@/components/admin/form-credits";
+import { CreditsPanel } from "@/components/admin/credits-panel";
 import {
   formatPackPrice,
   packsFor,
-  perSubmissionPrice,
+  perUnitPrice,
 } from "@/lib/server/billing/packs";
 import { getActiveProvider } from "@/lib/server/billing/orders";
 import { can } from "@/lib/server/auth/roles";
@@ -29,7 +29,7 @@ export default async function AdminFormsPage() {
     label: pack.label,
     credits: pack.credits,
     price: formatPackPrice(pack),
-    perSubmission: perSubmissionPrice(pack),
+    perUnit: perUnitPrice(pack),
     blurb: pack.blurb,
     popular: Boolean(pack.popular),
   }));
@@ -52,7 +52,8 @@ export default async function AdminFormsPage() {
         </p>
       </header>
 
-      <FormCredits
+      <CreditsPanel
+        product="forms"
         packs={packs}
         balance={credits}
         canGrant={can(session.role, "manage_settings")}
