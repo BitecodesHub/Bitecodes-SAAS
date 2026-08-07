@@ -326,4 +326,82 @@ describeWithDatabase("chat gateway", () => {
     // The `chat` bucket is 40/hour, so the tail must be refused.
     expect(kinds.filter((k) => k === "rate-limited").length).toBeGreaterThan(0);
   });
+
+  /**
+   * The production regression that motivated the retrieval rewrite.
+   *
+   * A visitor asked what the company does AND what a website costs. The four
+   * highest-scoring chunks were all about what the company does, the pricing
+   * chunk placed fifth, and the assistant replied "we do not have a fixed price
+   * for a website" while holding a price list. These fix the failure in place.
+   */
+  it("keeps BOTH subjects of a compound question in context", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    await addKnowledge("Bitecodes is a studio. We build websites and apps.");
+    await addKnowledge("Website development starts from $500 per project.");
+    await addKnowledge("You can reach Bitecodes at hello@bitecodes.test.");
+
+    const outcome = await handleChat(
+      baseRequest({
+        message: "What does Bitecodes do, and how much is a website?",
+      }),
+    );
+    expect(outcome.kind).toBe("ok");
+
+    // Both halves must be answerable, which means both must be present.
+    expect(capturedSystem).toContain("We build websites and apps");
+    expect(capturedSystem).toContain("$500");
+  });
+
+  it("does not let a contact block outrank the page that answers the question", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    // The contact chunk names the company three times once its email and URL are
+    // tokenized, which used to make it the top hit for any question naming the
+    // company — including questions about price.
+    await addKnowledge(
+      "Reach Bitecodes at bitecodes.global@gmail.com or https://www.bitecodes.com for the website.",
+    );
+    await addKnowledge("Website development starts from $500 per project.");
+
+    const outcome = await handleChat(
+      baseRequest({ message: "How much is a Bitecodes website?" }),
+    );
+    expect(outcome.kind).toBe("ok");
+    expect(capturedSystem).toContain("$500");
+  });
+
+  it("matches a price the visitor quotes with a thousands separator", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    await addKnowledge("Web applications start from $1,600 per project.");
+    await addKnowledge("Our office is in Ahmedabad, India.");
+
+    // "$1,600" used to tokenize to "600", so this could never match.
+    const outcome = await handleChat(
+      baseRequest({ message: "Is a web application around 1600?" }),
+    );
+    expect(outcome.kind).toBe("ok");
+    expect(capturedSystem).toContain("$1,600");
+  });
+
+  it("supplies the knowledge base when a question matches no word in it", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    // "process" appears nowhere; the text says "discovery" and "progress".
+    await addKnowledge(
+      "We start with a discovery call, then send a written scope. We share progress weekly.",
+    );
+
+    const outcome = await handleChat(
+      baseRequest({ message: "What is your process?" }),
+    );
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    // The answer is reachable even though nothing matched lexically...
+    expect(capturedSystem).toContain("discovery call");
+    // ...and the operator is still told honestly that nothing actually matched.
+    expect(outcome.grounded).toBe(false);
+  });
 });
