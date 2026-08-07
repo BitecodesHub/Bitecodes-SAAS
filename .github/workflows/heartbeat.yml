@@ -1,0 +1,84 @@
+name: Heartbeat
+
+# Two jobs the deployment cannot do for itself.
+#
+# 1. WARM. Measured on production: a cold request took 3.5s, a warm one 0.27s,
+#    and the first database connection a further ~3.7s against the shared-tier
+#    cluster. The admin panel is used in short bursts with long gaps, so nearly
+#    every visit paid the cold path. Pinging keeps an instance and its connection
+#    pool alive.
+#
+# 2. RUN QUEUED JOBS. /api/cron/run is the job runner, and it is driven by an
+#    external scheduler by design. It currently returns 503 in production because
+#    CRON_SECRET is unset, so no automation has been running at all.
+#
+# Why GitHub Actions rather than Vercel Cron: Vercel's Hobby plan limits cron to
+# once per day, which is useless for warming. This runs on any plan, costs
+# nothing, and the job runner was written for exactly this ("Vercel Cron, GitHub
+# Actions, or any cron that can make an authenticated request").
+#
+# GitHub does not guarantee punctual scheduling and drops runs when the runner
+# fleet is busy, which is fine for both jobs: warming is best-effort, and the job
+# runner is idempotent per time bucket.
+
+on:
+  schedule:
+    # Every 5 minutes — the shortest interval GitHub accepts.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  # Never stack heartbeats: a slow run must not overlap the next tick.
+  group: heartbeat
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Warm the deployment and its database connection
+        run: |
+          code=$(curl -sS -o /tmp/warm.json -w '%{http_code}' \
+            --max-time 30 --retry 2 --retry-delay 5 \
+            https://www.bitecodes.com/api/warm) || true
+          echo "status=$code"
+          cat /tmp/warm.json || true
+          echo
+          # Warming is best effort. A blip here must not turn the repository red.
+          if [ "$code" != "200" ]; then
+            echo "::warning::warm-up returned $code"
+          fi
+
+      - name: Run due jobs
+        # Skipped automatically until CRON_SECRET exists, so the workflow is not
+        # permanently red while that is outstanding. The secret is read through
+        # `env` rather than referenced directly in `if:` — the `secrets` context
+        # is not dependably available in step conditions.
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        if: ${{ env.CRON_SECRET != '' }}
+        run: |
+          code=$(curl -sS -o /tmp/cron.json -w '%{http_code}' \
+            --max-time 120 \
+            -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            https://www.bitecodes.com/api/cron/run) || true
+          echo "status=$code"
+          # Never print the body unfiltered: it summarises job activity and this
+          # log is readable by anyone who can read the repository.
+          python3 -c "
+          import json,sys
+          try:
+              d=json.load(open('/tmp/cron.json'))
+              print('ok:', d.get('ok'), '| ran:', d.get('ran'), '| failed:', d.get('failed'))
+          except Exception:
+              print('(no parseable response)')
+          " || true
+          if [ "$code" != "200" ]; then
+            echo "::error::job runner returned $code"
+            exit 1
+          fi
