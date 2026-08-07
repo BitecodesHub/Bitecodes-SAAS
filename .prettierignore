@@ -3,3 +3,8 @@ node_modules
 pnpm-lock.yaml
 *.md
 public
+
+# Throwaway probe tests written during investigation; see vitest.config.ts.
+.*.test.ts
+**/.*.test.ts
+**/.*.test.tsx

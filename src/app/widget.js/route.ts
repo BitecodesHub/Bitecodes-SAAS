@@ -48,31 +48,94 @@ export function GET() {
 
   var host = document.createElement("div");
   host.setAttribute("data-bitecodes-chat", chatbotId);
+  // Anchored right by default; applyLook() moves it if the bot says bottom-left.
   host.style.cssText = "position:fixed;z-index:2147483000;bottom:20px;right:20px;";
   document.body.appendChild(host);
   var root = host.attachShadow({ mode: "open" });
 
+  // Appearance defaults. The config endpoint overrides these per bot; if it is
+  // unreachable the widget still renders with these, because a visitor seeing a
+  // slightly off-brand assistant is far better than seeing none.
+  var look = {
+    theme: "auto",
+    primaryColor: "#4f46e5",
+    position: "bottom-right",
+    size: "regular",
+    welcomeMessage: "Hi! How can I help you today?",
+    placeholder: "Ask a question\u2026",
+    title: "Chat with us",
+    branding: true,
+    typingAnimation: true,
+    avatar: null,
+    logo: null
+  };
+
+  var SIZES = {
+    compact: { bubble: 48, w: 320, h: 440, font: 13 },
+    regular: { bubble: 56, w: 360, h: 520, font: 14 },
+    large:   { bubble: 64, w: 420, h: 620, font: 15 }
+  };
+
+  // Only a hex colour reaches the stylesheet. The server validates this too, but
+  // this is the sink: an arbitrary string interpolated into CSS is an injection
+  // point, and the widget runs on somebody else's page.
+  function safeColor(c, fallback) {
+    return /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || "")) ? c : fallback;
+  }
+
+  function css() {
+    var dim = SIZES[look.size] || SIZES.regular;
+    var accent = safeColor(look.primaryColor, "#4f46e5");
+    var dark =
+      look.theme === "dark" ||
+      (look.theme === "auto" &&
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var side = look.position === "bottom-left" ? "left" : "right";
+
+    var panelBg = dark ? "#15151b" : "#fff";
+    var panelFg = dark ? "#eee" : "#111";
+    var botBg = dark ? "#26262e" : "#f1f1f4";
+    var line = dark ? "#26262e" : "#eee";
+    var inputBg = dark ? "#0f0f14" : "#fff";
+    var inputBorder = dark ? "#33333d" : "#ddd";
+
+    return [
+      ":host{all:initial}",
+      "*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
+      ".bubble{width:" + dim.bubble + "px;height:" + dim.bubble + "px;border-radius:50%;border:0;cursor:pointer;",
+      "background:" + accent + ";color:#fff;font-size:" + Math.round(dim.bubble * 0.43) + "px;",
+      "box-shadow:0 6px 20px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}",
+      ".panel{position:absolute;bottom:" + (dim.bubble + 14) + "px;" + side + ":0;width:" + dim.w + "px;",
+      "max-width:calc(100vw - 40px);height:" + dim.h + "px;max-height:calc(100vh - 120px);",
+      "background:" + panelBg + ";color:" + panelFg + ";border-radius:16px;",
+      "box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column;overflow:hidden}",
+      ".panel.open{display:flex}",
+      ".hd{padding:14px 16px;background:" + accent + ";color:#fff;font-weight:600;",
+      "display:flex;align-items:center;gap:9px}",
+      ".hd img{width:20px;height:20px;border-radius:4px;object-fit:contain}",
+      ".log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}",
+      ".msg{padding:9px 12px;border-radius:12px;max-width:85%;font-size:" + dim.font + "px;",
+      "line-height:1.45;white-space:pre-wrap}",
+      ".user{align-self:flex-end;background:" + accent + ";color:#fff}",
+      ".bot{align-self:flex-start;background:" + botBg + ";color:" + panelFg + "}",
+      ".row{display:flex;align-items:flex-end;gap:7px;max-width:100%}",
+      ".row img{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:0 0 auto}",
+      ".dots span{display:inline-block;width:5px;height:5px;margin:0 1px;border-radius:50%;",
+      "background:currentColor;opacity:.45;animation:bcbounce 1.2s infinite}",
+      ".dots span:nth-child(2){animation-delay:.15s}.dots span:nth-child(3){animation-delay:.3s}",
+      "@keyframes bcbounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}",
+      ".ft{display:flex;gap:8px;padding:12px;border-top:1px solid " + line + "}",
+      ".ft input{flex:1;padding:9px 12px;border:1px solid " + inputBorder + ";border-radius:10px;",
+      "font-size:" + dim.font + "px;background:" + inputBg + ";color:" + panelFg + "}",
+      ".ft button{border:0;background:" + accent + ";color:#fff;border-radius:10px;padding:0 14px;cursor:pointer}",
+      ".brand{padding:0 12px 10px;font-size:11px;opacity:.55;text-align:center}",
+      ".brand a{color:inherit}"
+    ].join("");
+  }
+
   var style = document.createElement("style");
-  style.textContent = [
-    ":host{all:initial}",
-    "*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
-    ".bubble{width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;",
-    "background:#4f46e5;color:#fff;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.25)}",
-    ".panel{position:absolute;bottom:70px;right:0;width:360px;max-width:calc(100vw - 40px);",
-    "height:520px;max-height:calc(100vh - 120px);background:#fff;color:#111;border-radius:16px;",
-    "box-shadow:0 12px 40px rgba(0,0,0,.28);display:none;flex-direction:column;overflow:hidden}",
-    ".panel.open{display:flex}",
-    ".hd{padding:14px 16px;background:#4f46e5;color:#fff;font-weight:600}",
-    ".log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}",
-    ".msg{padding:9px 12px;border-radius:12px;max-width:85%;font-size:14px;line-height:1.45;white-space:pre-wrap}",
-    ".user{align-self:flex-end;background:#4f46e5;color:#fff}",
-    ".bot{align-self:flex-start;background:#f1f1f4;color:#111}",
-    ".ft{display:flex;gap:8px;padding:12px;border-top:1px solid #eee}",
-    ".ft input{flex:1;padding:9px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px}",
-    ".ft button{border:0;background:#4f46e5;color:#fff;border-radius:10px;padding:0 14px;cursor:pointer}",
-    "@media(prefers-color-scheme:dark){.panel{background:#15151b;color:#eee}.bot{background:#26262e;color:#eee}",
-    ".ft{border-top-color:#26262e}.ft input{background:#0f0f14;border-color:#33333d;color:#eee}}"
-  ].join("");
+  style.textContent = css();
   root.appendChild(style);
 
   var bubble = document.createElement("button");
@@ -83,13 +146,91 @@ export function GET() {
   var panel = document.createElement("div");
   panel.className = "panel";
   panel.innerHTML =
-    '<div class="hd">Chat with us</div>' +
+    '<div class="hd"><span class="hdlogo"></span><span class="hdtitle"></span></div>' +
     '<div class="log" role="log"></div>' +
-    '<div class="ft"><input type="text" placeholder="Ask a question\\u2026" aria-label="Message"/>' +
+    '<div class="ft"><input type="text" aria-label="Message"/>' +
     '<button type="button">Send</button></div>';
 
   root.appendChild(panel);
   root.appendChild(bubble);
+
+  /**
+   * Pushes look into the DOM. Called once with the defaults and again when the
+   * config arrives, so the widget is usable immediately and simply restyles.
+   */
+  function applyLook() {
+    style.textContent = css();
+    host.style.cssText =
+      "position:fixed;z-index:2147483000;bottom:20px;" +
+      (look.position === "bottom-left" ? "left:20px;" : "right:20px;");
+
+    var title = panel.querySelector(".hdtitle");
+    if (title) title.textContent = look.title || "Chat with us";
+
+    var slot = panel.querySelector(".hdlogo");
+    if (slot) {
+      slot.innerHTML = "";
+      // Only http(s) and data:image are rendered. The value is a URL an operator
+      // typed, and this ends up as an <img> on a customer's page.
+      if (look.logo && /^(https?:|data:image\/)/i.test(look.logo)) {
+        var im = document.createElement("img");
+        im.src = look.logo;
+        im.alt = "";
+        slot.appendChild(im);
+      }
+    }
+
+    var input = panel.querySelector(".ft input");
+    if (input) input.placeholder = look.placeholder || "Ask a question\u2026";
+
+    var brand = panel.querySelector(".brand");
+    if (look.branding && !brand) {
+      brand = document.createElement("div");
+      brand.className = "brand";
+      brand.innerHTML =
+        'Powered by <a href="' + origin + '/ai-chatbot" target="_blank" rel="noopener">Bitecodes</a>';
+      panel.appendChild(brand);
+    } else if (!look.branding && brand) {
+      brand.remove();
+    }
+  }
+
+  applyLook();
+
+  // Fetch this bot's appearance. Failure is silent on purpose: the widget already
+  // works with defaults, and a visitor must never be shown a configuration error.
+  // the t parameter is required for the preflight — see the note on the chat fetch below.
+  fetch(
+    origin + "/api/v1/chatbots/" + encodeURIComponent(chatbotId) +
+      "/config?t=" + encodeURIComponent(token)
+  )
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (payload) {
+      if (!payload || !payload.ok || !payload.data || !payload.data.appearance) return;
+      var a = payload.data.appearance;
+      if (a.theme) look.theme = a.theme;
+      if (a.primaryColor) look.primaryColor = a.primaryColor;
+      if (a.position) look.position = a.position;
+      if (a.size) look.size = a.size;
+      if (a.welcomeMessage) look.welcomeMessage = a.welcomeMessage;
+      if (a.placeholder) look.placeholder = a.placeholder;
+      if (typeof a.branding === "boolean") look.branding = a.branding;
+      if (typeof a.typingAnimation === "boolean") look.typingAnimation = a.typingAnimation;
+      look.avatar = a.avatar || null;
+      look.logo = a.logo || null;
+      if (payload.data.name) look.title = payload.data.name;
+      applyLook();
+    })
+    .catch(function () { /* Defaults stand. */ });
+
+  // Follow the system theme live while "auto" is in effect, matching what the
+  // stylesheet's media query used to do before the theme became configurable.
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    var onScheme = function () { if (look.theme === "auto") style.textContent = css(); };
+    if (mq.addEventListener) mq.addEventListener("change", onScheme);
+    else if (mq.addListener) mq.addListener(onScheme);
+  }
 
   var log = panel.querySelector(".log");
   var input = panel.querySelector("input");
@@ -113,7 +254,7 @@ export function GET() {
   bubble.addEventListener("click", function () {
     panel.classList.toggle("open");
     if (panel.classList.contains("open")) {
-      if (!greeted) { addMsg("bot", "Hi! How can I help you today?"); greeted = true; }
+      if (!greeted) { addMsg("bot", look.welcomeMessage); greeted = true; }
       input.focus();
     }
   });

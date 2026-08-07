@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "coverage/**",
     "next-env.d.ts",
+    // Dot-prefixed scratch tests: throwaway probes used to measure how real code
+    // behaves during an investigation. Never shipped, so never linted.
+    "**/.*.test.{ts,tsx}",
   ]),
 ]);
 
