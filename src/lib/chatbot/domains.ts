@@ -59,12 +59,43 @@ function matchesPattern(host: string, rawPattern: string): boolean {
  * An empty allowlist denies everything: a bot with no configured domains is
  * not embeddable yet, which is the safe default (fail closed).
  */
+/**
+ * Loopback hosts, which are always permitted regardless of the allowlist.
+ *
+ * A developer integrating the widget serves their page from `localhost` on some
+ * arbitrary port, and the only way to reach a real bot was to add `localhost` to
+ * a production allowlist and remember to remove it. That is a bad instruction to
+ * give a customer, and one they will forget the second half of.
+ *
+ * `.localhost` is included because the whole TLD is reserved for loopback by
+ * RFC 6761, so `app.localhost` cannot resolve anywhere else.
+ *
+ * The security trade, stated rather than glossed: a public chat token is visible
+ * in the page source of any site using it, so allowing loopback means anyone
+ * holding a token could spend it from their own machine. Two things bound that,
+ * and they are why this is an acceptable trade rather than a hole: the `chat`
+ * rate limit is 40 messages per hour per bot per IP, and every message is
+ * metered against the owner's balance with the spend visible in the ledger. It
+ * cannot be used to read anything — only to consume a capped amount of quota.
+ */
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+function isLoopbackHost(host: string): boolean {
+  return LOOPBACK_HOSTS.has(host) || host.endsWith(".localhost");
+}
+
 export function isOriginAllowed(
   origin: string | null | undefined,
   allowedDomains: readonly string[],
 ): boolean {
-  if (!allowedDomains || allowedDomains.length === 0) return false;
   const host = hostFromOrigin(origin);
   if (!host) return false;
+
+  // Checked before the allowlist, and deliberately before the empty-list guard:
+  // a brand-new bot with no domains configured yet must still be testable from a
+  // developer's machine, which is when they most need to see it work.
+  if (isLoopbackHost(host)) return true;
+
+  if (!allowedDomains || allowedDomains.length === 0) return false;
   return allowedDomains.some((pattern) => matchesPattern(host, pattern));
 }

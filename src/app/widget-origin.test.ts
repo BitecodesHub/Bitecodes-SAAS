@@ -53,6 +53,29 @@ describe.each(["widget.js", "form-widget.js"] as const)("%s", (route) => {
     // saves the widget — assert it is still present alongside the bad default.
     expect(js).toContain("new URL(current.src, document.baseURI).origin");
   });
+
+  it("puts the identifiers in the query string for the CORS preflight", async () => {
+    const js = await widgetSource(route);
+
+    // A cross-origin POST with a JSON content type triggers a preflight, and a
+    // preflight has no body — so OPTIONS can only resolve the bot/form, and
+    // therefore its allowlist, from the URL. Without these the handler grants no
+    // Access-Control-Allow-Origin and the browser blocks the request before
+    // sending it.
+    //
+    // This shipped broken and no request-level check caught it: bitecodes.com is
+    // the same origin as the API, where browsers skip CORS entirely, and curl
+    // never sends a preflight at all. The widget worked on our own site and
+    // could not work on any customer's.
+    if (route === "widget.js") {
+      expect(js).toContain("/api/v1/chat?id=");
+      expect(js).toContain("&t=");
+    } else {
+      expect(js).toContain("/submit?t=");
+    }
+    // Values must be escaped — a token or id is attacker-influenced input.
+    expect(js).toContain("encodeURIComponent");
+  });
 });
 
 describe("getSiteUrl", () => {

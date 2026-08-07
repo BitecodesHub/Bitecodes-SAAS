@@ -125,7 +125,27 @@ export function GET() {
     addMsg("user", text);
     var out = addMsg("bot", "");
     try {
-      var res = await fetch(origin + "/api/v1/chat", {
+      // The id and token go in the QUERY STRING as well as the body, and this is
+      // load-bearing rather than redundant.
+      //
+      // A cross-origin POST with a JSON content type triggers a CORS preflight,
+      // and a preflight carries no body — so OPTIONS cannot know which bot is
+      // being addressed unless it is told in the URL. Without them the handler
+      // resolves no bot, grants no Access-Control-Allow-Origin, and the browser
+      // blocks the real request before it is ever sent. The visitor sees
+      // "the assistant is unreachable".
+      //
+      // It went unnoticed because bitecodes.com is the SAME ORIGIN as the API,
+      // where browsers skip CORS entirely and no preflight happens. The widget
+      // therefore worked on our own site and could not work on a single
+      // customer's site — which is the entire product.
+      var chatUrl =
+        origin +
+        "/api/v1/chat?id=" +
+        encodeURIComponent(chatbotId) +
+        "&t=" +
+        encodeURIComponent(token);
+      var res = await fetch(chatUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
