@@ -23,7 +23,15 @@ export function GET() {
   if (!current) return;
   var formId = current.getAttribute("data-form");
   var token = current.getAttribute("data-token");
+  // Derived from this script's own URL rather than baked in — see the note in
+  // widget.js. A baked-in apex origin that 308s to www makes every embedded
+  // form fail its CORS preflight, because a preflight may not be redirected.
   var origin = ${JSON.stringify(origin)};
+  try {
+    origin = new URL(current.src, document.baseURI).origin;
+  } catch (e) {
+    /* Keep the server-rendered default. */
+  }
   if (!formId || !token) {
     console.error("[bitecodes-forms] data-form and data-token are required");
     return;

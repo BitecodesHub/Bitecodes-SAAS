@@ -130,12 +130,22 @@ export function hasSigningSecret(): boolean {
   return (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32;
 }
 
-/** Absolute origin used for links inside emails and signed report URLs. */
+/**
+ * Absolute origin used for links inside emails, signed report URLs, canonical
+ * tags, and the embed snippets customers paste into their own sites.
+ *
+ * Must be the host that is actually *served*, not the one that redirects to it.
+ * The apex answers 308 to `www`, and while a browser follows that happily for a
+ * page, it refuses to follow it for a CORS **preflight** — so an embed snippet
+ * pointing at the apex made every widget fail with "Redirect is not allowed for
+ * a preflight request". curl follows redirects and reported success, which is
+ * what let that ship unnoticed.
+ */
 export function getSiteUrl(): string {
   const configured = process.env.SITE_URL?.trim();
   if (configured) return configured.replace(/\/+$/, "");
   if (process.env.NODE_ENV !== "production") return "http://localhost:3000";
-  return "https://bitecodes.com";
+  return "https://www.bitecodes.com";
 }
 
 export function getCronSecret(): string | null {

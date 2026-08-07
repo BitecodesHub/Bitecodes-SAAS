@@ -24,7 +24,23 @@ export function GET() {
   if (!current) return;
   var chatbotId = current.getAttribute("data-chatbot");
   var token = current.getAttribute("data-token");
+  // The host this script was actually loaded from, NOT a baked-in constant.
+  //
+  // A CORS preflight may not follow a redirect — browsers fail the request
+  // outright rather than re-issuing OPTIONS at the new location. So when the
+  // configured site URL was the apex, which 308s to www, every embedded widget
+  // died on preflight with "Redirect is not allowed for a preflight request",
+  // while curl (which follows redirects) worked fine and hid the bug.
+  //
+  // Deriving the origin from the script's own src means the API is always on
+  // exactly the host that just successfully served this file, so the redirect
+  // can never be introduced by a mismatch between the two.
   var origin = ${JSON.stringify(origin)};
+  try {
+    origin = new URL(current.src, document.baseURI).origin;
+  } catch (e) {
+    /* Keep the server-rendered default. */
+  }
   if (!chatbotId || !token) {
     console.error("[bitecodes-chat] data-chatbot and data-token are required");
     return;
