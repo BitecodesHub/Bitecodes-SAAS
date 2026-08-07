@@ -182,7 +182,17 @@ export function GET() {
   return new Response(js, {
     headers: {
       "Content-Type": "text/javascript; charset=utf-8",
-      "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      // Short in the browser, long at the edge.
+      //
+      // This file is a loader embedded on sites we do not control, so it is the
+      // one asset we can never ask anyone to bust. An hour of browser caching
+      // meant the CORS preflight fix took an hour to reach live embeds — the
+      // deploy was green while visitors still ran the broken copy. Five minutes
+      // bounds that; `s-maxage` keeps the edge doing the actual serving, and
+      // `stale-while-revalidate` means a revalidation is never in a visitor's
+      // critical path.
+      "Cache-Control":
+        "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
     },
   });
 }
