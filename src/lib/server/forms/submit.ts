@@ -183,8 +183,17 @@ async function notifyNewSubmission(
         }),
       ),
     );
-  } catch {
-    // A queued notification is a convenience; losing it must not lose the lead.
+  } catch (error) {
+    // Losing a notification must never lose the lead, so this stays non-fatal —
+    // but it must not be SILENT. A submission that stores correctly, charges a
+    // credit, and never tells the owner is indistinguishable from a working form
+    // until someone checks the database. Swallowing the reason as well as the
+    // error made that undiagnosable: no row, no log, no trace anywhere.
+    console.error(
+      "[forms] submission notification failed for",
+      form.formId,
+      error instanceof Error ? `${error.name}: ${error.message}` : error,
+    );
   }
 }
 

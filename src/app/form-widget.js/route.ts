@@ -132,6 +132,15 @@ export function GET() {
     }
     input.id = id;
     input.name = f.name;
+    // Autofill hints, so a visitor is not retyping their own details. Same
+    // reasoning as the hosted renderer: this is a lead form, and friction here
+    // is lost customers.
+    var ac =
+      f.type === "email" ? "email"
+      : f.type === "phone" ? "tel"
+      : /name/i.test(f.name) ? "name"
+      : null;
+    if (ac) input.autocomplete = ac;
     if (f.placeholder && f.type !== "checkbox") input.placeholder = f.placeholder;
     if (f.required) input.required = true;
     if (f.maxLength && input.setAttribute) input.setAttribute("maxlength", f.maxLength);

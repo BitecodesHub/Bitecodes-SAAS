@@ -61,9 +61,26 @@ const nextConfig: NextConfig = {
   // The MongoDB driver is a native-ish Node package; bundling it into the
   // server build is unnecessary work and can break its optional dependencies.
   serverExternalPackages: ["mongodb"],
-  // Strip dev-only console output from the production bundle.
+  // Strip dev-only console noise from the production bundle — but NOT errors.
+  //
+  // This was `removeConsole: true`, which removes `console.error` too, and that
+  // left production with no server-side error logging whatsoever. Every
+  // diagnostic the code carefully writes — the chat gateway's upstream failures,
+  // index-creation problems, a form notification that could not be queued — was
+  // compiled away, so the platform logs showed nothing at all while things broke.
+  //
+  // It cost real time: a form submission stored correctly, charged a credit, and
+  // never notified its owner, and there was no trace anywhere to say why. The
+  // reason turned out to be that the reason itself had been stripped.
+  //
+  // `log`, `debug` and `info` still go, so casual output does not reach
+  // production. `error` and `warn` are how the application reports that something
+  // went wrong, and are kept.
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   // Modern image formats for any future next/image usage.
   images: {
