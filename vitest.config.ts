@@ -30,6 +30,27 @@ export default defineConfig({
      * was buying very little and costing a great deal of misdiagnosis.
      */
     fileParallelism: false,
+    /**
+     * Dot-prefixed test files are scratch probes, not suite members.
+     *
+     * Writing a throwaway `.probe.test.ts` to measure how some function actually
+     * behaves is a good habit — it uses the real code instead of reasoning about
+     * it. But such a file follows whatever it was investigating, so it references
+     * code that may not exist on the current branch, and joining the suite it
+     * then fails the pre-push hook for reasons unrelated to the change being
+     * pushed. That happened, and the diagnosis cost more than the probe saved.
+     *
+     * The default excludes are restated because supplying `exclude` replaces
+     * them, and dropping node_modules from it would collect every dependency's
+     * tests.
+     */
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.next/**",
+      "**/.{idea,git,cache,output,temp}/**",
+      "**/.*.test.{ts,tsx}",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
