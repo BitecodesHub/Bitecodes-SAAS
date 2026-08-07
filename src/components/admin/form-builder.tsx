@@ -18,6 +18,28 @@ import { Label } from "@/components/ui/label";
  * closed set the validator and both renderers share — adding a type here without
  * adding it there would produce a field nobody can submit.
  */
+
+/**
+ * Turns a human label into a usable field key: "Phone number" -> "phone_number".
+ *
+ * The key is not cosmetic. It is the property name in every stored submission,
+ * the column header in the CSV export, and the field name in the REST API. Left
+ * at its `field_4` default, an owner opens their export and finds a column called
+ * `field_4` with no way to tell what it holds.
+ */
+function slugifyFieldName(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+}
+
+/** True while the key is still an untouched default, so renaming is safe. */
+function isDefaultName(name: string): boolean {
+  return /^field_\d+$/.test(name);
+}
+
 export function FormBuilder({
   formId,
   initialFields,
@@ -98,7 +120,20 @@ export function FormBuilder({
                 <Input
                   id={`label-${field.id}`}
                   value={field.label}
-                  onChange={(e) => patch(index, { label: e.target.value })}
+                  onChange={(e) => {
+                    const label = e.target.value;
+                    // Follow the label only while the key is untouched. Once an
+                    // owner edits the key it is theirs — silently renaming it
+                    // would break a live form's stored data and any integration
+                    // already reading that property.
+                    const derived = slugifyFieldName(label);
+                    patch(
+                      index,
+                      isDefaultName(field.name) && derived
+                        ? { label, name: derived }
+                        : { label },
+                    );
+                  }}
                 />
               </div>
               <div className="space-y-1.5">

@@ -32,7 +32,7 @@ export default async function HostedFormPage({
 
   if (!form) {
     return (
-      <main className="mx-auto max-w-lg p-6">
+      <main className="mx-auto w-full max-w-lg p-6">
         <div className="border-border bg-card rounded-xl border p-5 text-sm leading-relaxed">
           <p className="font-medium">This form is not available.</p>
           <p className="text-muted-foreground mt-1">
@@ -45,7 +45,7 @@ export default async function HostedFormPage({
   }
 
   return (
-    <main className="mx-auto max-w-lg p-6">
+    <main className="mx-auto w-full max-w-lg p-6">
       <h1 className="text-xl font-semibold tracking-tight">{form.name}</h1>
       {form.description && (
         <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
