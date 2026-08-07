@@ -195,11 +195,9 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
   // that asked about pricing — see the note on `selectForContext`.
   let ranked = selectForContext(message, chunks);
 
-  // Grounded means the retrieved set accounts for most of what was asked, not
-  // merely that some word matched somewhere. Computed before the fallback below,
-  // because a fallback is by definition not a match, and measured against the
-  // visitor's own words rather than the expanded synonym set.
-  const grounded = coverage(message, ranked) >= MIN_COVERAGE_FOR_GROUNDED;
+  // Whether anything matched at all. Recorded before the fallback below, because
+  // a fallback is by definition not a match.
+  const hadMatches = ranked.length > 0;
 
   // "What do you do?" consists entirely of stop words, so it tokenizes to
   // nothing and term overlap has nothing to work with. Retrieval returned empty,
@@ -238,8 +236,18 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
   // to deny holding a price it holds. The citation list stays narrow, because
   // naming eight documents for a one-line answer tells the visitor it drew on
   // documents it did not.
-  const { context } = buildContext(ranked);
+  const { context, included } = buildContext(ranked);
   const { sources } = buildContext(filterRelevant(ranked));
+
+  // Grounding is measured over what was ACTUALLY SENT, not over what was
+  // selected. buildContext can drop a chunk that will not fit, and measuring the
+  // pre-truncation list reports confidence in text the model never received. On
+  // the production failure this read 0.667 and the request was recorded as
+  // grounded while the answer contradicted the knowledge base — so the one signal
+  // an operator has for "did this work" was affirming the exact case it existed to
+  // catch. Measured against the visitor's own words, never the expanded synonyms.
+  const grounded =
+    hadMatches && coverage(message, included) >= MIN_COVERAGE_FOR_GROUNDED;
 
   // Resolve which model to use, in order of preference:
   //   the bot's own choice, if it is still enabled → the catalogue default →

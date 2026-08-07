@@ -269,9 +269,19 @@ export function scoreChunks<T extends RetrievableChunk>(
   if (terms.length === 0 || chunks.length === 0) return [];
 
   // Pre-tokenise once; scoring is O(chunks x terms) and this keeps it cheap.
+  //
+  // The TITLE is indexed alongside the body, which it previously was not. The
+  // chunk titled "Pricing: websites and applications" earned nothing for the
+  // words "pricing" or "website" in its own heading — the densest and most
+  // topical line it has, and the very line already used as its citation label. A
+  // visitor asking "what is your pricing?" scored that chunk zero on "pricing"
+  // unless the body happened to repeat the word.
   const tokenised = chunks.map((chunk) => {
     const counts = new Map<string, number>();
-    for (const word of tokenize(chunk.text)) {
+    const title = chunk.meta?.title ?? "";
+    for (const word of tokenize(
+      title ? `${title} ${chunk.text}` : chunk.text,
+    )) {
       counts.set(word, (counts.get(word) ?? 0) + 1);
     }
     return { chunk, counts };
@@ -406,25 +416,54 @@ export function coverage<T extends RetrievableChunk>(
  * the prompt cannot exceed the model's window. Each block is labelled with its
  * source so the model can cite it and the operator can see what was used.
  */
+const BLOCK_SEPARATOR = "\n\n---\n\n";
+
 export function buildContext<T extends RetrievableChunk>(
   ranked: readonly ScoredChunk<T>[],
   maxChars = 6_000,
-): { context: string; used: number; sources: string[] } {
+): {
+  context: string;
+  used: number;
+  sources: string[];
+  /**
+   * The entries actually included. The caller needs these, not the input list:
+   * grounding must be measured over what the model was really given, or it
+   * reports confidence in text that was silently dropped.
+   */
+  included: ScoredChunk<T>[];
+} {
   const parts: string[] = [];
   const sources: string[] = [];
+  const included: ScoredChunk<T>[] = [];
   let length = 0;
-  let used = 0;
 
-  for (const { chunk } of ranked) {
-    const label = chunk.meta?.title || chunk.meta?.url || `Source ${used + 1}`;
+  for (const entry of ranked) {
+    const { chunk } = entry;
+    const label =
+      chunk.meta?.title || chunk.meta?.url || `Source ${included.length + 1}`;
     const block = `[${label}]\n${chunk.text}`;
-    if (length + block.length > maxChars) break;
+    // The separator counts toward the budget. Omitting it let twelve blocks
+    // totalling 5,995 characters produce a 6,072-character context — a silent
+    // overrun on exactly the tenant large enough to fill the window.
+    const cost = block.length + (parts.length > 0 ? BLOCK_SEPARATOR.length : 0);
+
+    // `continue`, not `break`. One oversized block used to terminate the loop and
+    // discard every lower-ranked chunk behind it, including ones that would have
+    // fitted in the remaining space. With a single long chunk near the top of a
+    // large corpus, that silently truncated the entire tail.
+    if (length + cost > maxChars) continue;
+
     parts.push(block);
-    length += block.length;
-    used += 1;
+    length += cost;
+    included.push(entry);
     const source = chunk.meta?.url || chunk.meta?.title;
     if (source && !sources.includes(source)) sources.push(source);
   }
 
-  return { context: parts.join("\n\n---\n\n"), used, sources };
+  return {
+    context: parts.join(BLOCK_SEPARATOR),
+    used: included.length,
+    sources,
+    included,
+  };
 }
