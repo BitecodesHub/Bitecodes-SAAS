@@ -201,7 +201,19 @@ export function GET() {
       }
 
       try {
-        var res = await fetch(origin + "/api/forms/" + formId + "/submit", {
+        // The t query parameter is required for the CORS preflight, not merely
+        // convenient: a preflight has no body, so the OPTIONS handler can only
+        // resolve this form — and therefore its allowlist — from the URL.
+        // Without it no Access-Control-Allow-Origin comes back and the browser
+        // blocks the submission before sending it. Longer note in widget.js.
+        // (No backticks in here: this whole script is a template literal.)
+        var submitUrl =
+          origin +
+          "/api/forms/" +
+          encodeURIComponent(formId) +
+          "/submit?t=" +
+          encodeURIComponent(token);
+        var res = await fetch(submitUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)

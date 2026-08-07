@@ -85,4 +85,48 @@ describe("isOriginAllowed", () => {
   it("rejects an unparseable origin", () => {
     expect(isOriginAllowed(null, ["example.com"])).toBe(false);
   });
+
+  describe("loopback origins", () => {
+    it("allows localhost on any port, so an integration can be developed", () => {
+      expect(isOriginAllowed("http://localhost:8080", ["example.com"])).toBe(
+        true,
+      );
+      expect(isOriginAllowed("http://localhost:3000", ["example.com"])).toBe(
+        true,
+      );
+      expect(isOriginAllowed("https://localhost", ["example.com"])).toBe(true);
+    });
+
+    it("allows the loopback IPs and the reserved .localhost TLD", () => {
+      expect(isOriginAllowed("http://127.0.0.1:5173", ["example.com"])).toBe(
+        true,
+      );
+      expect(isOriginAllowed("http://[::1]:8080", ["example.com"])).toBe(true);
+      // RFC 6761 reserves the whole TLD for loopback.
+      expect(isOriginAllowed("http://app.localhost:8080", [])).toBe(true);
+    });
+
+    it("allows loopback even when no domains are configured at all", () => {
+      // A brand-new bot is exactly when someone needs to see it work locally.
+      expect(isOriginAllowed("http://localhost:8080", [])).toBe(true);
+    });
+
+    it("does not let a lookalike host masquerade as loopback", () => {
+      for (const origin of [
+        "https://localhost.attacker.com",
+        "https://notlocalhost",
+        "https://mylocalhost",
+        "https://127.0.0.1.attacker.com",
+        "https://localhosts",
+      ]) {
+        expect(isOriginAllowed(origin, ["example.com"])).toBe(false);
+      }
+    });
+
+    it("still refuses a genuine third-party origin", () => {
+      expect(
+        isOriginAllowed("https://attacker.example.net", ["example.com"]),
+      ).toBe(false);
+    });
+  });
 });
