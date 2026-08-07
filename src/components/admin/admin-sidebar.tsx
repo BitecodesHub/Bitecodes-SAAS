@@ -160,6 +160,17 @@ function NavRow({
     <Link
       href={item.href}
       onClick={onNavigate}
+      // Prefetch is off deliberately, and it is a trade rather than an oversight.
+      //
+      // Adding `loading.tsx` makes these dynamic routes prefetchable, and every
+      // sidebar link is in the viewport at once. The default would therefore fire
+      // an authenticated RSC render for each one on every page view, and each of
+      // those re-runs the panel layout's session and user lookups — roughly a
+      // dozen renders to save one click. The skeleton from `loading.tsx` already
+      // gives the click instant feedback, which is what actually made the panel
+      // feel slow; paying for twelve speculative renders to shave the rest is not
+      // worth it on a shared-tier database.
+      prefetch={false}
       aria-current={isActive ? "page" : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(

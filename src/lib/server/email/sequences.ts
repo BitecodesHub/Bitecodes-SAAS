@@ -144,8 +144,30 @@ export async function getSequence(
   return collection.findOne({ key });
 }
 
+/**
+ * Per-process guard for the read path, matching `listTemplates`.
+ *
+ * `ensureSeededSequences` walks its seeds with one `findOne` each, sequentially,
+ * and `listSequences` is called on every render of `/admin/email` — so that page
+ * paid the whole walk again on every view. Seeding reconciles against code, which
+ * cannot change within a running process, so once per instance is sufficient.
+ *
+ * The guard lives here and not inside `ensureSeededSequences` because direct
+ * callers must still get real reconciliation: the tests assert insert counts
+ * after mutating rows, and a deploy step needs the genuine article.
+ */
+let sequencesSeededThisProcess = false;
+
+/** Test seam — forget the in-process flag. */
+export function resetSeededSequencesFlag() {
+  sequencesSeededThisProcess = false;
+}
+
 export async function listSequences(): Promise<EmailSequenceDoc[]> {
-  await ensureSeededSequences();
+  if (!sequencesSeededThisProcess) {
+    await ensureSeededSequences();
+    sequencesSeededThisProcess = true;
+  }
   const collection = await emailSequences();
   return collection.find({}).sort({ key: 1 }).toArray();
 }
