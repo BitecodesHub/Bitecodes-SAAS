@@ -165,6 +165,15 @@ export const RATE_LIMITS = {
   passwordReset: { max: 5, windowMs: HOUR_MS },
   /** Magic links are credentials; requesting them is capped like resets. */
   loginLink: { max: 5, windowMs: HOUR_MS },
+  /** Embedded form submissions, per form + visitor IP. */
+  formSubmit: { max: 20, windowMs: HOUR_MS },
+  /** Whole-form ceiling, so one popular embed cannot drain a credit pack. */
+  formSubmitPerForm: { max: 500, windowMs: HOUR_MS },
+  /**
+   * One "out of credits" warning per form per day. A form that is turning away
+   * submissions must not spam the very inbox it is meant to fill.
+   */
+  formCreditsWarning: { max: 1, windowMs: 24 * HOUR_MS },
   portalLogin: { max: 8, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
   unsubscribe: { max: 30, windowMs: HOUR_MS },

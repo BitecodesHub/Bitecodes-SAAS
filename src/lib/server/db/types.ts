@@ -722,3 +722,295 @@ export interface PortalSessionDoc {
   expiresAt: Date;
   revokedAt: Date | null;
 }
+
+// ---------------------------------------------------------------------------
+// AI Chatbot SaaS
+//
+// Multi-tenant: every document carries `ownerId` (the customer). The widget's
+// public path is scoped by `chatbotId` + a public token that grants chat only.
+// See docs/ai-chatbot-saas-architecture.md.
+// ---------------------------------------------------------------------------
+
+export type ChatbotStatus = "active" | "paused";
+
+/** Public-safe appearance/behaviour, resolved for the embeddable widget. */
+export interface ChatbotAppearance {
+  theme: "light" | "dark" | "auto";
+  avatar: string | null;
+  logo: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  position: "bottom-right" | "bottom-left";
+  size: "compact" | "regular" | "large";
+  displayMode: "bubble" | "popup" | "fullscreen" | "embedded";
+  welcomeMessage: string;
+  placeholder: string;
+  typingAnimation: boolean;
+  branding: boolean;
+  language: string;
+  timezone: string;
+  suggestedQuestions: string[];
+  starterPrompts: string[];
+}
+
+export interface ChatbotDoc extends Timestamped {
+  _id?: ObjectId;
+  chatbotId: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  websiteName: string | null;
+  status: ChatbotStatus;
+  /** Domains the widget may run on. Supports `*.company.com` wildcards. */
+  allowedDomains: string[];
+  appearance: ChatbotAppearance;
+  /** Key of the model this bot uses; must be an admin-enabled model. */
+  modelKey: string | null;
+  /** Active system-prompt version content (denormalised for the hot path). */
+  systemPrompt: string;
+  /** SHA-256 of the public widget token. The token itself is never stored. */
+  publicTokenHash: string;
+}
+
+export type KnowledgeSourceType = "file" | "url" | "sitemap" | "manual" | "faq";
+
+export type KnowledgeStatus = "queued" | "processing" | "indexed" | "failed";
+
+export interface KnowledgeSourceDoc extends Timestamped {
+  _id?: ObjectId;
+  ownerId: string;
+  chatbotId: string;
+  type: KnowledgeSourceType;
+  /** Filename, URL, or a short label for manual entries. */
+  origin: string;
+  status: KnowledgeStatus;
+  bytes: number;
+  chunkCount: number;
+  error: string | null;
+}
+
+export interface KnowledgeChunkDoc {
+  _id?: ObjectId;
+  ownerId: string;
+  chatbotId: string;
+  sourceId: string;
+  /** Order within the source. */
+  ord: number;
+  text: string;
+  tokenCount: number;
+  /** Embedding vector. Indexed by Atlas Vector Search in production. */
+  embedding: number[];
+  meta: { title: string | null; url: string | null };
+  createdAt: Date;
+}
+
+/** Server-to-server API keys a customer creates. */
+export interface ChatbotApiKeyDoc extends Timestamped {
+  _id?: ObjectId;
+  ownerId: string;
+  name: string;
+  /** SHA-256 of the secret. Only the hash is stored. */
+  keyHash: string;
+  /** First chars shown in the UI, e.g. `sk_live_a1b2…`. */
+  prefix: string;
+  scopes: string[];
+  allowedDomains: string[];
+  lastUsedAt: Date | null;
+  expiresAt: Date | null;
+  status: "active" | "revoked";
+}
+
+/** Admin-managed catalogue of AI models available to customers. */
+export interface ChatbotModelDoc extends Timestamped {
+  _id?: ObjectId;
+  key: string;
+  label: string;
+  provider: string;
+  /** Cost per 1M tokens, in the platform's accounting currency. */
+  inCostPerMTok: number;
+  outCostPerMTok: number;
+  maxContext: number;
+  maxOutput: number;
+  tempMin: number;
+  tempMax: number;
+  enabled: boolean;
+  /** Plans this model is available on; empty means all plans. */
+  planIds: string[];
+  isDefault: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Prepaid credit wallet (shared by every metered product)
+// ---------------------------------------------------------------------------
+
+/**
+ * Which metered good a balance belongs to. Chatbot tokens and form-submission
+ * credits are separately purchased, so they must never share a pool.
+ */
+export type WalletProduct = "chatbot" | "forms";
+
+/**
+ * Fast, authoritative balance counter, one per owner *per product*. Mutated
+ * only by an atomic conditional `$inc`, which is what makes concurrent spending
+ * race-safe; the ledger below is the immutable journal explaining every change.
+ */
+export interface WalletBalanceDoc {
+  /** `${ownerId}:${product}` — product isolation enforced by the primary key. */
+  _id: string;
+  ownerId: string;
+  product: WalletProduct;
+  balance: number;
+  updatedAt: Date;
+}
+
+export type WalletLedgerKind =
+  | "purchase"
+  | "deduct"
+  | "bonus"
+  | "refund"
+  | "expiry";
+
+/**
+ * Append-only credit accounting. Never mutated. This is the spend
+ * circuit-breaker: a drained balance stops all metered requests.
+ */
+export interface WalletLedgerDoc {
+  _id?: ObjectId;
+  ownerId: string;
+  product: WalletProduct;
+  /** Signed: positive credits, negative debits. */
+  delta: number;
+  kind: WalletLedgerKind;
+  balanceAfter: number;
+  /** The chatbot or form this row relates to. */
+  subjectId: string | null;
+  /** The message or submission a debit paid for. */
+  refId: string | null;
+  /** Set on `purchase` rows so a daily job can expire unused packs. */
+  expiresAt: Date | null;
+  note: string | null;
+  createdAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Forms SaaS
+// ---------------------------------------------------------------------------
+
+/**
+ * The field types a customer may put on a form.
+ *
+ * Deliberately closed: submissions are validated against this set and rendered
+ * by the widget, so an unknown type can never reach either. Extend the union,
+ * the builder in `src/lib/forms/fields.ts`, and the renderer together.
+ */
+export type FormFieldType =
+  | "text"
+  | "email"
+  | "textarea"
+  | "select"
+  | "checkbox"
+  | "number"
+  | "phone"
+  | "hidden";
+
+export interface FormField {
+  id: string;
+  type: FormFieldType;
+  /** Submission key. Unique within a form. */
+  name: string;
+  label: string;
+  placeholder: string | null;
+  required: boolean;
+  /** Choices for `select`; empty for every other type. */
+  options: string[];
+  maxLength: number | null;
+}
+
+export interface FormAppearance {
+  theme: "light" | "dark" | "auto";
+  primaryColor: string;
+  buttonText: string;
+}
+
+export type FormStatus = "active" | "paused";
+
+export interface FormDoc extends Timestamped {
+  _id?: ObjectId;
+  formId: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  status: FormStatus;
+  /** Domains the embed may post from. Supports `*.company.com` wildcards. */
+  allowedDomains: string[];
+  /** Array order is display order. */
+  fields: FormField[];
+  appearance: FormAppearance;
+  /** SHA-256 of the public embed token. The token itself is never stored. */
+  publicTokenHash: string;
+  /** Where new submissions are emailed. */
+  notifyEmails: string[];
+  honeypotEnabled: boolean;
+  redirectUrl: string | null;
+  thankYouMessage: string;
+  submissionCount: number;
+}
+
+export type FormSubmissionStatus = "new" | "spam" | "archived";
+
+export interface FormSubmissionDoc {
+  _id?: ObjectId;
+  submissionId: string;
+  formId: string;
+  ownerId: string;
+  /** Validated against the form's field definitions. Never rendered as HTML. */
+  data: Record<string, string | number | boolean | string[]>;
+  meta: {
+    /** Hashed so a database leak does not expose visitor IP addresses. */
+    ipHash: string | null;
+    userAgent: string | null;
+    referrer: string | null;
+    origin: string | null;
+  };
+  status: FormSubmissionStatus;
+  createdAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Billing
+// ---------------------------------------------------------------------------
+
+export type BillingGateway = "manual" | "razorpay";
+
+export type BillingOrderStatus = "pending" | "paid" | "failed" | "cancelled";
+
+export interface BillingOrderDoc extends Timestamped {
+  _id?: ObjectId;
+  orderId: string;
+  ownerId: string;
+  product: WalletProduct;
+  packId: string;
+  /** Credits granted once paid. */
+  credits: number;
+  /** Minor units (paise/cents) to avoid floating-point money. */
+  amount: number;
+  currency: string;
+  gateway: BillingGateway;
+  gatewayOrderId: string | null;
+  status: BillingOrderStatus;
+  paidAt: Date | null;
+}
+
+/**
+ * Processed gateway events, for webhook idempotency. A unique index on
+ * `{gateway, eventId}` makes a duplicate delivery a no-op insert rather than a
+ * second credit — the same guarantee the job queue gets from its idempotency
+ * key.
+ */
+export interface BillingEventDoc {
+  _id?: ObjectId;
+  gateway: BillingGateway;
+  eventId: string;
+  orderId: string | null;
+  processedAt: Date;
+}

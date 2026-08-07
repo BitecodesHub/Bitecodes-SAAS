@@ -31,6 +31,10 @@ export const CAPABILITIES = [
   "manage_users",
   /** Retry, cancel, and inspect background jobs. */
   "manage_jobs",
+  /** Create and configure AI chatbots and their API keys and models. */
+  "manage_chatbots",
+  /** Build embeddable forms and read their submissions. */
+  "manage_forms",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -55,6 +59,8 @@ const ROLE_CAPABILITIES: Record<AdminRole, readonly Capability[]> = {
     "send_email",
     "manage_settings",
     "manage_jobs",
+    "manage_chatbots",
+    "manage_forms",
   ],
   editor: ["view", "manage_leads", "write_content"],
   viewer: ["view"],

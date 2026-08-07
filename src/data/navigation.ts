@@ -1,10 +1,12 @@
 import {
   AppWindow,
   BrainCircuit,
+  ClipboardList,
   Cloud,
   Code2,
   Compass,
   Layers,
+  MessagesSquare,
   Newspaper,
   Rocket,
   Server,
@@ -76,6 +78,18 @@ export const mainNav: NavItem[] = [
       {
         heading: "AI, Cloud & Design",
         links: [
+          {
+            title: "AI Chatbot",
+            href: "/ai-chatbot",
+            description: "Embeddable chatbot SaaS",
+            icon: MessagesSquare,
+          },
+          {
+            title: "Forms",
+            href: "/forms",
+            description: "Embeddable form builder",
+            icon: ClipboardList,
+          },
           {
             title: "AI Integration",
             href: "/services/ai-integration",
@@ -247,6 +261,8 @@ export const footerNav: FooterColumn[] = [
   {
     heading: "Resources",
     links: [
+      { title: "AI Chatbot", href: "/ai-chatbot" },
+      { title: "Forms", href: "/forms" },
       { title: "Pricing", href: "/pricing" },
       { title: "Free Tools", href: "/tools" },
       { title: "Website Audit", href: "/website-audit" },

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  ClipboardList,
   Inbox,
   LayoutDashboard,
   ListChecks,
@@ -45,6 +46,7 @@ const ICONS: Record<string, LucideIcon> = {
   MapPin,
   Mail,
   MessagesSquare,
+  ClipboardList,
   PenLine,
   Search,
   BarChart3,

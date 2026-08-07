@@ -11,6 +11,17 @@ import type {
   AuditLogDoc,
   AuditReportDoc,
   AutopilotPresetDoc,
+  ChatbotApiKeyDoc,
+  ChatbotDoc,
+  ChatbotModelDoc,
+  BillingEventDoc,
+  BillingOrderDoc,
+  FormDoc,
+  FormSubmissionDoc,
+  KnowledgeChunkDoc,
+  KnowledgeSourceDoc,
+  WalletBalanceDoc,
+  WalletLedgerDoc,
   BlogPostDoc,
   BlogRevisionDoc,
   ChatConversationDoc,
@@ -108,6 +119,33 @@ export const projects = () => collection<ProjectDoc>(COLLECTIONS.projects);
 export const meetings = () => collection<MeetingDoc>(COLLECTIONS.meetings);
 export const portalSessions = () =>
   collection<PortalSessionDoc>(COLLECTIONS.portalSessions);
+
+// AI Chatbot SaaS.
+export const chatbots = () => collection<ChatbotDoc>(COLLECTIONS.chatbots);
+export const chatbotKnowledgeSources = () =>
+  collection<KnowledgeSourceDoc>(COLLECTIONS.chatbotKnowledgeSources);
+export const chatbotKnowledgeChunks = () =>
+  collection<KnowledgeChunkDoc>(COLLECTIONS.chatbotKnowledgeChunks);
+export const chatbotApiKeys = () =>
+  collection<ChatbotApiKeyDoc>(COLLECTIONS.chatbotApiKeys);
+export const chatbotModels = () =>
+  collection<ChatbotModelDoc>(COLLECTIONS.chatbotModels);
+// Prepaid credits, shared by every metered product.
+export const walletLedger = () =>
+  collection<WalletLedgerDoc>(COLLECTIONS.walletLedger);
+export const walletBalances = () =>
+  collection<WalletBalanceDoc>(COLLECTIONS.walletBalances);
+
+// Forms SaaS.
+export const forms = () => collection<FormDoc>(COLLECTIONS.forms);
+export const formSubmissions = () =>
+  collection<FormSubmissionDoc>(COLLECTIONS.formSubmissions);
+
+// Billing.
+export const billingOrders = () =>
+  collection<BillingOrderDoc>(COLLECTIONS.billingOrders);
+export const billingEvents = () =>
+  collection<BillingEventDoc>(COLLECTIONS.billingEvents);
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

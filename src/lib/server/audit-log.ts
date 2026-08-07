@@ -67,6 +67,22 @@ export const AUDIT_ACTIONS = {
   userEnabled: "user.enabled",
 
   chatKnowledgeUpdated: "chat.knowledge.updated",
+
+  chatbotCreated: "chatbot.created",
+  chatbotUpdated: "chatbot.updated",
+  chatbotDeleted: "chatbot.deleted",
+  chatbotApiKeyCreated: "chatbot.apikey.created",
+  chatbotApiKeyRevoked: "chatbot.apikey.revoked",
+  chatbotModelUpdated: "chatbot.model.updated",
+
+  formCreated: "form.created",
+  formUpdated: "form.updated",
+  formDeleted: "form.deleted",
+  formSubmissionStatusChanged: "form.submission.status_changed",
+
+  billingOrderCreated: "billing.order.created",
+  billingWebhookProcessed: "billing.webhook.processed",
+  billingCreditsGranted: "billing.credits.granted",
   chatResolved: "chat.resolved",
 } as const;
 
