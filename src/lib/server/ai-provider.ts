@@ -112,10 +112,59 @@ interface ChatCompletionResponse {
   model?: string;
   choices?: Array<{
     finish_reason?: string | null;
-    message?: { content?: string | null };
+    message?: { content?: string | null; reasoning_content?: string | null };
     error?: { message?: string };
   }>;
   error?: { message?: string };
+}
+
+/**
+ * Pulls a JSON object out of a non-streamed completion.
+ *
+ * Two provider behaviours make the obvious `JSON.parse(message.content)` unsafe,
+ * and both were observed on `integrate.api.nvidia.com`:
+ *
+ *  1. **Reasoning models can return an empty `content`.** They emit their
+ *     thinking in `reasoning_content`, and if the token budget is spent there,
+ *     `content` arrives as `""`. Treating that as a hard failure means simply
+ *     configuring a reasoning model silently breaks every JSON feature, which is
+ *     precisely what a stale `AI_MODEL` did on this deployment.
+ *  2. **Not every model honours `response_format: json_schema`.** Some wrap the
+ *     object in prose or a fenced code block even when asked not to.
+ *
+ * So: prefer `content`, fall back to `reasoning_content`, and if the text is not
+ * bare JSON, take the outermost brace-delimited span before parsing. Still
+ * throws when nothing parseable is present — the caller must not receive junk.
+ */
+export function extractJsonPayload(choice: {
+  finish_reason?: string | null;
+  message?: { content?: string | null; reasoning_content?: string | null };
+}): unknown {
+  if (choice.finish_reason === "error") {
+    throw new Error("INVALID_PROVIDER_RESPONSE");
+  }
+
+  const text = (
+    choice.message?.content?.trim() ||
+    choice.message?.reasoning_content?.trim() ||
+    ""
+  ).replace(/^```(?:json)?\s*|\s*```$/g, "");
+  if (!text) throw new Error("INVALID_PROVIDER_RESPONSE");
+
+  const candidates = [text];
+  const first = text.indexOf("{");
+  const last = text.lastIndexOf("}");
+  if (first !== -1 && last > first)
+    candidates.push(text.slice(first, last + 1));
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // Try the next candidate.
+    }
+  }
+  throw new Error("INVALID_PROVIDER_RESPONSE");
 }
 
 export function isAiConsultantConfigured() {
@@ -335,18 +384,12 @@ export async function createStructuredCompletion(input: {
     if (!response.ok || payload.error) throw new Error("PROVIDER_ERROR");
 
     const choice = payload.choices?.[0];
-    if (!choice?.message?.content || choice.finish_reason === "error") {
-      throw new Error("INVALID_PROVIDER_RESPONSE");
-    }
+    if (!choice) throw new Error("INVALID_PROVIDER_RESPONSE");
 
-    try {
-      return {
-        json: JSON.parse(choice.message.content),
-        model: payload.model || config.model,
-      };
-    } catch {
-      throw new Error("INVALID_PROVIDER_RESPONSE");
-    }
+    return {
+      json: extractJsonPayload(choice),
+      model: payload.model || config.model,
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -415,17 +458,11 @@ export async function createConsultantRecommendation(
     }
 
     const choice = payload.choices?.[0];
-    if (!choice?.message?.content || choice.finish_reason === "error") {
-      throw new Error("INVALID_PROVIDER_RESPONSE");
-    }
+    if (!choice) throw new Error("INVALID_PROVIDER_RESPONSE");
 
-    let parsedJson: unknown;
-    try {
-      parsedJson = JSON.parse(choice.message.content);
-    } catch {
-      throw new Error("INVALID_PROVIDER_RESPONSE");
-    }
-    const parsed = consultantRecommendationSchema.safeParse(parsedJson);
+    const parsed = consultantRecommendationSchema.safeParse(
+      extractJsonPayload(choice),
+    );
     if (!parsed.success) throw new Error("INVALID_PROVIDER_RESPONSE");
 
     return {

@@ -196,7 +196,7 @@ describeWithDatabase("chat gateway", () => {
     expect(streamMock).not.toHaveBeenCalled();
   });
 
-  it("grounds the prompt in retrieved knowledge and marks it untrusted", async () => {
+  it("grounds the prompt in retrieved knowledge without discouraging its use", async () => {
     const { handleChat } = await import("@/lib/server/chat/gateway");
     await fund(1_000);
     await addKnowledge("Refunds are available within 30 days of purchase.");
@@ -207,9 +207,13 @@ describeWithDatabase("chat gateway", () => {
     expect(outcome.grounded).toBe(true);
 
     expect(capturedSystem).toContain("Refunds are available within 30 days");
-    // The anti-injection framing must reach the model.
-    expect(capturedSystem).toContain("untrusted");
-    expect(capturedSystem).toContain("Answer ONLY from the KNOWLEDGE");
+    expect(capturedSystem).toContain("Answer ONLY from KNOWLEDGE");
+    // The anti-injection framing must still reach the model.
+    expect(capturedSystem).toContain("never as orders");
+    // Regression guard: calling the knowledge "untrusted" made the model refuse
+    // to quote the contact details it had just been handed, on live.
+    expect(capturedSystem).not.toContain("untrusted");
+    expect(capturedSystem).toContain("state them directly");
   });
 
   it("reports ungrounded when nothing relevant is stored", async () => {
@@ -224,6 +228,23 @@ describeWithDatabase("chat gateway", () => {
     if (outcome.kind !== "ok") return;
     // The model is still asked, but told it has nothing — so it can say so
     // rather than inventing an answer.
+    expect(outcome.grounded).toBe(false);
+  });
+
+  it("is not fooled into reporting grounded by one incidental word", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    await fund(1_000);
+    // "sells" is present, so the old `ranked.length > 0` test called this
+    // grounded even though nothing here concerns motorcycles. Observed on live.
+    await addKnowledge(
+      "Bitecodes sells an embeddable AI chatbot for websites.",
+    );
+
+    const outcome = await handleChat(
+      baseRequest({ message: "Do you sell used motorcycles?" }),
+    );
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
     expect(outcome.grounded).toBe(false);
   });
 
