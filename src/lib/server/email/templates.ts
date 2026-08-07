@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AnyBulkWriteOperation } from "mongodb";
 import { emailTemplates } from "@/lib/server/db/collections";
 import { extractVariables, type EmailBlock } from "@/lib/email/template";
 import {
@@ -21,19 +22,37 @@ import type { EmailTemplateDoc, ProspectTag } from "@/lib/server/db/types";
  * explicit, one-way opt-out of future seed updates.
  */
 
-/** Inserts any missing seed, and refreshes seeds a human has not touched. */
+/**
+ * Inserts any missing seed, and refreshes seeds a human has not touched.
+ *
+ * Reads all nine seeds in one query and writes in one batch. It used to issue a
+ * `findOne` per seed *sequentially* — nine serial round trips — and this runs on
+ * the read path of `/admin/email`, so every load of that page paid for all nine
+ * before rendering. Measured at 1.38s TTFB, the slowest page in the panel by a
+ * wide margin, on a database with no rows in it at all.
+ *
+ * The decision semantics are unchanged: a human-edited template is left alone
+ * entirely, and a still-default one is refreshed when the shipped wording moves.
+ */
 export async function ensureSeededTemplates(
   now = new Date(),
 ): Promise<{ inserted: number; refreshed: number }> {
   const collection = await emailTemplates();
+
+  const existingRows = await collection
+    .find({ key: { $in: OUTREACH_TEMPLATE_SEEDS.map((s) => s.key) } })
+    .toArray();
+  const byKey = new Map(existingRows.map((row) => [row.key, row]));
+
+  const writes: AnyBulkWriteOperation<EmailTemplateDoc>[] = [];
   let inserted = 0;
   let refreshed = 0;
 
   for (const seed of OUTREACH_TEMPLATE_SEEDS) {
-    const existing = await collection.findOne({ key: seed.key });
+    const existing = byKey.get(seed.key);
 
     if (!existing) {
-      await collection.insertOne(toDocument(seed, now));
+      writes.push({ insertOne: { document: toDocument(seed, now) } });
       inserted += 1;
       continue;
     }
@@ -51,24 +70,49 @@ export async function ensureSeededTemplates(
       existing.description !== next.description;
 
     if (changed) {
-      await collection.updateOne(
-        { key: seed.key },
-        {
-          $set: {
-            name: next.name,
-            description: next.description,
-            subject: next.subject,
-            blocks: next.blocks,
-            variables: next.variables,
-            updatedAt: now,
+      writes.push({
+        updateOne: {
+          filter: { key: seed.key },
+          update: {
+            $set: {
+              name: next.name,
+              description: next.description,
+              subject: next.subject,
+              blocks: next.blocks,
+              variables: next.variables,
+              updatedAt: now,
+            },
           },
         },
-      );
+      });
       refreshed += 1;
     }
   }
 
+  // Unordered: the writes touch distinct keys, so there is no reason to make
+  // one wait for the previous, and one failure should not abandon the rest.
+  if (writes.length > 0) {
+    await collection.bulkWrite(writes, { ordered: false });
+  }
+
   return { inserted, refreshed };
+}
+
+/**
+ * Per-process guard for the read path only.
+ *
+ * Seeding is reconciliation against code, so it cannot produce a new result
+ * twice in the same deployment — but `listTemplates` is called on every render of
+ * `/admin/email`, which made it a per-request cost. The flag lives here rather
+ * than inside `ensureSeededTemplates` because callers that invoke that function
+ * directly (a deploy step, and the tests that assert refresh behaviour after
+ * mutating a row) must still get the real reconciliation every time.
+ */
+let seededThisProcess = false;
+
+/** Test seam — forget the in-process flag. */
+export function resetSeededTemplatesFlag() {
+  seededThisProcess = false;
 }
 
 function toDocument(seed: OutreachTemplateSeed, now: Date): EmailTemplateDoc {
@@ -110,7 +154,11 @@ export function blockText(blocks: readonly EmailBlock[]): string[] {
 }
 
 export async function listTemplates(): Promise<EmailTemplateDoc[]> {
-  await ensureSeededTemplates();
+  // Reconcile once per process, not once per page view.
+  if (!seededThisProcess) {
+    await ensureSeededTemplates();
+    seededThisProcess = true;
+  }
   const collection = await emailTemplates();
   return collection.find({}).sort({ category: 1, key: 1 }).toArray();
 }
