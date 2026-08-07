@@ -178,4 +178,49 @@ describeWithDatabase("email templates", () => {
 
     expect((await getTemplateForTag("no-website"))?.subject).toBe("Mine");
   });
+
+  it("seeds once per process on the read path, not once per page view", async () => {
+    const { listTemplates, resetSeededTemplatesFlag } =
+      await import("@/lib/server/email/templates");
+    const { emailTemplates } = await import("@/lib/server/db/collections");
+    resetSeededTemplatesFlag();
+
+    const first = await listTemplates();
+    expect(first).toHaveLength(OUTREACH_TEMPLATE_SEEDS.length);
+
+    // Delete a template behind the read path's back. A second listTemplates()
+    // must NOT re-seed it, because reconciliation already ran in this process —
+    // that is the whole point of the guard. /admin/email used to pay nine serial
+    // round trips on every single render.
+    await (
+      await emailTemplates()
+    ).deleteOne({
+      key: OUTREACH_TEMPLATE_SEEDS[0]!.key,
+    });
+    const second = await listTemplates();
+    expect(second).toHaveLength(OUTREACH_TEMPLATE_SEEDS.length - 1);
+
+    // Clearing the flag restores full reconciliation, so a fresh process heals.
+    resetSeededTemplatesFlag();
+    const third = await listTemplates();
+    expect(third).toHaveLength(OUTREACH_TEMPLATE_SEEDS.length);
+  });
+
+  it("still reconciles every time when called directly", async () => {
+    const { ensureSeededTemplates } =
+      await import("@/lib/server/email/templates");
+    const { emailTemplates } = await import("@/lib/server/db/collections");
+
+    const a = await ensureSeededTemplates();
+    expect(a.inserted).toBe(OUTREACH_TEMPLATE_SEEDS.length);
+
+    await (
+      await emailTemplates()
+    ).deleteOne({
+      key: OUTREACH_TEMPLATE_SEEDS[0]!.key,
+    });
+    // Direct callers (deploy steps, tests) must never be short-circuited.
+    const b = await ensureSeededTemplates();
+    expect(b.inserted).toBe(1);
+  });
 });
