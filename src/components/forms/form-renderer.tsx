@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { FormAppearance, FormField } from "@/lib/server/db/types";
+import { isNavigableHttpUrl } from "@/lib/navigable-url";
 
 /**
  * Renders one customer form and posts it to the public submit endpoint.
@@ -70,8 +71,14 @@ export function FormRenderer({
       const payload = await res.json().catch(() => ({}));
 
       if (res.ok) {
-        if (payload.redirectUrl || redirectUrl) {
-          window.location.href = payload.redirectUrl ?? redirectUrl!;
+        const target = payload.redirectUrl ?? redirectUrl;
+        // Scheme-checked at the sink as well as where it is saved. This page is
+        // served from our own origin — the same one as /admin — so a stored
+        // `javascript:` or `data:` redirect would execute script there. The
+        // server now rejects those, but a row written before that guard existed
+        // must not be trusted, and the cost of checking here is nothing.
+        if (target && isNavigableHttpUrl(target)) {
+          window.location.href = target;
           return;
         }
         setSent(true);

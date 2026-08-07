@@ -32,6 +32,17 @@ export function GET() {
   } catch (e) {
     /* Keep the server-rendered default. */
   }
+  // Only http(s) may be navigated to. A javascript: or data: URL assigned to
+  // location.href executes script on whichever origin the form is embedded in.
+  function isNavigable(u) {
+    try {
+      var p = new URL(u, document.baseURI).protocol;
+      return p === "http:" || p === "https:";
+    } catch (e) {
+      return false;
+    }
+  }
+
   if (!formId || !token) {
     console.error("[bitecodes-forms] data-form and data-token are required");
     return;
@@ -221,7 +232,14 @@ export function GET() {
         var payload = await res.json().catch(function () { return {}; });
 
         if (res.ok) {
-          if (payload.redirectUrl) { window.location.href = payload.redirectUrl; return; }
+          // Re-check the scheme at the sink, not only where it was saved. The
+          // server now rejects anything but http/https, but a row written before
+          // that guard existed would still land here, and this assignment is a
+          // script-execution primitive for a javascript: or data: URL. Cheap
+          // enough to do on both sides, and the side that matters is this one.
+          if (payload.redirectUrl && isNavigable(payload.redirectUrl)) {
+            window.location.href = payload.redirectUrl; return;
+          }
           note("ok", payload.message || "Thanks — we have received your message.");
           return;
         }
