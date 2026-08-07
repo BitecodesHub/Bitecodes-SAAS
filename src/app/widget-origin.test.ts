@@ -54,6 +54,26 @@ describe.each(["widget.js", "form-widget.js"] as const)("%s", (route) => {
     expect(js).toContain("new URL(current.src, document.baseURI).origin");
   });
 
+  it("emits JavaScript that actually parses", async () => {
+    const js = await widgetSource(route);
+
+    // Parses the EMITTED script, which is the only form that matters. A previous
+    // check parsed the route's SOURCE text and passed while production was broken:
+    // the script is built inside a template literal, so a backslash-slash written
+    // in the source is resolved away before the browser sees it. That emitted
+    // /^(https?:|data:image/)/i — a bare slash closing the regex early — and the
+    // whole widget died with "Invalid regular expression: Unterminated group".
+    // Nothing short of evaluating the output catches that.
+    expect(() => new Function(js)).not.toThrow();
+  });
+
+  it("leaves no unresolved template placeholder in the emitted script", async () => {
+    const js = await widgetSource(route);
+    // A stray ${...} means an interpolation was written as plain text and the
+    // browser would receive it literally.
+    expect(js).not.toMatch(/\$\{/);
+  });
+
   it("puts the identifiers in the query string for the CORS preflight", async () => {
     const js = await widgetSource(route);
 

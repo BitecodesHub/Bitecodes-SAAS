@@ -172,7 +172,11 @@ export function GET() {
       slot.innerHTML = "";
       // Only http(s) and data:image are rendered. The value is a URL an operator
       // typed, and this ends up as an <img> on a customer's page.
-      if (look.logo && /^(https?:|data:image\/)/i.test(look.logo)) {
+      // No slash escape in this regex: the whole script is a template literal, so
+      // a backslash-slash here would be resolved before the browser ever sees it,
+      // emitting a bare slash that closes the regex early. A character class
+      // avoids needing the escape at all.
+      if (look.logo && /^(https?:|data:image[/])/i.test(look.logo)) {
         var im = document.createElement("img");
         im.src = look.logo;
         im.alt = "";
