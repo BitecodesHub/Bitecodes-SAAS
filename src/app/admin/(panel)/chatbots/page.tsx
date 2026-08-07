@@ -3,6 +3,15 @@ import Link from "next/link";
 import { assertCapability } from "@/lib/server/auth/dal";
 import { listChatbots } from "@/lib/server/chatbot/repository";
 import { ChatbotManager } from "@/components/admin/chatbot-manager";
+import { CreditsPanel } from "@/components/admin/credits-panel";
+import { getBalance } from "@/lib/server/wallet/wallet";
+import {
+  formatPackPrice,
+  packsFor,
+  perUnitPrice,
+} from "@/lib/server/billing/packs";
+import { getActiveProvider } from "@/lib/server/billing/orders";
+import { can } from "@/lib/server/auth/roles";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Chatbots" };
@@ -10,7 +19,20 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminChatbotsPage() {
   const session = await assertCapability("manage_chatbots");
-  const bots = await listChatbots(session.userId);
+  const [bots, tokens] = await Promise.all([
+    listChatbots(session.userId),
+    getBalance(session.userId, "chatbot"),
+  ]);
+
+  const packs = packsFor("chatbot").map((pack) => ({
+    packId: pack.packId,
+    label: pack.label,
+    credits: pack.credits,
+    price: formatPackPrice(pack),
+    perUnit: perUnitPrice(pack),
+    blurb: pack.blurb,
+    popular: Boolean(pack.popular),
+  }));
 
   return (
     <div className="space-y-6">
@@ -37,6 +59,14 @@ export default async function AdminChatbotsPage() {
           Manage AI models →
         </Link>
       </header>
+
+      <CreditsPanel
+        product="chatbot"
+        packs={packs}
+        balance={tokens}
+        canGrant={can(session.role, "manage_settings")}
+        gatewayLive={getActiveProvider().id !== "manual"}
+      />
 
       <ChatbotManager
         siteUrl={siteConfig.url}

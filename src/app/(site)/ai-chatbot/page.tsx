@@ -21,6 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
+import {
+  formatPackPrice,
+  packsFor,
+  perUnitPrice,
+} from "@/lib/server/billing/packs";
 import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
@@ -87,62 +92,16 @@ const FEATURES = [
   },
 ];
 
-interface Tier {
-  name: string;
-  price: string;
-  cadence: string;
-  highlight?: boolean;
-  tokens: string;
-  features: string[];
-}
-
-const TIERS: Tier[] = [
-  {
-    name: "Free trial",
-    price: "$0",
-    cadence: "10,000 tokens",
-    tokens: "10,000 tokens",
-    features: ["1 chatbot", "1 knowledge source", "Community support"],
-  },
-  {
-    name: "Starter",
-    price: "$9",
-    cadence: "per month",
-    tokens: "500,000 tokens / mo",
-    features: ["1 chatbot", "Website crawl + uploads", "Email support"],
-  },
-  {
-    name: "Growth",
-    price: "$29",
-    cadence: "per month",
-    highlight: true,
-    tokens: "2,000,000 tokens / mo",
-    features: [
-      "5 chatbots",
-      "All models we enable",
-      "Analytics + lead capture",
-      "Remove branding",
-    ],
-  },
-  {
-    name: "Scale",
-    price: "$99",
-    cadence: "per month",
-    tokens: "10,000,000 tokens / mo",
-    features: [
-      "Unlimited chatbots",
-      "Priority support",
-      "Integrations + webhooks",
-      "Human hand-off",
-    ],
-  },
-];
-
-const TOKEN_PACKS = [
-  { size: "100,000 tokens", price: "$5" },
-  { size: "500,000 tokens", price: "$19" },
-  { size: "1,000,000 tokens", price: "$29" },
-];
+/**
+ * The packs a customer can actually buy, read from the billing source of truth.
+ *
+ * This page previously advertised four monthly subscription tiers in USD, plus a
+ * separate pay-as-you-go strip — none of which existed. There is no subscription
+ * machinery, no per-plan chatbot limits, and no webhooks or human hand-off. It
+ * promised a billing model and features the product does not have, which is a
+ * commercial problem, not a copy problem.
+ */
+const CHATBOT_PACKS = packsFor("chatbot");
 
 const FAQS = [
   {
@@ -191,32 +150,17 @@ export default function AiChatbotPage() {
           url: `${siteConfig.url}/ai-chatbot`,
           description:
             "Trainable, embeddable AI chatbot SaaS: RAG knowledge base, multiple AI models, a customisable website widget, analytics, and token-based pricing.",
-          offers: [
-            {
-              "@type": "Offer",
-              name: "Free trial",
-              price: "0",
-              priceCurrency: "USD",
-            },
-            {
-              "@type": "Offer",
-              name: "Starter",
-              price: "9",
-              priceCurrency: "USD",
-            },
-            {
-              "@type": "Offer",
-              name: "Growth",
-              price: "29",
-              priceCurrency: "USD",
-            },
-            {
-              "@type": "Offer",
-              name: "Scale",
-              price: "99",
-              priceCurrency: "USD",
-            },
-          ],
+          // Derived from the packs a customer can actually buy. These offers
+          // previously listed four USD subscription tiers that do not exist —
+          // structured data is machine-read by search engines and assistants, so
+          // a fictional price here is published misinformation, not just stale
+          // marketing copy.
+          offers: CHATBOT_PACKS.map((pack) => ({
+            "@type": "Offer",
+            name: `${pack.label} — ${pack.credits.toLocaleString()} tokens`,
+            price: (pack.amount / 100).toFixed(2),
+            priceCurrency: pack.currency,
+          })),
           provider: {
             "@type": "Organization",
             "@id": `${siteConfig.url}/#organization`,
@@ -370,66 +314,51 @@ export default function AiChatbotPage() {
             Simple, token-based pricing
           </h2>
           <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
-            Start free. Take a monthly plan for an included allowance, or buy
-            token packs as you go. You only pay for the answers you use.
+            Buy a pack of tokens once and use them whenever you like — there is
+            no subscription and nothing expires monthly. Tokens cover the
+            question and the answer together, so a longer reply costs more than
+            a short one. Answer counts below are approximate for that reason.
           </p>
 
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {TIERS.map((tier) => (
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {CHATBOT_PACKS.map((pack) => (
               <div
-                key={tier.name}
+                key={pack.packId}
                 className={
-                  tier.highlight
-                    ? "border-primary bg-card relative rounded-2xl border-2 p-6 shadow-[var(--shadow-lift)]"
-                    : "border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+                  pack.popular
+                    ? "border-primary bg-card relative flex flex-col rounded-2xl border-2 p-6 shadow-[var(--shadow-lift)]"
+                    : "border-border bg-card relative flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
                 }
               >
-                {tier.highlight && (
-                  <Badge className="absolute -top-3 left-6">Most popular</Badge>
+                {pack.popular && (
+                  <Badge className="absolute -top-3 left-6">Most chosen</Badge>
                 )}
-                <h3 className="font-semibold">{tier.name}</h3>
-                <p className="mt-3 text-3xl font-semibold tracking-tight">
-                  {tier.price}
-                  <span className="text-muted-foreground ml-1 text-sm font-normal">
-                    {tier.cadence !== tier.tokens ? tier.cadence : ""}
-                  </span>
+                <h3 className="text-lg font-semibold">{pack.label}</h3>
+                <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">
+                  {formatPackPrice(pack)}
                 </p>
-                <p className="text-primary mt-1 text-sm font-medium">
-                  {tier.tokens}
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {pack.credits.toLocaleString()} tokens · {perUnitPrice(pack)}
                 </p>
-                <ul className="mt-5 space-y-2.5">
-                  {tier.features.map((feat) => (
-                    <li key={feat} className="flex items-start gap-2.5 text-sm">
-                      <Check className="text-primary mt-0.5 size-4 shrink-0" />
-                      <span className="text-muted-foreground">{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button asChild variant="outline" className="mt-6 w-full">
+                <p className="text-muted-foreground mt-3 flex-1 text-sm leading-relaxed">
+                  {pack.blurb}
+                </p>
+                <Button
+                  asChild
+                  variant={pack.popular ? "gradient" : "outline"}
+                  className="mt-5 w-full"
+                >
                   <Link href="/contact">Get started</Link>
                 </Button>
               </div>
             ))}
           </div>
 
-          <div className="mt-8">
-            <p className="text-sm font-semibold">Prefer pay-as-you-go?</p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {TOKEN_PACKS.map((pack) => (
-                <span
-                  key={pack.size}
-                  className="border-border bg-card rounded-full border px-4 py-2 text-sm"
-                >
-                  {pack.size} —{" "}
-                  <span className="font-semibold">{pack.price}</span>
-                </span>
-              ))}
-            </div>
-            <p className="text-muted-foreground mt-3 text-xs">
-              Indicative launch pricing in USD; INR and GST-inclusive invoicing
-              available. Final plan limits are set at checkout.
-            </p>
-          </div>
+          <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
+            Launch pricing, billed in Indian rupees. Every answer is metered
+            against your balance and recorded in a ledger you can audit, and the
+            assistant stops rather than overspending when a balance runs out.
+          </p>
         </div>
       </Section>
 

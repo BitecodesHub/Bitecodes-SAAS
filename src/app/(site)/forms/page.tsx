@@ -21,10 +21,14 @@ import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
 import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import {
-  CREDIT_PACKS,
   formatPackPrice,
+  packsFor,
   perSubmissionPrice,
 } from "@/lib/server/billing/packs";
+
+// Only this product's packs. `CREDIT_PACKS` holds every product's, so iterating
+// it here would advertise chatbot token packs on the forms page.
+const FORM_PACKS = packsFor("forms");
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
@@ -147,7 +151,7 @@ export default function FormsProductPage() {
             "@id": `${siteConfig.url}/#organization`,
             name: siteConfig.name,
           },
-          offers: CREDIT_PACKS.map((pack) => ({
+          offers: FORM_PACKS.map((pack) => ({
             "@type": "Offer",
             name: `${pack.label} — ${pack.credits.toLocaleString()} submissions`,
             price: String(pack.amount / 100),
@@ -300,7 +304,7 @@ export default function FormsProductPage() {
           </p>
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {CREDIT_PACKS.map((pack) => (
+            {FORM_PACKS.map((pack) => (
               <div
                 key={pack.packId}
                 className="border-border bg-card relative flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
