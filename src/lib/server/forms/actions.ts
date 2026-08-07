@@ -15,6 +15,7 @@ import {
   updateForm,
 } from "@/lib/server/forms/repository";
 import { formFieldsSchema } from "@/lib/forms/fields";
+import { isNavigableHttpUrl } from "@/lib/navigable-url";
 
 /**
  * Server Actions for form management.
@@ -75,7 +76,17 @@ const updateSchema = z.object({
   notifyEmails: z.array(z.string().trim().max(254)).max(10).optional(),
   honeypotEnabled: z.boolean().optional(),
   redirectUrl: z
-    .union([z.string().trim().url().max(500), z.literal("")])
+    .union([
+      z
+        .string()
+        .trim()
+        .max(500)
+        // `.url()` alone is not enough: it accepts javascript:, data: and
+        // vbscript:. See src/lib/navigable-url.ts — this value ends up in
+        // `location.href`, on our own origin for the hosted page.
+        .refine(isNavigableHttpUrl, "Use a full http:// or https:// address."),
+      z.literal(""),
+    ])
     .nullable()
     .optional(),
   thankYouMessage: z.string().trim().min(1).max(500).optional(),
