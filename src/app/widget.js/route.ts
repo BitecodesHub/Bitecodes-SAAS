@@ -46,6 +46,42 @@ export function GET() {
     return;
   }
 
+  /**
+   * Why a request failed, in words a developer can act on.
+   *
+   * The gateway sends a precise refusal — ORIGIN_NOT_ALLOWED with instructions —
+   * but when it refuses an origin it also sends no Access-Control-Allow-Origin,
+   * so the browser hides the whole response from this script. All the widget can
+   * observe is that fetch rejected. That is why every configuration mistake used
+   * to surface to a visitor as "the assistant is unreachable right now", which
+   * tells the site owner nothing and cost real debugging time.
+   *
+   * So the cause is inferred from what IS observable, and written to the console
+   * where whoever installed the snippet will look.
+   */
+  function explainFailure() {
+    if (location.protocol === "file:") {
+      return (
+        "This page was opened directly from disk (file://), which sends no " +
+        "Origin header, so the assistant cannot verify which site is asking. " +
+        "Serve the page over http instead - for example: python3 -m http.server 8080 " +
+        "- then open http://localhost:8080/. Localhost is always allowed."
+      );
+    }
+    return (
+      "The request was blocked before a reply could be read, which almost " +
+      "always means this site is not on the assistant's allowed domains. Add " +
+      location.hostname + " in the Bitecodes dashboard under the chatbot's " +
+      "settings. Loopback addresses such as localhost are always allowed."
+    );
+  }
+
+  function reportFailure() {
+    var why = explainFailure();
+    console.error("[bitecodes-chat] " + why);
+    return why;
+  }
+
   var host = document.createElement("div");
   host.setAttribute("data-bitecodes-chat", chatbotId);
   // Anchored right by default; applyLook() moves it if the bot says bottom-left.
@@ -302,9 +338,11 @@ export function GET() {
         })
       });
       if (!res.ok) {
+        if (res.status === 403) console.error("[bitecodes-chat] " + explainFailure());
         out.textContent =
           res.status === 402 ? "This assistant is out of credits right now."
           : res.status === 403 ? "This assistant is not enabled on this site."
+          : res.status === 404 ? "This assistant is not available. Check the chatbot id and token."
           : "Sorry, something went wrong. Please try again.";
         return;
       }
@@ -336,7 +374,17 @@ export function GET() {
       history.push({ role: "user", content: text });
       history.push({ role: "assistant", content: out.textContent });
     } catch (e) {
-      out.textContent = "Sorry, the assistant is unreachable right now.";
+      // fetch rejected without a readable response. That is what a refused origin
+      // looks like from inside the page: the gateway answered 403 with a precise
+      // explanation, but withheld the CORS header, so the browser will not let
+      // this script see any of it. The console gets the real reason; the visitor
+      // gets something true but not alarming, because a misconfigured allowlist
+      // is the site owner's problem to fix, not theirs to decipher.
+      reportFailure();
+      out.textContent =
+        location.protocol === "file:"
+          ? "This demo page needs to be served over http, not opened from a file. See the console."
+          : "Sorry, the assistant is unreachable right now.";
     }
   }
 
