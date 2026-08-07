@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Throwaway one-off scripts run from the project root so Node can resolve
+# node_modules. Never meant to be committed; one slipped in via `git add -A`.
+/.*.mjs
