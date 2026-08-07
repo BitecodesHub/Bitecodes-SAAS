@@ -6,6 +6,7 @@ import { assertCapability } from "@/lib/server/auth/dal";
 import { getForm, listSubmissions } from "@/lib/server/forms/repository";
 import { getBalance } from "@/lib/server/wallet/wallet";
 import { FormBuilder } from "@/components/admin/form-builder";
+import { FormSettings } from "@/components/admin/form-settings";
 import { FormSubmissions } from "@/components/admin/form-submissions";
 import { Badge } from "@/components/ui/badge";
 
@@ -54,6 +55,29 @@ export default async function FormDetailPage({
             : "no domains configured yet"}
         </p>
       </header>
+
+      <section>
+        <h2 className="text-lg font-semibold tracking-tight">Settings</h2>
+        <p className="text-muted-foreground mt-1 mb-4 max-w-2xl text-sm">
+          Placed above the field builder because an unconfigured allowlist is
+          the usual reason a freshly embedded form appears to do nothing.
+        </p>
+        {/* Only the plain, serialisable subset crosses to the client — the doc
+            also carries the token hash and the owner id, which it must not. */}
+        <FormSettings
+          formId={form.formId}
+          initial={{
+            name: form.name,
+            description: form.description,
+            allowedDomains: form.allowedDomains,
+            notifyEmails: form.notifyEmails,
+            honeypotEnabled: form.honeypotEnabled,
+            redirectUrl: form.redirectUrl,
+            thankYouMessage: form.thankYouMessage,
+            appearance: form.appearance,
+          }}
+        />
+      </section>
 
       <section>
         <h2 className="text-lg font-semibold tracking-tight">Fields</h2>
