@@ -247,7 +247,11 @@ export function GET() {
   return new Response(js, {
     headers: {
       "Content-Type": "text/javascript; charset=utf-8",
-      "Cache-Control": "public, max-age=3600, s-maxage=86400",
+      // Short in the browser, long at the edge — see the note in widget.js. A
+      // loader embedded on sites we do not control is the one asset nobody can
+      // bust for us, so a long browser TTL delays every fix.
+      "Cache-Control":
+        "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
     },
   });
 }
