@@ -3,6 +3,21 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { assertCapability } from "@/lib/server/auth/dal";
+import type { Capability } from "@/lib/server/auth/roles";
+
+/**
+ * Which permission may buy credits for each product.
+ *
+ * Typed as a total record, so adding a wallet product without deciding who may
+ * fund it is a compile error rather than a runtime refusal nobody expects.
+ */
+const CAPABILITY_FOR_PRODUCT: Record<WalletProduct, Capability> = {
+  chatbot: "manage_chatbots",
+  forms: "manage_forms",
+  bookings: "manage_bookings",
+  // No separate email permission exists; sending is configured with settings.
+  email: "manage_settings",
+};
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 import {
   createOrder,
@@ -41,10 +56,18 @@ export type CheckoutStarted =
 export async function createCheckoutAction(
   packId: string,
 ): Promise<BillingActionResult<CheckoutStarted>> {
-  const session = await assertCapability("manage_forms");
-
+  // The pack decides which capability is required, because the packs are no
+  // longer all for one product. This asked for `manage_forms` unconditionally,
+  // which meant buying CHATBOT or BOOKING credits demanded the forms permission —
+  // so a teammate given only `manage_bookings` could run a calendar but never top
+  // it up, and the refusal named the wrong product.
+  //
+  // The pack is resolved first, so an unknown id is rejected before any
+  // capability is asserted and cannot be used to probe which permissions exist.
   const pack = getPack(packId);
   if (!pack) return fail("That pack is not available.");
+
+  const session = await assertCapability(CAPABILITY_FOR_PRODUCT[pack.product]);
 
   const order = await createOrder({ ownerId: session.userId, packId });
   if (!order) return fail("That pack is not available.");
