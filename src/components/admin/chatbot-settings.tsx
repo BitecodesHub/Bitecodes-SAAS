@@ -142,9 +142,14 @@ function domainError(
     return "Loopback addresses are already allowed — you do not need to add this.";
   if (stored.length > LIMITS.domain)
     return `Keep it under ${LIMITS.domain} characters.`;
-  const base = stored.startsWith("*.") ? stored.slice(2) : stored;
-  if (!HOST.test(base))
-    return "That does not look like a domain. Use example.com or *.example.com.";
+  // A bare `*` is a real, supported value meaning "any site". It has to be
+  // accepted here or the editor rejects a setting the matcher honours — which is
+  // how a form ended up holding a `*` its own settings page refused to load.
+  if (stored !== "*") {
+    const base = stored.startsWith("*.") ? stored.slice(2) : stored;
+    if (!HOST.test(base))
+      return "That does not look like a domain. Use example.com or *.example.com.";
+  }
   if (existing.includes(stored)) return "That domain is already on the list.";
   if (existing.length >= LIMITS.domains)
     return `A chatbot can allow at most ${LIMITS.domains} domains.`;
@@ -444,11 +449,25 @@ export function ChatbotSettings({
             </p>
           )}
 
+          {draft.domains.includes("*") && (
+            <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-amber-600">
+              <AlertTriangle className="mt-px size-3.5 shrink-0" />
+              <span>
+                <code>*</code> allows <strong>any website</strong> to embed this
+                assistant. The public token is visible in your page source, so
+                the domain list is the only thing stopping a stranger spending
+                your tokens. Use it for testing, then replace it with your own
+                domains.
+              </span>
+            </p>
+          )}
+
           <ul className="text-muted-foreground mt-3 space-y-1 text-xs leading-relaxed">
             <li>
-              <code className="text-foreground">*.example.com</code> covers
-              subdomains such as app.example.com, but not example.com itself —
-              list the apex too if you serve pages there.
+              <code className="text-foreground">*</code> on its own allows every
+              site. <code className="text-foreground">*.example.com</code>{" "}
+              covers subdomains such as app.example.com, but not example.com
+              itself — list the apex too if you serve pages there.
             </li>
             <li>
               A leading <code className="text-foreground">www.</code> is

@@ -42,6 +42,17 @@ function matchesPattern(host: string, rawPattern: string): boolean {
   const pattern = normalizeDomainPattern(rawPattern);
   if (!pattern) return false;
 
+  // A bare `*` means "any site", which is what everyone who types it expects.
+  //
+  // It used to be compared literally — `host === "*"` — so an allowlist of `["*"]`
+  // matched nothing at all and refused every origin including the owner's own
+  // site. That is the worst kind of failure: the setting reads as maximally
+  // permissive and behaves as maximally restrictive, and the operator gets
+  // "not enabled for this website" on the one domain they were sure they had
+  // configured. Whether to permit any origin is the owner's decision to make;
+  // silently inverting it is not.
+  if (pattern === "*") return true;
+
   if (pattern.startsWith("*.")) {
     const base = pattern.slice(2);
     // `*.company.com` → any single-or-multi-label subdomain, not the apex.
