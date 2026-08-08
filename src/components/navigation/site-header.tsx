@@ -26,14 +26,26 @@ export function SiteHeader() {
         </div>
         <div className="flex flex-1 items-center justify-end gap-1.5">
           <ThemeToggle />
+          {/*
+            Sign in comes before the primary call to action and is styled down.
+            Somebody who already has an account is not choosing between these
+            two — they know which one they want, and making it quiet keeps it
+            out of the way of the visitor who is deciding.
+          */}
+          <Link
+            href="/login"
+            className="text-muted-foreground hover:text-foreground hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:inline-flex"
+          >
+            Sign in
+          </Link>
           <Button
             asChild
             variant="gradient"
             size="sm"
             className="hidden sm:inline-flex"
           >
-            <Link href="/contact">
-              Start a project
+            <Link href="/signup">
+              Get started free
               <ArrowRight className="size-3.5" />
             </Link>
           </Button>

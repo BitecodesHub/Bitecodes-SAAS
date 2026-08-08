@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import Link from "next/link";
 import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
 import { loginAction, type LoginState } from "@/lib/server/auth/actions";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 /**
- * Admin sign-in form.
+ * The sign-in form, for staff and for customers alike.
+ *
+ * One form rather than two because there is one credential check behind it:
+ * `loginAction` reads the account's role and sends it to the right area, so a
+ * customer who arrives at the staff sign-in page still lands on their own
+ * dashboard. Two forms would mean two places to get the lockout messaging, the
+ * two-factor step, and the uniform failure wording right.
  *
  * A plain `<form action={…}>` bound to a Server Action, so it submits and shows
  * errors with JavaScript disabled. `useActionState` adds the returned error and
@@ -32,7 +39,19 @@ export function LoginForm({ next }: { next?: string }) {
           className="border-destructive/40 bg-destructive/5 text-destructive flex items-start gap-2.5 rounded-xl border p-3.5 text-sm"
         >
           <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <p className="leading-relaxed">{state.error}</p>
+          <div className="leading-relaxed">
+            <p>{state.error}</p>
+            {state.needsVerification && (
+              // The one failure with a next step the person can take here and
+              // now, so it is offered rather than described.
+              <Link
+                href={`/verify?email=${encodeURIComponent(state.email ?? "")}`}
+                className="mt-1.5 inline-block font-medium underline underline-offset-4"
+              >
+                Send the link again
+              </Link>
+            )}
+          </div>
         </div>
       )}
 

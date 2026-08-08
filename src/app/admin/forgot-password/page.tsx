@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { RecoveryForm } from "@/components/admin/recovery-form";
+import { RecoveryForm } from "@/components/account/recovery-form";
 
 export const metadata: Metadata = {
   title: "Account recovery",

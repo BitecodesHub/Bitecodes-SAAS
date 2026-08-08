@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { LoginLinkForm } from "@/components/admin/login-link-form";
+import { LoginLinkForm } from "@/components/account/login-link-form";
 import { peekToken } from "@/lib/server/auth/recovery";
 
 export const metadata: Metadata = {

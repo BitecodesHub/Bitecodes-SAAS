@@ -45,6 +45,7 @@ export type LoginFailure =
   | { ok: false; reason: "invalid" }
   | { ok: false; reason: "locked"; retryAfterSeconds: number }
   | { ok: false; reason: "disabled" }
+  | { ok: false; reason: "unverified"; email: string }
   | { ok: false; reason: "two-factor-required" };
 
 export type LoginResult =
@@ -93,6 +94,14 @@ export async function authenticateAdmin(
 
   // Status is checked only after the password verifies, so a disabled account
   // cannot be identified without its password.
+  //
+  // `pending` is told apart from `disabled` because the two need opposite
+  // things from the person: one has to click a link we already sent them, the
+  // other has to talk to us. Both answers are given only to somebody who has
+  // just proved they know the password, so neither leaks anything to a stranger.
+  if (user.status === "pending") {
+    return { ok: false, reason: "unverified", email: user.email };
+  }
   if (user.status !== "active") {
     return { ok: false, reason: "disabled" };
   }

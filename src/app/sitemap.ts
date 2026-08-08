@@ -21,6 +21,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/booking", priority: 0.9 },
     { path: "/portfolio", priority: 0.9 },
     { path: "/pricing", priority: 0.8 },
+    // The way in. Listed high because "bitecodes sign up" and "bitecodes login"
+    // are navigational queries a real customer types, and answering them with
+    // the right page beats answering them with the home page. `/verify`,
+    // `/reset` and the dashboard itself carry credentials or private data and
+    // are `noindex` in next.config.ts.
+    { path: "/signup", priority: 0.8 },
+    { path: "/login", priority: 0.5 },
     { path: "/tools", priority: 0.9 },
     { path: "/website-audit", priority: 0.9 },
     { path: "/ai-project-consultant", priority: 0.9 },

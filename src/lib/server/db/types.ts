@@ -125,7 +125,21 @@ export interface AuditReportDoc extends Timestamped {
 // Admin identity
 // ---------------------------------------------------------------------------
 
-export type AdminRole = "owner" | "admin" | "editor" | "viewer";
+/**
+ * Who a principal is.
+ *
+ * The first four are staff. `customer` is a self-serve account: somebody who
+ * signed themselves up to run their own chatbots, forms and calendars. It shares
+ * this collection with staff rather than living in a second users table, because
+ * every control that protects an account — scrypt hashing, lockout, session
+ * epochs, TOTP, single-use recovery tokens — would otherwise have to be written
+ * a second time, and the second copy is where the bug goes.
+ *
+ * What keeps the two apart is capability, not storage: `customer` holds only the
+ * three product permissions, so every staff page refuses it on its own terms.
+ * See `roles.ts`.
+ */
+export type AdminRole = "owner" | "admin" | "editor" | "viewer" | "customer";
 
 export interface AdminUserDoc extends Timestamped {
   _id?: ObjectId;
@@ -135,7 +149,16 @@ export interface AdminUserDoc extends Timestamped {
   role: AdminRole;
   /** `scrypt` output, encoded by `password.ts`. Never leaves the server. */
   passwordHash: string;
-  status: "active" | "invited" | "disabled";
+  /**
+   * `pending` is a self-serve account that has not clicked its verification
+   * link yet. Session validation accepts only `active`, so a pending account
+   * cannot hold a session even if one were somehow issued to it.
+   */
+  status: "active" | "invited" | "pending" | "disabled";
+  /** When the address was proven. Null on staff accounts, which are vouched for. */
+  emailVerifiedAt?: Date | null;
+  /** What a self-serve customer calls their business. Optional, and free text. */
+  company?: string | null;
   /** Base32 TOTP secret. Present only once two-factor auth is enabled. */
   totpSecret?: string | null;
   totpEnabledAt?: Date | null;
@@ -167,7 +190,7 @@ export interface AdminTokenDoc {
   _id?: ObjectId;
   tokenHash: string;
   userId: string;
-  purpose: "password-reset" | "invite" | "login-link";
+  purpose: "password-reset" | "invite" | "login-link" | "verify-email";
   createdAt: Date;
   expiresAt: Date;
   usedAt: Date | null;

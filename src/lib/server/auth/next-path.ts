@@ -9,27 +9,39 @@
  * `/admin/login?next=https://evil.example` would bounce a freshly-authenticated
  * operator off-site, which is a credible phishing setup against exactly the
  * person whose credentials are worth the most.
+ *
+ * There are two signed-in areas — `/admin` for staff and `/app` for self-serve
+ * customers — and a destination is confined to the one being signed in to. That
+ * is not merely tidy: a customer arriving at `/admin` is refused, and a staff
+ * member arriving at `/app` is shown a customer's dashboard for an account with
+ * no products, so a cross-area `next` produces a confusing dead end even when it
+ * is not an attack.
  */
-export function safeNextPath(next: string | undefined | null): string {
-  const fallback = "/admin";
-  if (!next) return fallback;
+export type SignedInArea = "/admin" | "/app";
+
+export function safeNextPath(
+  next: string | undefined | null,
+  area: SignedInArea = "/admin",
+): string {
+  if (!next) return area;
 
   // Reject absolute and protocol-relative URLs. "//evil.example" is a fully
   // valid absolute URL as far as a browser is concerned.
-  if (!next.startsWith("/") || next.startsWith("//")) return fallback;
+  if (!next.startsWith("/") || next.startsWith("//")) return area;
 
   // Some user agents normalise a backslash to a forward slash, so "/\evil.com"
   // can become "//evil.com" after this check would otherwise have passed.
-  if (next.includes("\\")) return fallback;
+  if (next.includes("\\")) return area;
 
-  // Confine to the admin area. Anchored on the segment boundary so
-  // "/adminx/evil" does not slip through on a bare prefix match.
+  // Confine to the area being signed in to. Anchored on the segment boundary so
+  // "/adminx/evil" does not slip through on a bare prefix match, and "/apple"
+  // does not pass as "/app".
   if (
-    next !== "/admin" &&
-    !next.startsWith("/admin/") &&
-    !next.startsWith("/admin?")
+    next !== area &&
+    !next.startsWith(`${area}/`) &&
+    !next.startsWith(`${area}?`)
   ) {
-    return fallback;
+    return area;
   }
 
   return next;

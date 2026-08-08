@@ -144,8 +144,8 @@ export default function BookingPage() {
       <Section spacing="sm">
         <div className="container-page flex flex-wrap gap-3">
           <Button asChild variant="gradient" size="lg">
-            <Link href="/contact">
-              Get started
+            <Link href="/signup">
+              Get started free
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -287,6 +287,8 @@ export default function BookingPage() {
       <CtaSection
         title="Let people book you without the back and forth"
         description="Tell us the hours you work and we will have a calendar live on your site."
+        primary={{ label: "Create your account", href: "/signup" }}
+        secondary={{ label: "Talk to us first", href: "/contact" }}
       />
     </>
   );

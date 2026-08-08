@@ -1,7 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import {
+  revalidateProduct,
+  revalidateProductRecord,
+} from "@/lib/server/revalidate-product";
 import { assertCapability } from "@/lib/server/auth/dal";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 import {
@@ -65,7 +68,7 @@ export async function createFormAction(input: {
     detail: { name: parsed.data.name },
   });
 
-  revalidatePath("/admin/forms");
+  revalidateProduct("forms");
   return { ok: true, data: created };
 }
 
@@ -125,8 +128,8 @@ export async function updateFormAction(
     actorId: session.userId,
     target: { type: "form", id: formId },
   });
-  revalidatePath("/admin/forms");
-  revalidatePath(`/admin/forms/${formId}`);
+  revalidateProduct("forms");
+  revalidateProductRecord("forms", formId);
   return { ok: true };
 }
 
@@ -155,7 +158,7 @@ export async function updateFieldsAction(
     target: { type: "form", id: formId },
     detail: { fields: parsed.data.length },
   });
-  revalidatePath(`/admin/forms/${formId}`);
+  revalidateProductRecord("forms", formId);
   return { ok: true };
 }
 
@@ -172,7 +175,7 @@ export async function setFormStatusAction(
     target: { type: "form", id: formId },
     detail: { status },
   });
-  revalidatePath("/admin/forms");
+  revalidateProduct("forms");
   return { ok: true };
 }
 
@@ -182,7 +185,7 @@ export async function rotateFormTokenAction(
   const session = await assertCapability("manage_forms");
   const token = await rotatePublicToken(session.userId, formId);
   if (!token) return fail("That form no longer exists.");
-  revalidatePath(`/admin/forms/${formId}`);
+  revalidateProductRecord("forms", formId);
   return { ok: true, data: { publicToken: token } };
 }
 
@@ -197,7 +200,7 @@ export async function deleteFormAction(
     actorId: session.userId,
     target: { type: "form", id: formId },
   });
-  revalidatePath("/admin/forms");
+  revalidateProduct("forms");
   return { ok: true };
 }
 
@@ -215,7 +218,7 @@ export async function setSubmissionStatusAction(
     target: { type: "form_submission", id: submissionId },
     detail: { status },
   });
-  revalidatePath(`/admin/forms/${formId}`);
+  revalidateProductRecord("forms", formId);
   return { ok: true };
 }
 

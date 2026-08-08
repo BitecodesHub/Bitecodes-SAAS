@@ -2,7 +2,7 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 import { adminTokens, adminUsers } from "@/lib/server/db/collections";
-import type { AdminTokenDoc } from "@/lib/server/db/types";
+import type { AdminRole, AdminTokenDoc } from "@/lib/server/db/types";
 import { hashPassword, randomToken, sha256Hex } from "@/lib/server/crypto";
 import { revokeAllSessions } from "@/lib/server/auth/session";
 import { queueEmail } from "@/lib/server/email/send";
@@ -103,6 +103,18 @@ async function findActiveUserByEmail(email: string) {
 }
 
 /**
+ * Where a recovery link lands, which depends on who is recovering.
+ *
+ * Staff reset inside `/admin`; customers reset on the public site. Sending a
+ * customer to `/admin/reset` would work — the token is what authorises the
+ * change — but it would show them a page branded for staff and then drop them
+ * on a sign-in form they are not allowed to use.
+ */
+function areaFor(role: AdminRole): "/admin" | "" {
+  return role === "customer" ? "" : "/admin";
+}
+
+/**
  * Emails a password-reset link if — and only if — the address has an active
  * account. Resolves either way; the caller must not reveal which happened.
  */
@@ -115,16 +127,16 @@ export async function requestPasswordReset(email: string): Promise<void> {
     "password-reset",
     RESET_TTL_MS,
   );
-  const url = `${getSiteUrl()}/admin/reset/${token}`;
+  const url = `${getSiteUrl()}${areaFor(user.role)}/reset/${token}`;
 
   await queueEmail({
     to: user.email,
     toName: user.name,
-    subject: `Reset your ${siteConfig.name} admin password`,
+    subject: `Reset your ${siteConfig.name} password`,
     blocks: [
       {
         type: "p",
-        text: `Someone asked to reset the password for the ${siteConfig.name} admin account belonging to this address. If that was you, use the button below within the next hour.`,
+        text: `Someone asked to reset the password for the ${siteConfig.name} account belonging to this address. If that was you, use the button below within the next hour.`,
       },
       { type: "cta", label: "Choose a new password", url },
       {
@@ -151,7 +163,7 @@ export async function requestLoginLink(email: string): Promise<void> {
     "login-link",
     LOGIN_LINK_TTL_MS,
   );
-  const url = `${getSiteUrl()}/admin/login/link?token=${encodeURIComponent(token)}`;
+  const url = `${getSiteUrl()}${areaFor(user.role)}/login/link?token=${encodeURIComponent(token)}`;
 
   await queueEmail({
     to: user.email,
@@ -160,7 +172,7 @@ export async function requestLoginLink(email: string): Promise<void> {
     blocks: [
       {
         type: "p",
-        text: `Use the button below to sign in to the ${siteConfig.name} admin panel. The link works once and expires in 15 minutes.`,
+        text: `Use the button below to sign in to ${siteConfig.name}. The link works once and expires in 15 minutes.`,
       },
       { type: "cta", label: "Sign in", url },
       {
@@ -175,7 +187,7 @@ export async function requestLoginLink(email: string): Promise<void> {
 }
 
 export type ResetOutcome =
-  | { ok: true; userId: string; email: string }
+  | { ok: true; userId: string; email: string; role: AdminRole }
   | { ok: false; reason: "invalid-token" | "no-account" };
 
 /**
@@ -209,7 +221,10 @@ export async function performPasswordReset(
   if (!user) return { ok: false, reason: "no-account" };
 
   await revokeAllSessions(userId);
-  return { ok: true, userId, email: user.email };
+  // `findOneAndUpdate` defaults to returning the pre-update document, which is
+  // exactly what is wanted here: the role has not changed, and reading it back
+  // saves the caller a second query to decide where to send them next.
+  return { ok: true, userId, email: user.email, role: user.role };
 }
 
 export type LoginLinkOutcome =

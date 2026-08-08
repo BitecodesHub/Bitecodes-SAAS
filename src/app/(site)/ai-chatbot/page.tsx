@@ -348,7 +348,7 @@ export default function AiChatbotPage() {
                   variant={pack.popular ? "gradient" : "outline"}
                   className="mt-5 w-full"
                 >
-                  <Link href="/contact">Get started</Link>
+                  <Link href="/signup">Get started free</Link>
                 </Button>
               </div>
             ))}
@@ -384,7 +384,10 @@ export default function AiChatbotPage() {
         </div>
       </Section>
 
-      <CtaSection />
+      <CtaSection
+        primary={{ label: "Create your account", href: "/signup" }}
+        secondary={{ label: "Talk to us first", href: "/contact" }}
+      />
     </>
   );
 }

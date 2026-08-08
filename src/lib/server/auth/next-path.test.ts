@@ -75,3 +75,52 @@ describe("safeNextPath", () => {
     }
   });
 });
+
+describe("safeNextPath in the customer area", () => {
+  it("keeps a legitimate customer path", () => {
+    expect(safeNextPath("/app", "/app")).toBe("/app");
+    expect(safeNextPath("/app/chatbots", "/app")).toBe("/app/chatbots");
+    expect(safeNextPath("/app/billing?pack=x", "/app")).toBe(
+      "/app/billing?pack=x",
+    );
+  });
+
+  it("defaults to the customer dashboard when absent", () => {
+    expect(safeNextPath(undefined, "/app")).toBe("/app");
+    expect(safeNextPath("", "/app")).toBe("/app");
+  });
+
+  it("anchors the prefix so /apple is not /app", () => {
+    // The customer area is the one prefix with a plausible English word after
+    // it, so this is the case a bare startsWith would actually get wrong.
+    expect(safeNextPath("/apple/evil", "/app")).toBe("/app");
+    expect(safeNextPath("/application", "/app")).toBe("/app");
+    expect(safeNextPath("/app-store/x", "/app")).toBe("/app");
+  });
+
+  it("refuses to send a customer into the admin panel", () => {
+    // A customer holds no `view` capability, so /admin would refuse them
+    // anyway; keeping the redirect in-area means they see their dashboard
+    // rather than a 403 immediately after a successful sign-in.
+    expect(safeNextPath("/admin", "/app")).toBe("/app");
+    expect(safeNextPath("/admin/users", "/app")).toBe("/app");
+  });
+
+  it("refuses to send a staff member into the customer area", () => {
+    expect(safeNextPath("/app", "/admin")).toBe("/admin");
+    expect(safeNextPath("/app/billing", "/admin")).toBe("/admin");
+  });
+
+  it("rejects every off-site shape in the customer area too", () => {
+    for (const value of [
+      "https://evil.example/app",
+      "//evil.example",
+      "/\\evil.example",
+      "javascript:alert(1)",
+      "/",
+      "/contact",
+    ]) {
+      expect(safeNextPath(value, "/app"), value).toBe("/app");
+    }
+  });
+});

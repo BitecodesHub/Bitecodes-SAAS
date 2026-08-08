@@ -54,6 +54,13 @@ const noIndexPaths = [
   "/form/:path*",
   // The hosted booking embed, for the same reason.
   "/book/:path*",
+  // The customer dashboard: somebody's own data, behind a session.
+  "/app/:path*",
+  // Credential-bearing URLs. `/login` and `/signup` are deliberately absent —
+  // they are how customers find the product, and both should be indexed.
+  "/verify/:path*",
+  "/reset/:path*",
+  "/login/link",
 ];
 
 const nextConfig: NextConfig = {

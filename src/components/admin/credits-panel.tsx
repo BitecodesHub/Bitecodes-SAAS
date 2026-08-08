@@ -12,22 +12,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import type { WalletProduct } from "@/lib/server/db/types";
 
 /**
  * Buy prepaid credits for a metered product.
  *
- * One component for both products rather than two near-copies: the wallet, the
+ * One component for every product rather than four near-copies: the wallet, the
  * order flow, and the grant action are all already product-generic, so the only
  * thing that actually differs is the noun. Duplicating the panel would mean
- * every future billing change had to be made twice, and the second copy is the
- * one that gets forgotten.
+ * every future billing change had to be made four times, and the copies that get
+ * forgotten are the ones nobody is looking at.
+ *
+ * This was typed `"forms" | "chatbot"`, which is why `/admin/bookings` carried a
+ * hand-written wallet section with no Buy button and a note admitting checkout
+ * was not connected. Booking credits could be granted by an administrator and
+ * bought by nobody — fine while the only account was ours, and a dead end the
+ * moment a customer signs themselves up. `CreditProduct` is now the wallet's own
+ * union, so a new product cannot be added without deciding what its credits are
+ * called here.
  *
  * When no gateway is configured the action returns payment instructions instead
  * of a redirect. Those are shown verbatim rather than pretending checkout
  * succeeded.
  */
 
-export type CreditProduct = "forms" | "chatbot";
+export type CreditProduct = WalletProduct;
 
 export interface PackCard {
   packId: string;
@@ -63,6 +72,20 @@ const COPY: Record<
       "Tokens cover both the question and the answer, so a longer reply costs more. A refusal costs a few tokens; nothing is charged when a visitor is turned away.",
     unit: "tokens",
     grantDefault: "250000",
+  },
+  bookings: {
+    heading: "Booking credits",
+    explainer:
+      "One credit per confirmed booking. Showing the calendar, a visitor browsing times, and a slot lost to somebody faster all cost nothing.",
+    unit: "bookings",
+    grantDefault: "100",
+  },
+  email: {
+    heading: "Email credits",
+    explainer:
+      "One credit per message accepted for delivery. A message rejected for a bad address or a suppressed recipient is not charged.",
+    unit: "emails",
+    grantDefault: "1000",
   },
 };
 

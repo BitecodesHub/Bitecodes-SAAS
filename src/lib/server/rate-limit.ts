@@ -175,6 +175,15 @@ export const RATE_LIMITS = {
    */
   formCreditsWarning: { max: 1, windowMs: 24 * HOUR_MS },
   portalLogin: { max: 8, windowMs: HOUR_MS },
+  /**
+   * Self-serve sign-ups, per IP. Low, because each one sends an email to an
+   * address the sender chose — an uncapped form is a way to have our domain
+   * deliver unwanted mail to strangers, which costs us our sending reputation
+   * rather than costing the abuser anything.
+   */
+  signup: { max: 5, windowMs: HOUR_MS },
+  /** Re-sending a verification link, capped per address as well as per IP. */
+  verifyResend: { max: 4, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
   unsubscribe: { max: 30, windowMs: HOUR_MS },
   analytics: { max: 200, windowMs: HOUR_MS },
