@@ -26,6 +26,8 @@ export const AUDIT_ACTIONS = {
   passwordResetRequested: "auth.password.reset_requested",
   loginLinkRequested: "auth.login_link.requested",
   loginLinkUsed: "auth.login_link.used",
+  signupStarted: "auth.signup.started",
+  signupVerified: "auth.signup.verified",
   twoFactorEnabled: "auth.2fa.enabled",
   twoFactorDisabled: "auth.2fa.disabled",
   sessionRevoked: "auth.session.revoked",

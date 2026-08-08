@@ -7,10 +7,17 @@ import {
   ROLE_ORDER,
   can,
   capabilitiesFor,
+  isCustomerRole,
   type Capability,
 } from "@/lib/server/auth/roles";
 
-const ROLES: AdminRole[] = ["owner", "admin", "editor", "viewer"];
+/**
+ * Staff sit on one ladder, each rung a subset of the one above. `customer` is
+ * not on that ladder at all — it is a different kind of principal that happens
+ * to share the table — so the monotonicity rules below apply to staff only.
+ */
+const STAFF_ROLES: AdminRole[] = ["owner", "admin", "editor", "viewer"];
+const ALL_ROLES: AdminRole[] = [...STAFF_ROLES, "customer"];
 
 describe("can", () => {
   it("gives the owner every capability", () => {
@@ -19,8 +26,8 @@ describe("can", () => {
     }
   });
 
-  it("lets every role read", () => {
-    for (const role of ROLES) {
+  it("lets every member of staff read", () => {
+    for (const role of STAFF_ROLES) {
       expect(can(role, "view"), role).toBe(true);
     }
   });
@@ -99,7 +106,7 @@ describe("permission matrix shape", () => {
   });
 
   it("references only declared capabilities", () => {
-    for (const role of ROLES) {
+    for (const role of ALL_ROLES) {
       for (const capability of capabilitiesFor(role)) {
         expect(CAPABILITIES, `${role}: ${capability}`).toContain(capability);
       }
@@ -107,18 +114,81 @@ describe("permission matrix shape", () => {
   });
 
   it("has no duplicate capabilities in any role", () => {
-    for (const role of ROLES) {
+    for (const role of ALL_ROLES) {
       const list = capabilitiesFor(role);
       expect(new Set(list).size, role).toBe(list.length);
     }
   });
 
   it("labels and describes every role", () => {
-    for (const role of ROLES) {
+    for (const role of ALL_ROLES) {
       expect(ROLE_LABELS[role], role).toBeTruthy();
       expect(ROLE_DESCRIPTIONS[role], role).toBeTruthy();
     }
-    expect(ROLE_ORDER).toHaveLength(ROLES.length);
-    expect(new Set(ROLE_ORDER).size).toBe(ROLES.length);
+  });
+
+  it("offers only staff roles in the role picker", () => {
+    // `customer` must not be assignable from the team page: it would let an
+    // owner demote a colleague into a customer account, or promote a paying
+    // customer into staff, from a dropdown.
+    expect(ROLE_ORDER).toHaveLength(STAFF_ROLES.length);
+    expect(new Set(ROLE_ORDER).size).toBe(STAFF_ROLES.length);
+    expect(ROLE_ORDER).not.toContain("customer");
+  });
+});
+
+describe("the customer role", () => {
+  /**
+   * This block is the security boundary for self-serve accounts. Everything a
+   * customer must NOT reach is refused by *not holding a capability*, so these
+   * assertions are the whole of the rule — there is no second check elsewhere
+   * that would catch a mistake made here.
+   */
+  it("holds exactly the four product permissions", () => {
+    expect([...capabilitiesFor("customer")].sort()).toEqual(
+      [
+        "manage_bookings",
+        "manage_chatbots",
+        "manage_email",
+        "manage_forms",
+      ].sort(),
+    );
+  });
+
+  it("cannot read the admin dashboard, leads, or prospects", () => {
+    // `view` gates the panel's own dashboard and, through it, the business's
+    // pipeline. A customer holding it would see another company's leads.
+    expect(can("customer", "view")).toBe(false);
+    expect(can("customer", "manage_leads")).toBe(false);
+    expect(can("customer", "manage_prospects")).toBe(false);
+  });
+
+  it("cannot reach settings, the model catalogue, or other accounts", () => {
+    // `manage_settings` opens the AI model catalogue, which holds provider API
+    // keys, and the outbound email templates.
+    expect(can("customer", "manage_settings")).toBe(false);
+    expect(can("customer", "manage_users")).toBe(false);
+    expect(can("customer", "manage_jobs")).toBe(false);
+  });
+
+  it("cannot publish content or send outreach in our name", () => {
+    expect(can("customer", "write_content")).toBe(false);
+    expect(can("customer", "publish_content")).toBe(false);
+    expect(can("customer", "send_email")).toBe(false);
+  });
+
+  it("holds no capability that staff below admin do not also hold", () => {
+    // Guards against the matrix drifting so that signing yourself up grants
+    // more than being hired as an editor.
+    for (const capability of capabilitiesFor("customer")) {
+      expect(can("admin", capability), capability).toBe(true);
+    }
+  });
+
+  it("is the only role reported as a customer", () => {
+    expect(isCustomerRole("customer")).toBe(true);
+    for (const role of STAFF_ROLES) {
+      expect(isCustomerRole(role), role).toBe(false);
+    }
   });
 });

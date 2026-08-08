@@ -37,6 +37,15 @@ export const CAPABILITIES = [
   "manage_forms",
   /** Configure booking pages, their availability, and the resulting diary. */
   "manage_bookings",
+  /**
+   * Send mail through the account's own email credits, and buy more.
+   *
+   * Separate from `manage_settings`, which configures the *platform's* own
+   * sending — templates, suppression, sequences. A self-serve customer must be
+   * able to top up the email product they pay for without being handed the
+   * controls for our outreach machinery.
+   */
+  "manage_email",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -64,10 +73,36 @@ const ROLE_CAPABILITIES: Record<AdminRole, readonly Capability[]> = {
     "manage_chatbots",
     "manage_forms",
     "manage_bookings",
+    "manage_email",
   ],
   editor: ["view", "manage_leads", "write_content"],
   viewer: ["view"],
+  /**
+   * A self-serve customer: the four products they pay for, and nothing else.
+   *
+   * The omission that does the work is `view`. It gates the admin dashboard,
+   * and with it the leads, prospects and reports of the business itself — so a
+   * customer who types `/admin` is refused by the same rule that refuses a
+   * viewer who types `/admin/users`, rather than by a special case somebody has
+   * to remember to write. `manage_settings` is withheld for the same reason: it
+   * opens the AI model catalogue, which holds provider API keys.
+   *
+   * Everything a customer can reach is already scoped by `ownerId` in the query
+   * itself, so holding these capabilities grants access to their own records
+   * only, never to another customer's.
+   */
+  customer: [
+    "manage_chatbots",
+    "manage_forms",
+    "manage_bookings",
+    "manage_email",
+  ],
 };
+
+/** True when the role is a self-serve customer rather than a member of staff. */
+export function isCustomerRole(role: AdminRole): boolean {
+  return role === "customer";
+}
 
 export function can(role: AdminRole, capability: Capability): boolean {
   return ROLE_CAPABILITIES[role]?.includes(capability) ?? false;
@@ -77,7 +112,15 @@ export function capabilitiesFor(role: AdminRole): readonly Capability[] {
   return ROLE_CAPABILITIES[role] ?? [];
 }
 
-/** Ordered most to least privileged, for display and for role pickers. */
+/**
+ * Staff roles, most to least privileged, for display and for role pickers.
+ *
+ * `customer` is deliberately absent: it is not a role anybody is *assigned* on
+ * the team page, it is what signing yourself up makes you. Listing it there
+ * would offer an owner a way to demote a colleague into a customer account, and
+ * to promote a paying customer into staff, neither of which is a thing to do by
+ * accident from a dropdown.
+ */
 export const ROLE_ORDER: AdminRole[] = ["owner", "admin", "editor", "viewer"];
 
 export const ROLE_LABELS: Record<AdminRole, string> = {
@@ -85,6 +128,7 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
   admin: "Admin",
   editor: "Editor",
   viewer: "Viewer",
+  customer: "Customer",
 };
 
 export const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
@@ -92,4 +136,6 @@ export const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
   admin: "Everything except managing admin accounts.",
   editor: "Draft content and work leads. Cannot publish or send email.",
   viewer: "Read-only access.",
+  customer:
+    "Self-serve account. Their own chatbots, forms, and calendars only.",
 };

@@ -4,6 +4,15 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { assertCapability } from "@/lib/server/auth/dal";
 import type { Capability } from "@/lib/server/auth/roles";
+import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
+import {
+  createOrder,
+  getActiveProvider,
+  setGatewayOrderId,
+} from "@/lib/server/billing/orders";
+import { getPack } from "@/lib/server/billing/packs";
+import { credit } from "@/lib/server/wallet/wallet";
+import type { WalletProduct } from "@/lib/server/db/types";
 
 /**
  * Which permission may buy credits for each product.
@@ -15,18 +24,8 @@ const CAPABILITY_FOR_PRODUCT: Record<WalletProduct, Capability> = {
   chatbot: "manage_chatbots",
   forms: "manage_forms",
   bookings: "manage_bookings",
-  // No separate email permission exists; sending is configured with settings.
-  email: "manage_settings",
+  email: "manage_email",
 };
-import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
-import {
-  createOrder,
-  getActiveProvider,
-  setGatewayOrderId,
-} from "@/lib/server/billing/orders";
-import { getPack } from "@/lib/server/billing/packs";
-import { credit } from "@/lib/server/wallet/wallet";
-import type { WalletProduct } from "@/lib/server/db/types";
 
 /**
  * Billing actions.
@@ -106,9 +105,23 @@ export async function createCheckoutAction(
   }
 }
 
+/**
+ * `product` lists every wallet product, not just the two that existed when this
+ * was written. Left at `["chatbot", "forms"]` it rejected a booking or email
+ * grant as malformed input, and the message blamed the operator for a field they
+ * had filled in correctly. `satisfies` ties the list to the union, so a new
+ * product breaks the build here rather than failing silently at run time.
+ */
+const GRANTABLE_PRODUCTS = [
+  "chatbot",
+  "forms",
+  "bookings",
+  "email",
+] as const satisfies readonly WalletProduct[];
+
 const grantSchema = z.object({
   ownerId: z.string().trim().min(1).max(64),
-  product: z.enum(["chatbot", "forms"]),
+  product: z.enum(GRANTABLE_PRODUCTS),
   amount: z.number().int().min(1).max(1_000_000),
   note: z.string().trim().max(200).optional(),
 });
