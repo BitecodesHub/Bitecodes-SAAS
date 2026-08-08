@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { LoginForm } from "@/components/admin/login-form";
+import { LoginForm } from "@/components/account/login-form";
+import { redirectIfSignedIn } from "@/lib/server/auth/redirect-if-signed-in";
 
 /**
  * Admin sign-in.
@@ -16,11 +17,16 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLoginPage({
   searchParams,
 }: {
   searchParams: Promise<{ next?: string; reset?: string }>;
 }) {
+  // Validated, unlike the cookie-presence check proxy used to make here.
+  await redirectIfSignedIn();
+
   const { next, reset } = await searchParams;
 
   return (

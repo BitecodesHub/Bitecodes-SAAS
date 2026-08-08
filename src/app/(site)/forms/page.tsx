@@ -180,8 +180,8 @@ export default function FormsProductPage() {
       <Section spacing="sm">
         <div className="container-page flex flex-wrap gap-3">
           <Button asChild variant="gradient" size="lg">
-            <Link href="/contact">
-              Get started
+            <Link href="/signup">
+              Get started free
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -333,7 +333,7 @@ export default function FormsProductPage() {
                   variant={pack.popular ? "gradient" : "outline"}
                   className="mt-5 w-full"
                 >
-                  <Link href="/contact">Get started</Link>
+                  <Link href="/signup">Get started free</Link>
                 </Button>
               </div>
             ))}
@@ -371,7 +371,10 @@ export default function FormsProductPage() {
         </div>
       </Section>
 
-      <CtaSection />
+      <CtaSection
+        primary={{ label: "Create your account", href: "/signup" }}
+        secondary={{ label: "Talk to us first", href: "/contact" }}
+      />
     </>
   );
 }

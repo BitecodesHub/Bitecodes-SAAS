@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
-import { ResetPasswordForm } from "@/components/admin/reset-password-form";
+import { ResetPasswordForm } from "@/components/account/reset-password-form";
 import { peekToken } from "@/lib/server/auth/recovery";
 
 export const metadata: Metadata = {

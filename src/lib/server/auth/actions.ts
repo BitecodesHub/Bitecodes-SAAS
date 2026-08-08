@@ -13,6 +13,8 @@ import { getAdminSession, getCurrentAdminUser } from "@/lib/server/auth/dal";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { safeNextPath } from "@/lib/server/auth/next-path";
+import { isCustomerRole } from "@/lib/server/auth/roles";
+import type { AdminRole } from "@/lib/server/db/types";
 import {
   performPasswordReset,
   redeemLoginLink,
@@ -47,6 +49,11 @@ export type LoginState =
       error?: string;
       /** Set when the password was right but a second factor is needed. */
       needsTwoFactor?: boolean;
+      /**
+       * Set when the password was right but the address is still unproven, so
+       * the form can offer to resend the link instead of showing a dead end.
+       */
+      needsVerification?: boolean;
       /** Preserved so the form does not clear on a failed attempt. */
       email?: string;
     }
@@ -98,6 +105,17 @@ export async function loginAction(
       return { email, needsTwoFactor: true };
     }
 
+    if (result.reason === "unverified") {
+      // Only reachable by somebody who has just supplied the right password,
+      // so telling them the account exists reveals nothing they did not know.
+      return {
+        email,
+        needsVerification: true,
+        error:
+          "Confirm your email address first. We sent you a link when you signed up.",
+      };
+    }
+
     if (result.reason === "locked") {
       await recordAudit({
         action: AUDIT_ACTIONS.loginLocked,
@@ -140,7 +158,21 @@ export async function loginAction(
     detail: { role: result.role, twoFactor: Boolean(totpCode) },
   });
 
-  redirect(safeNextPath(parsed.data.next));
+  // Signed-in destination follows the account, not the form that was used. One
+  // sign-in form serves both areas, and a customer who reaches the staff form
+  // lands on their own dashboard rather than on a 403 from a panel they were
+  // never going to be allowed into.
+  redirect(safeNextPath(parsed.data.next, areaForRole(result.role)));
+}
+
+/** Which signed-in area a role belongs to. */
+function areaForRole(role: AdminRole): "/admin" | "/app" {
+  return isCustomerRole(role) ? "/app" : "/admin";
+}
+
+/** Where to send somebody who has just signed out, or must sign in again. */
+function signInPathForRole(role: AdminRole): string {
+  return isCustomerRole(role) ? "/login" : "/admin/login";
 }
 
 // ---------------------------------------------------------------------------
@@ -276,7 +308,7 @@ export async function resetPasswordAction(
     detail: { via: "reset-link" },
   });
 
-  redirect("/admin/login?reset=done");
+  redirect(`${signInPathForRole(result.role)}?reset=done`);
 }
 
 /**
@@ -333,7 +365,7 @@ export async function completeLoginLinkAction(
     actorEmail: result.email,
   });
 
-  redirect("/admin");
+  redirect(areaForRole(result.role));
 }
 
 export async function logoutAction(): Promise<void> {
@@ -350,5 +382,7 @@ export async function logoutAction(): Promise<void> {
     });
   }
 
-  redirect("/admin/login");
+  // Read before the session was destroyed, so a customer is returned to the
+  // sign-in page they recognise rather than to the staff one.
+  redirect(signInPathForRole(session?.role ?? "owner"));
 }

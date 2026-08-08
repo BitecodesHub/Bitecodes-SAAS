@@ -2,6 +2,10 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import {
+  revalidateProduct,
+  revalidateProductRecord,
+} from "@/lib/server/revalidate-product";
 import { assertCapability } from "@/lib/server/auth/dal";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 import {
@@ -68,7 +72,7 @@ export async function createChatbotAction(input: {
     detail: { name: parsed.data.name },
   });
 
-  revalidatePath("/admin/chatbots");
+  revalidateProduct("chatbots");
   return { ok: true, data: created };
 }
 
@@ -159,8 +163,8 @@ export async function updateChatbotAction(
     actorId: session.userId,
     target: { type: "chatbot", id: chatbotId },
   });
-  revalidatePath("/admin/chatbots");
-  revalidatePath(`/admin/chatbots/${chatbotId}`);
+  revalidateProduct("chatbots");
+  revalidateProductRecord("chatbots", chatbotId);
   return { ok: true };
 }
 
@@ -177,7 +181,7 @@ export async function setChatbotStatusAction(
     target: { type: "chatbot", id: chatbotId },
     detail: { status },
   });
-  revalidatePath("/admin/chatbots");
+  revalidateProduct("chatbots");
   return { ok: true };
 }
 
@@ -187,7 +191,7 @@ export async function rotatePublicTokenAction(
   const session = await assertCapability("manage_chatbots");
   const token = await rotatePublicToken(session.userId, chatbotId);
   if (!token) return fail("That chatbot no longer exists.");
-  revalidatePath(`/admin/chatbots/${chatbotId}`);
+  revalidateProductRecord("chatbots", chatbotId);
   return { ok: true, data: { publicToken: token } };
 }
 
@@ -202,7 +206,7 @@ export async function deleteChatbotAction(
     actorId: session.userId,
     target: { type: "chatbot", id: chatbotId },
   });
-  revalidatePath("/admin/chatbots");
+  revalidateProduct("chatbots");
   return { ok: true };
 }
 
@@ -221,7 +225,7 @@ export async function createApiKeyAction(
     actorId: session.userId,
     detail: { prefix: created.prefix },
   });
-  revalidatePath("/admin/chatbots/api-keys");
+  revalidateProduct("chatbots/api-keys");
   return { ok: true, data: { secret: created.secret, prefix: created.prefix } };
 }
 
@@ -235,7 +239,7 @@ export async function revokeApiKeyAction(
     action: AUDIT_ACTIONS.chatbotApiKeyRevoked,
     actorId: session.userId,
   });
-  revalidatePath("/admin/chatbots/api-keys");
+  revalidateProduct("chatbots/api-keys");
   return { ok: true };
 }
 
@@ -367,6 +371,6 @@ export async function deleteKnowledgeSourceAction(
   const session = await assertCapability("manage_chatbots");
   const ok = await deleteSource(session.userId, chatbotId, sourceId);
   if (!ok) return fail("That source no longer exists.");
-  revalidatePath(`/admin/chatbots/${chatbotId}`);
+  revalidateProductRecord("chatbots", chatbotId);
   return { ok: true };
 }

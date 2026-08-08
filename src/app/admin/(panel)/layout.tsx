@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { unauthorized } from "next/navigation";
+import { redirect, unauthorized } from "next/navigation";
 import {
   requireAdminSession,
   getCurrentAdminUser,
 } from "@/lib/server/auth/dal";
-import { capabilitiesFor } from "@/lib/server/auth/roles";
+import { capabilitiesFor, isCustomerRole } from "@/lib/server/auth/roles";
 import { logoutAction } from "@/lib/server/auth/actions";
 import { AdminShell, SIDEBAR_COOKIE } from "@/components/admin/admin-shell";
 
@@ -30,6 +30,14 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await requireAdminSession();
+
+  // A customer would be refused by every page in here anyway, because none of
+  // the capabilities they hold appears on one — so this changes no permission.
+  // What it changes is the answer: a redirect to their own dashboard, rather
+  // than a 403 that reads as "you have broken something" to somebody who most
+  // likely just followed a stale bookmark or a link in an old email.
+  if (isCustomerRole(session.role)) redirect("/app");
+
   const user = await getCurrentAdminUser();
 
   if (!user) {

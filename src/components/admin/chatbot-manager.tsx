@@ -42,9 +42,12 @@ export interface ChatbotRow {
 export function ChatbotManager({
   chatbots,
   siteUrl,
+  basePath,
 }: {
   chatbots: ChatbotRow[];
   siteUrl: string;
+  /** `/admin` or `/app` — the same list is rendered in both areas. */
+  basePath: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -204,7 +207,7 @@ export function ChatbotManager({
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium">
                     <Link
-                      href={`/admin/chatbots/${bot.chatbotId}`}
+                      href={`${basePath}/chatbots/${bot.chatbotId}`}
                       className="hover:text-primary"
                     >
                       {bot.name}

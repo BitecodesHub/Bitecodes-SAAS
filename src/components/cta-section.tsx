@@ -4,16 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 
+interface CtaAction {
+  label: string;
+  href: string;
+}
+
 interface CtaSectionProps {
   title?: string;
   description?: string;
   className?: string;
+  /**
+   * The two buttons.
+   *
+   * Defaulted to the studio's own call to action — "tell us about your
+   * project" — because that is what most of the site is selling. The product
+   * pages override them: a chatbot, a form or a calendar is something a visitor
+   * can have working in a minute by signing up, and asking them to fill in a
+   * contact form instead is asking them to wait a day for something that needs
+   * nobody's involvement.
+   */
+  primary?: CtaAction;
+  secondary?: CtaAction;
 }
 
 export function CtaSection({
   title = "Let's build something that lasts.",
   description = "Tell us what you're working on. We'll reply within one business day with thoughts on how we can help.",
   className,
+  primary = { label: "Start a project", href: "/contact" },
+  secondary = { label: "View our work", href: "/portfolio" },
 }: CtaSectionProps) {
   return (
     <section className={cn("container-page py-20 sm:py-28", className)}>
@@ -45,8 +64,8 @@ export function CtaSection({
                 size="lg"
                 className="bg-background text-foreground hover:bg-background/90"
               >
-                <Link href="/contact">
-                  Start a project
+                <Link href={primary.href}>
+                  {primary.label}
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
@@ -56,7 +75,7 @@ export function CtaSection({
                 variant="outline"
                 className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
               >
-                <Link href="/portfolio">View our work</Link>
+                <Link href={secondary.href}>{secondary.label}</Link>
               </Button>
             </div>
           </div>

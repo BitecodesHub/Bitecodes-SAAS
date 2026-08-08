@@ -1,7 +1,10 @@
 "use server";
 
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
+import {
+  revalidateProduct,
+  revalidateProductRecord,
+} from "@/lib/server/revalidate-product";
 import { assertCapability } from "@/lib/server/auth/dal";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 import {
@@ -201,7 +204,7 @@ export async function createBookingAction(input: {
     detail: { name: parsed.data.name, timezone: parsed.data.timezone },
   });
 
-  revalidatePath("/admin/bookings");
+  revalidateProduct("bookings");
   // The token is returned once, here. Only its SHA-256 is stored.
   return { ok: true, data: created };
 }
@@ -276,8 +279,8 @@ export async function updateBookingAction(
     detail: { fields: Object.keys(parsed.data) },
   });
 
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidateProduct("bookings");
+  revalidateProductRecord("bookings", bookingId);
   return { ok: true };
 }
 
@@ -304,8 +307,8 @@ export async function setBookingStatusAction(
     detail: { status },
   });
 
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidateProduct("bookings");
+  revalidateProductRecord("bookings", bookingId);
   return { ok: true };
 }
 
@@ -329,7 +332,7 @@ export async function rotateBookingTokenAction(
     detail: { rotated: true },
   });
 
-  revalidatePath(`/admin/bookings/${bookingId}`);
+  revalidateProductRecord("bookings", bookingId);
   return { ok: true, data: { publicToken } };
 }
 
@@ -347,7 +350,7 @@ export async function deleteBookingAction(
     target: { type: "booking_config", id: bookingId },
   });
 
-  revalidatePath("/admin/bookings");
+  revalidateProduct("bookings");
   return { ok: true };
 }
 
@@ -388,6 +391,6 @@ export async function cancelBookingAction(
     },
   });
 
-  revalidatePath(`/admin/bookings/${booking.configId}`);
+  revalidateProductRecord("bookings", booking.configId);
   return { ok: true };
 }

@@ -100,6 +100,10 @@ export function GET() {
   lines.push(`- [Home](${url}/)`);
   lines.push(`- [Services](${url}/services)`);
   lines.push(`- [Pricing](${url}/pricing)`);
+  lines.push(
+    `- [Sign up](${url}/signup) — self-serve. Create an account in a minute, no card, with free credits on all four products (chatbot, forms, bookings, transactional email). Credits never expire and nothing renews automatically.`,
+  );
+  lines.push(`- [Sign in](${url}/login)`);
   lines.push(`- [Portfolio](${url}/portfolio)`);
   lines.push(`- [About](${url}/about)`);
   lines.push(`- [Process](${url}/process)`);

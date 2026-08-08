@@ -30,9 +30,9 @@ export function RecoveryForm() {
       >
         <MailCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
         <p className="leading-relaxed">
-          If <span className="font-medium">{state.email}</span> has an admin
-          account, {state.mode === "reset" ? "a reset link" : "a sign-in link"}{" "}
-          is on its way. Check your inbox — the link{" "}
+          If <span className="font-medium">{state.email}</span> has an account,{" "}
+          {state.mode === "reset" ? "a reset link" : "a sign-in link"} is on its
+          way. Check your inbox — the link{" "}
           {state.mode === "reset"
             ? "works once and expires in an hour."
             : "works once and expires in 15 minutes."}

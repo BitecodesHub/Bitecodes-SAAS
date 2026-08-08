@@ -44,9 +44,12 @@ export interface FormRow {
 export function FormsManager({
   forms,
   siteUrl,
+  basePath,
 }: {
   forms: FormRow[];
   siteUrl: string;
+  /** `/admin` or `/app` — the same list is rendered in both areas. */
+  basePath: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -222,7 +225,7 @@ export function FormsManager({
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-medium">
                     <Link
-                      href={`/admin/forms/${form.formId}`}
+                      href={`${basePath}/forms/${form.formId}`}
                       className="hover:text-primary"
                     >
                       {form.name}

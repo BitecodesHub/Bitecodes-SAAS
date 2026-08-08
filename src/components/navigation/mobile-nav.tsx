@@ -74,14 +74,21 @@ export function MobileNav() {
             )}
           </Accordion>
         </nav>
-        <DialogClose asChild>
-          <Button asChild variant="gradient" size="lg" className="w-full">
-            <Link href="/contact">
-              Start a project
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </DialogClose>
+        <div className="space-y-2">
+          <DialogClose asChild>
+            <Button asChild variant="gradient" size="lg" className="w-full">
+              <Link href="/signup">
+                Get started free
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+          </DialogClose>
+          <DialogClose asChild>
+            <Button asChild variant="outline" size="lg" className="w-full">
+              <Link href="/login">Sign in</Link>
+            </Button>
+          </DialogClose>
+        </div>
       </DialogSheet>
     </Dialog>
   );

@@ -1,0 +1,36 @@
+import Link from "next/link";
+import { LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+/**
+ * The 401 boundary for the customer area, rendered when `unauthorized()` is
+ * called.
+ *
+ * A real 401 page rather than a redirect to sign-in: a redirect returns 200 for
+ * a resource the caller was not allowed to see, which misreports the outcome to
+ * crawlers, monitoring, and any API client.
+ */
+export default function AppUnauthorized() {
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4 py-16">
+      <div className="max-w-md text-center">
+        <p className="text-muted-foreground text-sm font-medium">401</p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          You are not signed in
+        </h1>
+        <p className="text-muted-foreground mt-3 leading-relaxed">
+          Your session has expired or was signed out elsewhere. Sign in again to
+          pick up where you left off.
+        </p>
+        <div className="mt-6 flex justify-center">
+          <Button asChild variant="gradient">
+            <Link href="/login">
+              <LogIn aria-hidden="true" />
+              Sign in
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </main>
+  );
+}
