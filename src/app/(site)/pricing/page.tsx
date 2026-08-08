@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Calculator } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  Bot,
+  ClipboardList,
+  CalendarClock,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
@@ -52,6 +58,36 @@ function pricingCatalogSchema() {
   };
 }
 
+/**
+ * The three metered products, listed here because this is the page people open
+ * when they want to know what things cost. Forms and Booking were sellable and
+ * unmentioned on it, so a visitor comparing prices saw project work and the
+ * chatbot and concluded that was everything.
+ */
+const PRODUCTS = [
+  {
+    href: "/ai-chatbot",
+    icon: Bot,
+    title: "AI Chatbot",
+    body: "An assistant that answers from your own content, embedded with one line of code. Prepaid tokens; a refusal costs almost nothing.",
+    cta: "See chatbot pricing",
+  },
+  {
+    href: "/forms",
+    icon: ClipboardList,
+    title: "Forms",
+    body: "A form on any website, with submissions emailed to you and stored with CSV export. One credit per submission, and spam never bills you.",
+    cta: "See form pricing",
+  },
+  {
+    href: "/booking",
+    icon: CalendarClock,
+    title: "Booking",
+    body: "A calendar people can book directly, correct in every timezone and impossible to double-book. One credit per confirmed booking.",
+    cta: "See booking pricing",
+  },
+];
+
 export default function PricingPage() {
   return (
     <>
@@ -96,6 +132,40 @@ export default function PricingPage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </Section>
+
+      <Section spacing="sm">
+        <div className="container-page">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Ready-made products, priced per use
+          </h2>
+          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+            Three things you can put on your own website today. Each is prepaid
+            and metered, so there is no monthly fee and nothing to cancel — you
+            buy credits and spend them as they are used.
+          </p>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {PRODUCTS.map((product) => (
+              <Link
+                key={product.href}
+                href={product.href}
+                className="border-border bg-card hover:border-primary/40 group rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+              >
+                <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
+                  <product.icon className="size-4.5" />
+                </span>
+                <h3 className="mt-4 font-semibold">{product.title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {product.body}
+                </p>
+                <p className="text-primary mt-4 inline-flex items-center gap-1.5 text-sm font-medium">
+                  {product.cta}
+                  <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </p>
+              </Link>
+            ))}
           </div>
         </div>
       </Section>

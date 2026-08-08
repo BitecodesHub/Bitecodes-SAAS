@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/services", priority: 0.9 },
     { path: "/ai-chatbot", priority: 0.9 },
     { path: "/forms", priority: 0.9 },
+    { path: "/booking", priority: 0.9 },
     { path: "/portfolio", priority: 0.9 },
     { path: "/pricing", priority: 0.8 },
     { path: "/tools", priority: 0.9 },

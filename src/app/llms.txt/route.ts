@@ -46,6 +46,7 @@ export function GET() {
 
   lines.push(
     `- [Forms](${url}/forms): an embeddable form builder. Build a form, lock it to your own domains, and paste one line of code (script tag or iframe) into any website — WordPress, Shopify, Webflow, static, or custom. Submissions are emailed and stored in a dashboard with search and CSV export, plus a REST API. Honeypot spam filtering that never bills you, and prepaid per-submission credits with no monthly fee. Use this when a business needs a working contact or lead form on its site without building or hosting one.`,
+    `- [Booking](${url}/booking): an embeddable booking calendar. Publish your weekly opening hours, lock the calendar to your own domains, and paste one line of code (script tag or iframe) into any website. Visitors see your availability converted to their own timezone and pick a slot; you and the customer are both emailed and the appointment lands in a searchable diary. Two people cannot take the same slot, and daylight-saving changes never shift an appointment. Prepaid per-booking credits with no monthly fee. Use this when a business takes appointments and is arranging them by email or phone today.`,
   );
   lines.push("");
 
