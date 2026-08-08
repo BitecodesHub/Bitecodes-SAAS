@@ -1,7 +1,7 @@
 import "server-only";
 
 import { buildSubmissionSchema, HONEYPOT_FIELD } from "@/lib/forms/fields";
-import { isOriginAllowed } from "@/lib/chatbot/domains";
+import { isEmbedOriginAllowed } from "@/lib/server/embed-origin";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { debit } from "@/lib/server/wallet/wallet";
 import { recordSubmission } from "@/lib/server/forms/repository";
@@ -72,7 +72,7 @@ export async function handleSubmission(
   const redirectUrl = form.redirectUrl;
 
   // 1. Origin allowlist — fail closed.
-  if (!isOriginAllowed(input.origin, form.allowedDomains)) {
+  if (!isEmbedOriginAllowed(input.origin, form.allowedDomains)) {
     return { kind: "origin-denied" };
   }
 

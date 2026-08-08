@@ -18,14 +18,13 @@ const securityHeaders = [
 ];
 
 /**
- * Clickjacking protection, applied to every route **except** the hosted form
- * embed.
+ * Clickjacking protection, applied to every route **except** the hosted embeds.
  *
- * `/form/:formId` exists precisely to be iframed by a customer's own website,
- * so a blanket `SAMEORIGIN` would break the product. It is safe to exempt: the
- * page renders one form the embedder already owns a token for, holds no session,
- * and performs no authenticated action, so there is nothing for a hostile framer
- * to hijack.
+ * `/form/:formId` and `/book/:bookingId` exist precisely to be iframed by a
+ * customer's own website, so a blanket `SAMEORIGIN` would break the product.
+ * Both are safe to exempt: each renders one record the embedder already owns a
+ * token for, holds no session, and performs no authenticated action, so there is
+ * nothing for a hostile framer to hijack.
  */
 const frameGuardHeader = { key: "X-Frame-Options", value: "SAMEORIGIN" };
 
@@ -53,6 +52,8 @@ const noIndexPaths = [
   "/e/:path*",
   // The hosted form embed: a customer's form, not Bitecodes content.
   "/form/:path*",
+  // The hosted booking embed, for the same reason.
+  "/book/:path*",
 ];
 
 const nextConfig: NextConfig = {
@@ -101,13 +102,19 @@ const nextConfig: NextConfig = {
     return [
       // Security + privacy headers apply to every route, including HTML.
       { source: "/:path*", headers: securityHeaders },
-      // Frame protection everywhere the embed does not live.
-      { source: "/:path((?!form/).*)", headers: [frameGuardHeader] },
-      // The embed instead declares that any site may frame it. `frame-ancestors`
-      // also takes precedence over X-Frame-Options in modern browsers, so this
-      // is belt-and-braces with the exclusion above.
+      // Frame protection everywhere the embeds do not live.
+      { source: "/:path((?!form/|book/).*)", headers: [frameGuardHeader] },
+      // The embeds instead declare that any site may frame them.
+      // `frame-ancestors` also takes precedence over X-Frame-Options in modern
+      // browsers, so this is belt-and-braces with the exclusion above.
       {
         source: "/form/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: "frame-ancestors *" },
+        ],
+      },
+      {
+        source: "/book/:path*",
         headers: [
           { key: "Content-Security-Policy", value: "frame-ancestors *" },
         ],

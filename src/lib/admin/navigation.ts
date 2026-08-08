@@ -132,6 +132,27 @@ export const ADMIN_NAV: AdminNavSection[] = [
         matchPrefix: true,
       },
       {
+        label: "Bookings",
+        href: "/admin/bookings",
+        // `ListChecks` rather than a calendar icon only because the sidebar
+        // resolves this string against a fixed map and falls back to the
+        // dashboard icon for anything it does not know. Switch this to
+        // `CalendarDays` in the same commit that adds that icon to `ICONS` in
+        // admin-sidebar.tsx; until then this shares a glyph with Jobs, which is
+        // `enabled: false` and therefore not a link.
+        icon: "ListChecks",
+        // Must stay identical to the capability every booking page and Server
+        // Action asserts. A link gated on one capability leading to a page that
+        // demands another is worse than no link: it renders for someone who is
+        // then refused on arrival, and reads as a broken panel rather than as
+        // the deliberate boundary it is.
+        capability: "manage_bookings",
+        enabled: true,
+        description:
+          "Embeddable booking calendars, availability, and the diary",
+        matchPrefix: true,
+      },
+      {
         label: "SEO",
         href: "/admin/seo",
         icon: "Search",

@@ -80,6 +80,12 @@ export const AUDIT_ACTIONS = {
   formDeleted: "form.deleted",
   formSubmissionStatusChanged: "form.submission.status_changed",
 
+  bookingCreated: "booking.created",
+  bookingUpdated: "booking.updated",
+  bookingDeleted: "booking.deleted",
+  /** One appointment cancelled, not the configuration it was booked against. */
+  bookingCancelled: "booking.cancelled",
+
   billingOrderCreated: "billing.order.created",
   billingWebhookProcessed: "billing.webhook.processed",
   billingCreditsGranted: "billing.credits.granted",
