@@ -284,8 +284,14 @@ export async function verifyEmail(token: string): Promise<VerifyOutcome> {
   };
 }
 
-/** Credits every product's starter allowance. Journalled as `bonus`. */
-async function grantSignupBonus(ownerId: string): Promise<void> {
+/**
+ * Credits every product's starter allowance. Journalled as `bonus`.
+ *
+ * Exported because Google sign-in reaches the same moment by a different route:
+ * an address proven by Google is as proven as one confirmed by a link, and both
+ * paths must hand out the same welcome credits from the same table.
+ */
+export async function grantSignupBonus(ownerId: string): Promise<void> {
   for (const [product, amount] of Object.entries(SIGNUP_BONUS)) {
     if (amount <= 0) continue;
     await credit({

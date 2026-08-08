@@ -44,13 +44,44 @@ export interface AdminSessionInfo {
   role: AdminRole;
 }
 
+export interface IssuedSession {
+  token: string;
+  expiresAt: Date;
+}
+
 /**
- * Issues a session and sets the cookie.
+ * The flags every session cookie carries, wherever it is set.
+ *
+ * Shared rather than written twice: a sign-in path that set the cookie without
+ * `httpOnly`, or with a different `path`, would be a hole nobody would spot by
+ * reading either file on its own.
  *
  * `secure` is conditional on production only so that local development over
- * plain HTTP works; every other flag is unconditional.
+ * plain HTTP works. `lax` rather than `strict`, because `strict` would drop the
+ * cookie when somebody follows a link into the panel from an email — which
+ * reads as a random logout — and it would break the top-level navigation an
+ * OAuth provider returns through. `lax` still blocks cross-site POSTs.
  */
-export async function createAdminSession({
+export function sessionCookieOptions(expiresAt: Date) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+    expires: expiresAt,
+  };
+}
+
+/**
+ * Records a session and returns its token, without touching any cookie jar.
+ *
+ * Separated from `createAdminSession` because a Route Handler needs to put the
+ * cookie on the `NextResponse` it is already returning. Setting it through
+ * `cookies()` while also returning a response that carries its own `Set-Cookie`
+ * header is a coin toss over which one survives, and the cost of losing is a
+ * sign-in that reports success and leaves the visitor signed out.
+ */
+export async function issueAdminSession({
   userId,
   role,
   sessionEpoch,
@@ -62,7 +93,7 @@ export async function createAdminSession({
   sessionEpoch: number;
   ip: string | null;
   userAgent: string | null;
-}): Promise<void> {
+}): Promise<IssuedSession> {
   const token = randomToken(32);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
@@ -82,17 +113,20 @@ export async function createAdminSession({
     revokedAt: null,
   });
 
+  return { token, expiresAt };
+}
+
+/** Issues a session and sets the cookie. For Server Actions. */
+export async function createAdminSession(input: {
+  userId: string;
+  role: AdminRole;
+  sessionEpoch: number;
+  ip: string | null;
+  userAgent: string | null;
+}): Promise<void> {
+  const { token, expiresAt } = await issueAdminSession(input);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    // `lax` rather than `strict`: `strict` would drop the cookie when an
-    // operator follows a link to the admin panel from an email notification,
-    // which reads as a random logout. `lax` still blocks cross-site POSTs.
-    sameSite: "lax",
-    path: "/",
-    expires: expiresAt,
-  });
+  cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));
 }
 
 /**

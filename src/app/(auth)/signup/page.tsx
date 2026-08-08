@@ -4,6 +4,8 @@ import { Check } from "lucide-react";
 import { SignupForm } from "@/components/account/signup-form";
 import { createMetadata } from "@/lib/seo";
 import { SIGNUP_BONUS } from "@/lib/server/auth/signup";
+import { GoogleButton } from "@/components/account/google-button";
+import { isGoogleSignInConfigured } from "@/lib/server/auth/google-oauth";
 
 export const metadata: Metadata = createMetadata({
   title: "Create your account",
@@ -62,6 +64,19 @@ export default function SignupPage() {
           </li>
         ))}
       </ul>
+
+      {isGoogleSignInConfigured() && (
+        <div className="mt-6 space-y-4">
+          <GoogleButton label="Sign up with Google" />
+          <div className="flex items-center gap-3">
+            <span className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-xs">
+              or with your email
+            </span>
+            <span className="bg-border h-px flex-1" />
+          </div>
+        </div>
+      )}
 
       <div className="mt-6">
         <SignupForm />

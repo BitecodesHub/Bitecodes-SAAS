@@ -3,6 +3,9 @@ import Link from "next/link";
 import { LoginForm } from "@/components/account/login-form";
 import { createMetadata } from "@/lib/seo";
 import { redirectIfSignedIn } from "@/lib/server/auth/redirect-if-signed-in";
+import { GoogleButton } from "@/components/account/google-button";
+import { isGoogleSignInConfigured } from "@/lib/server/auth/google-oauth";
+import { authErrorMessage } from "@/lib/auth-error-messages";
 
 export const metadata: Metadata = createMetadata({
   title: "Sign in",
@@ -16,12 +19,20 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; reset?: string; verified?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    reset?: string;
+    verified?: string;
+    error?: string;
+  }>;
 }) {
   // Validated, unlike the cookie-presence check proxy used to make here.
   await redirectIfSignedIn();
 
-  const { next, reset, verified } = await searchParams;
+  const { next, reset, verified, error } = await searchParams;
+  // Looked up, never rendered raw: the code arrives in the URL, where anyone
+  // can put anything.
+  const errorMessage = authErrorMessage(error);
 
   return (
     <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
@@ -29,6 +40,15 @@ export default async function LoginPage({
       <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
         Your chatbots, forms, calendars, and credits.
       </p>
+
+      {errorMessage && (
+        <p
+          role="alert"
+          className="border-destructive/40 bg-destructive/5 text-destructive mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+        >
+          {errorMessage}
+        </p>
+      )}
 
       {verified === "1" && (
         <p
@@ -46,6 +66,19 @@ export default async function LoginPage({
         >
           Your password has been changed. Sign in with the new one.
         </p>
+      )}
+
+      {isGoogleSignInConfigured() && (
+        <div className="mt-6 space-y-4">
+          <GoogleButton next={next} />
+          <div className="flex items-center gap-3">
+            <span className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-xs">
+              or with your email
+            </span>
+            <span className="bg-border h-px flex-1" />
+          </div>
+        </div>
       )}
 
       <div className="mt-6">
