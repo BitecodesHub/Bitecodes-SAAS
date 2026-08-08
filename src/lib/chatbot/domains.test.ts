@@ -130,3 +130,39 @@ describe("isOriginAllowed", () => {
     });
   });
 });
+
+describe("bare wildcard", () => {
+  it("allows any origin, which is what typing * means", () => {
+    // This was compared literally, so ["*"] matched NOTHING — the setting read as
+    // maximally permissive and behaved as maximally restrictive. A real form
+    // configured with ["*"] refused its owner's own website.
+    for (const origin of [
+      "https://anyone.example",
+      "https://bitecodes.com",
+      "http://127.0.0.1:5500",
+      "https://deep.sub.domain.co.uk",
+    ]) {
+      expect(isOriginAllowed(origin, ["*"]), origin).toBe(true);
+    }
+  });
+
+  it("works alongside other entries and however it is written", () => {
+    expect(
+      isOriginAllowed("https://anyone.example", ["example.com", "*"]),
+    ).toBe(true);
+    expect(isOriginAllowed("https://anyone.example", ["  *  "])).toBe(true);
+  });
+
+  it("still refuses an unparseable origin, wildcard or not", () => {
+    // A missing Origin header is not an origin; `*` must not turn it into one.
+    expect(isOriginAllowed(null, ["*"])).toBe(false);
+    expect(isOriginAllowed("", ["*"])).toBe(false);
+    expect(isOriginAllowed("not a url", ["*"])).toBe(false);
+  });
+
+  it("does not treat a partial star as a wildcard", () => {
+    // "*foo.com" and "*." are not meaningful patterns and must not open the door.
+    expect(isOriginAllowed("https://evil.com", ["*evil.com"])).toBe(false);
+    expect(isOriginAllowed("https://evil.com", ["*."])).toBe(false);
+  });
+});

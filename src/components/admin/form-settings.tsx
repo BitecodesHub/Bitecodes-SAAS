@@ -86,6 +86,9 @@ function normalizeDomain(pattern: string): string {
 
 /** A host we can plausibly match: labels, dots, and at most a leading `*.`. */
 function looksLikeDomain(normalized: string): boolean {
+  // `*` alone means "any site" and is honoured by the matcher, so the editor
+  // must accept it too rather than refusing a value the product supports.
+  if (normalized === "*") return true;
   if (!/^(\*\.)?[a-z0-9.-]+$/.test(normalized)) return false;
   const host = normalized.replace(/^\*\./, "");
   // A single label only makes sense for loopback, which is allowed anyway.
@@ -296,7 +299,10 @@ export function FormSettings({
             <code>example.com</code>. <code>*.example.com</code> matches any
             subdomain but <em>not</em> the bare <code>example.com</code> — list
             the apex as well if you need both, the same way a TLS wildcard
-            behaves.
+            behaves. A bare <code>*</code> allows every site — useful while
+            testing, but the public token is visible in your page source, so the
+            domain list is the only thing stopping a stranger submitting to your
+            form and spending your credits.
           </p>
         </div>
         {badDomains.length > 0 && (
