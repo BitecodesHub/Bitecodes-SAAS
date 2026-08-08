@@ -59,6 +59,42 @@ export const CREDIT_PACKS: CreditPack[] = [
     blurb: "For agencies running forms across many client sites.",
   },
 
+  // Booking packs are denominated in **confirmed bookings**, and deliberately
+  // share the forms ladder rung for rung. One credit is spent when a slot is
+  // actually reserved, so an abandoned widget, a rejected origin, and a visitor
+  // who merely browses the calendar all cost nothing — which is why the same
+  // price buys the same number of units as a form submission. Quoting a
+  // different rate for a comparable event would have to be justified, and there
+  // is nothing to justify it with.
+  {
+    packId: "bookings-starter",
+    product: "bookings",
+    label: "Starter",
+    credits: 500,
+    amount: 49_900, // ₹499
+    currency: "INR",
+    blurb: "For one calendar with a steady trickle of appointments.",
+  },
+  {
+    packId: "bookings-growth",
+    product: "bookings",
+    label: "Growth",
+    credits: 2_500,
+    amount: 149_900, // ₹1,499
+    currency: "INR",
+    blurb: "For a busy diary, or several calendars on one site.",
+    popular: true,
+  },
+  {
+    packId: "bookings-scale",
+    product: "bookings",
+    label: "Scale",
+    credits: 12_500,
+    amount: 499_900, // ₹4,999
+    currency: "INR",
+    blurb: "For agencies running booking pages across many client sites.",
+  },
+
   // Chatbot packs are denominated in **tokens**, not messages, because that is
   // what the provider bills and what the wallet debits — quoting messages would
   // be a promise the meter cannot keep, since a long answer costs more than a

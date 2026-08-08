@@ -53,6 +53,167 @@ export const SETTINGS_DEFAULTS = {
   },
 } as const;
 
+// ---------------------------------------------------------------------------
+// Notification preferences
+// ---------------------------------------------------------------------------
+
+/**
+ * Every notification the platform can send, in one list.
+ *
+ * The list lives here rather than in the page that renders it, so adding a
+ * notification anywhere in the product forces a decision about who receives it
+ * and whether it is on — instead of a new email quietly appearing in someone's
+ * inbox with no switch attached to it.
+ */
+export const NOTIFICATION_CHANNELS = [
+  "formSubmission",
+  "chatConversation",
+  "booking",
+  "lowBalance",
+  "failedJob",
+] as const;
+
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
+
+export interface NotificationChannelPrefs {
+  enabled: boolean;
+  /**
+   * Extra addresses for this notification. Empty means "use
+   * `defaultRecipients`" — it does **not** mean "send to nobody", because an
+   * empty per-channel list is the state every channel starts in.
+   */
+  recipients: string[];
+}
+
+export interface NotificationSettings {
+  /** Used by any channel whose own recipient list is empty. */
+  defaultRecipients: string[];
+  channels: Record<NotificationChannel, NotificationChannelPrefs>;
+  chat: {
+    /**
+     * Notify on every conversation, not only on the ones the knowledge base
+     * could not answer. Off by default: an unanswered question is a lead, a
+     * successfully answered one is just traffic.
+     */
+    everyConversation: boolean;
+    /** Ceiling on alert emails per chatbot per hour. */
+    maxAlertsPerBotPerHour: number;
+  };
+  lowBalance: {
+    /** Credits at or below which the low-balance warning fires. */
+    threshold: number;
+  };
+}
+
+export const NOTIFICATION_DEFAULTS: NotificationSettings = {
+  defaultRecipients: [],
+  channels: {
+    formSubmission: { enabled: true, recipients: [] },
+    chatConversation: { enabled: true, recipients: [] },
+    booking: { enabled: true, recipients: [] },
+    lowBalance: { enabled: true, recipients: [] },
+    failedJob: { enabled: true, recipients: [] },
+  },
+  chat: { everyConversation: false, maxAlertsPerBotPerHour: 6 },
+  lowBalance: { threshold: 50 },
+};
+
+/** The stored (all-optional) shape of the block above. */
+export interface StoredNotificationSettings {
+  defaultRecipients?: string[];
+  channels?: Partial<
+    Record<NotificationChannel, Partial<NotificationChannelPrefs>>
+  >;
+  chat?: { everyConversation?: boolean; maxAlertsPerBotPerHour?: number };
+  lowBalance?: { threshold?: number };
+}
+
+/**
+ * `SiteSettingsDoc` plus the notification block.
+ *
+ * Kept as an intersection here rather than added to the shared document
+ * interface: this module is the only reader and the only writer of the block,
+ * and the settings collection is schemaless, so widening the type at the point
+ * of use is enough.
+ */
+export type StoredSiteSettings = SiteSettingsDoc & {
+  notifications?: StoredNotificationSettings;
+};
+
+function resolveNotifications(
+  stored: StoredNotificationSettings | undefined,
+): NotificationSettings {
+  const channels = {} as Record<NotificationChannel, NotificationChannelPrefs>;
+  for (const channel of NOTIFICATION_CHANNELS) {
+    const saved = stored?.channels?.[channel];
+    channels[channel] = {
+      enabled:
+        saved?.enabled ?? NOTIFICATION_DEFAULTS.channels[channel].enabled,
+      recipients: cleanRecipients(saved?.recipients),
+    };
+  }
+
+  return {
+    defaultRecipients: cleanRecipients(stored?.defaultRecipients),
+    channels,
+    chat: { ...NOTIFICATION_DEFAULTS.chat, ...pickDefined(stored?.chat) },
+    lowBalance: {
+      ...NOTIFICATION_DEFAULTS.lowBalance,
+      ...pickDefined(stored?.lowBalance),
+    },
+  };
+}
+
+/**
+ * Normalises a recipient list: lowercased, trimmed, de-duplicated, bounded.
+ *
+ * Deliverability is *not* checked here — that is `isDeliverableEmail`'s job at
+ * send time, and rejecting a typo silently at read time would make the settings
+ * page show a list that differs from what was saved.
+ */
+export function cleanRecipients(
+  input: string[] | undefined | null,
+  max = 10,
+): string[] {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set<string>();
+  for (const entry of input) {
+    if (typeof entry !== "string") continue;
+    const normalized = entry.trim().toLowerCase();
+    if (normalized) seen.add(normalized);
+    if (seen.size >= max) break;
+  }
+  return [...seen];
+}
+
+/**
+ * The addresses a given notification should reach.
+ *
+ * `extra` is a product's own list — a form's `notifyEmails`, a booking config's
+ * `notifyEmails`. Those are deliberately *added to* rather than replaced by the
+ * central settings: the per-record list is the answer to "who owns this form",
+ * and silently overriding it from a global page would redirect a customer's
+ * leads to whoever last edited settings. The central page is a floor, the
+ * per-record list is the specific.
+ */
+export function recipientsForChannel(
+  settings: ResolvedSettings,
+  channel: NotificationChannel,
+  extra: string[] = [],
+): string[] {
+  const prefs = settings.notifications.channels[channel];
+  if (!prefs.enabled) return [];
+
+  // The default list applies *in addition to* a channel's own list, so one
+  // global "copy me on everything" address does not have to be repeated in
+  // five places — and so clearing a channel's list never means "nobody".
+  return cleanRecipients([
+    ...prefs.recipients,
+    ...extra,
+    ...settings.notifications.defaultRecipients,
+  ]);
+}
+
 export interface ResolvedSettings {
   contact: {
     email: string;
@@ -87,9 +248,10 @@ export interface ResolvedSettings {
     fromAddress: string | null;
     replyTo: string | null;
   };
+  notifications: NotificationSettings;
 }
 
-function resolve(stored: SiteSettingsDoc | null): ResolvedSettings {
+function resolve(stored: StoredSiteSettings | null): ResolvedSettings {
   const contact = stored?.contact;
   const address = contact?.address;
 
@@ -128,6 +290,7 @@ function resolve(stored: SiteSettingsDoc | null): ResolvedSettings {
         process.env.OUTREACH_REPLY_TO?.trim() ||
         null,
     },
+    notifications: resolveNotifications(stored?.notifications),
   };
 }
 
@@ -157,7 +320,9 @@ function pickDefined<T extends object>(source: T | undefined): Partial<T> {
 export async function getSettingsFresh(): Promise<ResolvedSettings> {
   try {
     const collection = await siteSettings();
-    const stored = await collection.findOne({ _id: SETTINGS_ID });
+    const stored = (await collection.findOne({
+      _id: SETTINGS_ID,
+    })) as StoredSiteSettings | null;
     return resolve(stored);
   } catch {
     // A database outage must not take the public site down; fall back to the
@@ -181,7 +346,7 @@ export const getSettings = unstable_cache(getSettingsFresh, ["site-settings"], {
  * two admins editing different sections cannot clobber each other's changes.
  */
 export async function updateSettings(
-  patch: Partial<SiteSettingsDoc>,
+  patch: Partial<StoredSiteSettings>,
 ): Promise<void> {
   const collection = await siteSettings();
   const now = new Date();

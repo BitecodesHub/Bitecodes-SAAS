@@ -35,6 +35,8 @@ export const CAPABILITIES = [
   "manage_chatbots",
   /** Build embeddable forms and read their submissions. */
   "manage_forms",
+  /** Configure booking pages, their availability, and the resulting diary. */
+  "manage_bookings",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -61,6 +63,7 @@ const ROLE_CAPABILITIES: Record<AdminRole, readonly Capability[]> = {
     "manage_jobs",
     "manage_chatbots",
     "manage_forms",
+    "manage_bookings",
   ],
   editor: ["view", "manage_leads", "write_content"],
   viewer: ["view"],

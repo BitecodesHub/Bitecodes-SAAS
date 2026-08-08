@@ -15,6 +15,7 @@ import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { deduct, getBalance } from "@/lib/server/tokens-ledger/ledger";
 import { streamChatCompletion } from "@/lib/server/ai-provider";
 import { sha256Hex } from "@/lib/server/crypto";
+import { notifyChatConversation } from "@/lib/server/email/notify";
 import type { ChatbotDoc } from "@/lib/server/db/types";
 
 /**
@@ -37,6 +38,10 @@ import type { ChatbotDoc } from "@/lib/server/db/types";
  *     retrieved context and to say so when it cannot. Retrieved content and the
  *     visitor's question are both marked untrusted in the prompt, so neither can
  *     redirect the assistant's instructions.
+ *  6. **Notify the owner**, once the answer is complete. A form submission
+ *     emailed its owner and a conversation emailed nobody, so a visitor the bot
+ *     could not help was a lead lost in silence. Batching and the on/off switch
+ *     live in `email/notify.ts`; this file only reports what happened.
  */
 
 /** Tokens a request must have available before the model is called. */
@@ -305,10 +310,28 @@ async function startStream(
 
   const conversationId = options.conversationId?.trim() || randomUUID();
 
+  // The answer is accumulated as it streams so the owner's alert can quote it.
+  // The route consumes the generator and never hands the text back, so
+  // capturing it here is the only place it exists in one piece — and a second
+  // model call to reconstruct it would cost real money for an email.
+  let answer = "";
+  const relay = async function* () {
+    for await (const delta of completion.stream) {
+      answer += delta;
+      yield delta;
+    }
+  };
+
+  // `settle` is called twice on the error path (once by the stream loop, once
+  // by its catch), and the token debit is idempotent enough not to care. An
+  // email is not, so notification is guarded by its own flag as well as by the
+  // per-conversation counter in `notify.ts`.
+  let notified = false;
+
   return {
     kind: "ok",
     conversationId,
-    stream: completion.stream,
+    stream: relay(),
     sources,
     grounded,
     settle: async () => {
@@ -325,6 +348,31 @@ async function startStream(
           note: `chat:${completion.model}`,
         }).catch(() => undefined);
       }
+
+      if (!notified) {
+        notified = true;
+        // Awaited rather than left floating: on a serverless runtime a promise
+        // that outlives the response is not guaranteed to run at all, and an
+        // alert that only fires on long-lived instances is worse than none —
+        // it works in development and disappears in production. The cost is a
+        // couple of writes before the final SSE event, after the visitor has
+        // already read the whole answer.
+        await notifyChatConversation({
+          chatbotId: bot.chatbotId,
+          chatbotName: bot.name,
+          conversationId,
+          question: message,
+          answer,
+          grounded,
+        }).catch((error: unknown) => {
+          console.error(
+            "[chat] conversation alert failed for",
+            bot.chatbotId,
+            error instanceof Error ? `${error.name}: ${error.message}` : error,
+          );
+        });
+      }
+
       return usage;
     },
   };

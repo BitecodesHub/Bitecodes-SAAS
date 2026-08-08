@@ -49,6 +49,8 @@ export const COLLECTIONS = {
   // Forms SaaS
   forms: "forms",
   formSubmissions: "form_submissions",
+  bookingConfigs: "booking_configs",
+  bookings: "bookings",
   // Billing
   billingOrders: "billing_orders",
   billingEvents: "billing_events",
@@ -264,6 +266,36 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { ownerId: 1, createdAt: -1 } },
     // The public embed path looks a form up by its token hash.
     { key: { publicTokenHash: 1 }, unique: true },
+  ],
+  [COLLECTIONS.bookingConfigs]: [
+    { key: { bookingId: 1 }, unique: true },
+    { key: { ownerId: 1, createdAt: -1 } },
+    // The public embed path looks a config up by its token hash.
+    { key: { publicTokenHash: 1 }, unique: true },
+  ],
+  [COLLECTIONS.bookings]: [
+    { key: { bookingId: 1 }, unique: true },
+    { key: { ownerId: 1, startAt: -1 } },
+    // Listing a config's diary, and computing which slots are already taken.
+    { key: { configId: 1, startAt: 1 } },
+    /**
+     * The double-booking guard, and the reason this is an index rather than a
+     * check in application code.
+     *
+     * Two visitors racing for the last slot both read "free" before either
+     * writes, so a read-then-write cannot prevent it at any isolation level this
+     * deployment runs at. Making (configId, startAt) unique means the database
+     * decides: one insert succeeds, the other gets a duplicate-key error the
+     * caller turns into "that time was just taken".
+     *
+     * Partial, on confirmed bookings only, so cancelling a slot frees it for
+     * someone else instead of poisoning that time forever.
+     */
+    {
+      key: { configId: 1, startAt: 1, status: 1 },
+      unique: true,
+      partialFilterExpression: { status: "confirmed" },
+    },
   ],
   [COLLECTIONS.formSubmissions]: [
     { key: { submissionId: 1 }, unique: true },

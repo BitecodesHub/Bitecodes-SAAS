@@ -847,7 +847,7 @@ export interface ChatbotModelDoc extends Timestamped {
  * Which metered good a balance belongs to. Chatbot tokens and form-submission
  * credits are separately purchased, so they must never share a pool.
  */
-export type WalletProduct = "chatbot" | "forms";
+export type WalletProduct = "chatbot" | "forms" | "bookings" | "email";
 
 /**
  * Fast, authoritative balance counter, one per owner *per product*. Mutated
@@ -1013,4 +1013,99 @@ export interface BillingEventDoc {
   eventId: string;
   orderId: string | null;
   processedAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Bookings
+// ---------------------------------------------------------------------------
+
+export type BookingConfigStatus = "active" | "paused";
+
+/**
+ * One weekday's bookable window, in the config's own timezone.
+ *
+ * Stored as minutes from midnight rather than "09:00" so arithmetic never has to
+ * parse a string, and so a window crossing no boundary stays comparable. `day` is
+ * 0-6 with 0 = Sunday, matching `Date.getUTCDay()`.
+ */
+export interface AvailabilityWindow {
+  day: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /** Inclusive start, minutes from local midnight. */
+  startMinute: number;
+  /** Exclusive end. Must be greater than `startMinute`. */
+  endMinute: number;
+}
+
+export interface BookingAppearance {
+  primaryColor: string;
+  buttonText: string;
+  theme: "light" | "dark" | "auto";
+}
+
+export interface BookingConfigDoc extends Timestamped {
+  _id?: ObjectId;
+  bookingId: string;
+  ownerId: string;
+  name: string;
+  description: string | null;
+  status: BookingConfigStatus;
+  /** Domains the embed may book from. Same matcher as chatbots and forms. */
+  allowedDomains: string[];
+  /** SHA-256 of the public embed token. The token itself is never stored. */
+  publicTokenHash: string;
+  /**
+   * IANA zone the windows below are expressed in, e.g. "Asia/Kolkata".
+   *
+   * Availability is authored in the owner's local time — "Tuesdays 9 to 5" means
+   * their Tuesday, not UTC's — while every stored instant is UTC. This field is
+   * what lets the two be reconciled, and it is why slots are computed rather than
+   * stored.
+   */
+  timezone: string;
+  /** Length of one bookable slot, in minutes. */
+  slotMinutes: number;
+  /** A slot must start at least this many hours from now. */
+  leadTimeHours: number;
+  /** How far ahead the widget will offer slots. */
+  horizonDays: number;
+  availability: AvailabilityWindow[];
+  /** Whole days with no availability, as YYYY-MM-DD in the config's timezone. */
+  blackoutDates: string[];
+  appearance: BookingAppearance;
+  notifyEmails: string[];
+  confirmationMessage: string;
+  bookingCount: number;
+}
+
+export type BookingStatus = "confirmed" | "cancelled";
+
+export interface BookingDoc {
+  _id?: ObjectId;
+  bookingId: string;
+  ownerId: string;
+  /** The configuration this was booked against. */
+  configId: string;
+  /**
+   * Slot start, UTC.
+   *
+   * Carries the unique index together with `configId`, so two visitors racing for
+   * the last slot are resolved by the database rather than by a read-then-write
+   * that can interleave. The loser gets a duplicate-key error, which the caller
+   * turns into "that time was just taken".
+   */
+  startAt: Date;
+  endAt: Date;
+  status: BookingStatus;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string | null;
+  notes: string | null;
+  meta: {
+    ipHash: string | null;
+    userAgent: string | null;
+    origin: string | null;
+    timezone: string | null;
+  };
+  createdAt: Date;
+  cancelledAt: Date | null;
 }

@@ -16,6 +16,8 @@ import type {
   ChatbotModelDoc,
   BillingEventDoc,
   BillingOrderDoc,
+  BookingConfigDoc,
+  BookingDoc,
   FormDoc,
   FormSubmissionDoc,
   KnowledgeChunkDoc,
@@ -138,6 +140,9 @@ export const walletBalances = () =>
 
 // Forms SaaS.
 export const forms = () => collection<FormDoc>(COLLECTIONS.forms);
+export const bookingConfigs = () =>
+  collection<BookingConfigDoc>(COLLECTIONS.bookingConfigs);
+export const bookings = () => collection<BookingDoc>(COLLECTIONS.bookings);
 export const formSubmissions = () =>
   collection<FormSubmissionDoc>(COLLECTIONS.formSubmissions);
 
