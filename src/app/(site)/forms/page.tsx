@@ -32,9 +32,9 @@ const FORM_PACKS = packsFor("forms");
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
-  title: "Form Builder for Any Website — Embed, Collect, Pay Per Submission",
+  title: "Embeddable Form Builder — Free Credits, No Card",
   description:
-    "Bitecodes Forms lets you build a form, embed it on any website with one line of code, and collect submissions to your inbox and dashboard. Domain-locked, spam-filtered, CSV export, and prepaid submission credits with no monthly lock-in.",
+    "Build a form and embed it on any website with one line of code. Submissions land in your inbox and dashboard. Spam-filtered, CSV export, free credits to start.",
   path: "/forms",
 });
 

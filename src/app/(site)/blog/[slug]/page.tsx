@@ -32,11 +32,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPublishedPost(slug);
-  if (!post) return createMetadata({ title: "Article not found" });
+  // `image: false`: this segment has its own opengraph-image.tsx (one
+  // per post), which createMetadata's generic default would otherwise
+  // replace outright rather than merge with.
+  if (!post) {
+    return createMetadata({ title: "Article not found", image: false });
+  }
   const meta = createMetadata({
     title: post.title,
     description: post.metaDescription || post.excerpt,
     path: `/blog/${post.slug}`,
+    image: false,
   });
   // Blog posts are articles, not generic web pages.
   return {
@@ -77,7 +83,11 @@ export default async function BlogPostPage({
     description: post.excerpt,
     image: `${siteConfig.url}/opengraph-image`,
     datePublished: post.date,
-    dateModified: post.date,
+    // Real value for database-backed posts, which is most of them post-launch
+    // of the blog engine's edit flow; static posts have no independent
+    // modification timestamp, so this was always identical to datePublished —
+    // a freshness signal that never actually reported freshness.
+    dateModified: post.updatedAt ?? post.date,
     author: {
       "@type": "Person",
       name: post.author,

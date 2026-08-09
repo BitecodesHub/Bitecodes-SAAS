@@ -159,6 +159,14 @@ export interface AdminUserDoc extends Timestamped {
   emailVerifiedAt?: Date | null;
   /** What a self-serve customer calls their business. Optional, and free text. */
   company?: string | null;
+  /**
+   * Google's `sub` claim, when the account has Google sign-in linked.
+   *
+   * The subject rather than the address, because Google states the address on
+   * an account can change and `sub` cannot — matching on address alone would
+   * hand an account to whoever inherits a recycled Workspace address.
+   */
+  googleSub?: string | null;
   /** Base32 TOTP secret. Present only once two-factor auth is enabled. */
   totpSecret?: string | null;
   totpEnabledAt?: Date | null;

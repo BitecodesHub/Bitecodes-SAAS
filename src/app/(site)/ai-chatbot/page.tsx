@@ -30,9 +30,9 @@ import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
-  title: "AI Chatbot for Your Website — Trainable, Embeddable, Token-Metered",
+  title: "AI Chatbot for Any Website — Free Credits, No Card",
   description:
-    "Bitecodes AI Chatbot is a production-ready chatbot SaaS: train it on your content, customise the widget, and embed it on any website with one line of code. Multiple AI models, RAG knowledge base, analytics, and transparent token pricing.",
+    "Train an AI chatbot on your content and embed it on any website with one line of code. RAG knowledge base, multiple AI models, and free credits to start.",
   path: "/ai-chatbot",
 });
 

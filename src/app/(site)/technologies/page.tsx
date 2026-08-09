@@ -11,7 +11,7 @@ import { createMetadata, breadcrumbSchema } from "@/lib/seo";
 export const metadata: Metadata = createMetadata({
   title: "Technologies",
   description:
-    "The languages, frameworks, databases, cloud platforms, and AI tools Bitecodes uses to build fast, reliable software — Java, Spring Boot, Next.js, React, AWS, Azure, and more.",
+    "The languages, frameworks, databases, and cloud platforms Bitecodes uses to build fast, reliable software — Java, Spring Boot, Next.js, React, AWS, and more.",
   path: "/technologies",
 });
 

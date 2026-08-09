@@ -9,7 +9,7 @@ import { breadcrumbSchema, createMetadata } from "@/lib/seo";
 export const metadata: Metadata = createMetadata({
   title: "AI Project Consultant & Software Quote Planner",
   description:
-    "Describe your software idea and receive an AI-assisted service recommendation, scope, technology direction, India-focused cost range, timeline, team, assumptions, and discovery questions.",
+    "Describe your software idea and get an AI-assisted scope, technology direction, cost range, timeline, and discovery questions in return.",
   path: "/ai-project-consultant",
 });
 

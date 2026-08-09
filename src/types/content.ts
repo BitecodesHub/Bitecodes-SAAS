@@ -130,6 +130,12 @@ export interface BlogPost {
   featured?: boolean;
   /** Present on database-backed posts; overrides `excerpt` for meta tags. */
   metaDescription?: string | null;
+  /**
+   * Present on database-backed posts. Static posts have no independent
+   * modification timestamp, so `BlogPosting.dateModified` falls back to
+   * `date` for those — see the call site in `blog/[slug]/page.tsx`.
+   */
+  updatedAt?: string;
   /** Rendered as FAQPage structured data beneath the article. */
   faq?: { question: string; answer: string }[];
   /** Curated internal links rendered after the body. */

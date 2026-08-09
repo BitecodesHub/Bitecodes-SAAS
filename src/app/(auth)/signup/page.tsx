@@ -4,11 +4,13 @@ import { Check } from "lucide-react";
 import { SignupForm } from "@/components/account/signup-form";
 import { createMetadata } from "@/lib/seo";
 import { SIGNUP_BONUS } from "@/lib/server/auth/signup";
+import { GoogleButton } from "@/components/account/google-button";
+import { isGoogleSignInConfigured } from "@/lib/server/auth/google-oauth";
 
 export const metadata: Metadata = createMetadata({
   title: "Create your account",
   description:
-    "Sign up for Bitecodes and get free credits on every product: an AI chatbot, embeddable forms, a booking calendar, and transactional email. No card required, and credits never expire.",
+    "Sign up free — credits on every product: AI chatbot, forms, booking calendar, and transactional email. No card required, and credits never expire.",
   path: "/signup",
 });
 
@@ -66,6 +68,18 @@ export default function SignupPage() {
       <div className="mt-6">
         <SignupForm />
       </div>
+
+      {/* Below the form, for the same reason as on the sign-in page. */}
+      {isGoogleSignInConfigured() && (
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-xs">or</span>
+            <span className="bg-border h-px flex-1" />
+          </div>
+          <GoogleButton label="Sign up with Google" />
+        </div>
+      )}
 
       <p className="text-muted-foreground mt-6 text-center text-sm">
         Already have an account?{" "}

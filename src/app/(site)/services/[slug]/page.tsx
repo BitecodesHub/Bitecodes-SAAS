@@ -26,11 +26,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const service = getService(slug);
-  if (!service) return createMetadata({ title: "Service not found" });
+  // `image: false` on both branches: this segment has its own
+  // opengraph-image.tsx, which createMetadata's generic default would
+  // otherwise replace outright rather than merge with.
+  if (!service) {
+    return createMetadata({ title: "Service not found", image: false });
+  }
   return createMetadata({
     title: service.title,
     description: service.description,
     path: `/services/${service.slug}`,
+    image: false,
   });
 }
 

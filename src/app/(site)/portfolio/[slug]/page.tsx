@@ -26,11 +26,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const project = getProject(slug);
-  if (!project) return createMetadata({ title: "Case study not found" });
+  // `image: false`: this segment has its own opengraph-image.tsx, which
+  // createMetadata's generic default would otherwise replace outright.
+  if (!project) {
+    return createMetadata({ title: "Case study not found", image: false });
+  }
   return createMetadata({
     title: `${project.name} — Case Study`,
     description: project.teaser,
     path: `/portfolio/${project.slug}`,
+    image: false,
   });
 }
 

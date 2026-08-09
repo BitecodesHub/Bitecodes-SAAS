@@ -95,6 +95,20 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   [COLLECTIONS.adminUsers]: [
     { key: { email: 1 }, unique: true },
     { key: { role: 1 } },
+    /*
+      One Google identity may own at most one account.
+
+      Partial rather than sparse: a sparse unique index still indexes documents
+      whose field is explicitly `null`, so the second account to be written with
+      `googleSub: null` — every password-only account — would collide with the
+      first. The partial filter takes only the documents that actually carry a
+      string, which is the set the uniqueness is about.
+    */
+    {
+      key: { googleSub: 1 },
+      unique: true,
+      partialFilterExpression: { googleSub: { $type: "string" } },
+    },
   ],
   [COLLECTIONS.adminSessions]: [
     { key: { tokenHash: 1 }, unique: true },

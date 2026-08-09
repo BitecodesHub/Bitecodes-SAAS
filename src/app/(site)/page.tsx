@@ -18,7 +18,7 @@ import { faqs } from "@/data/faqs";
 
 export const metadata = createMetadata({
   description:
-    "Bitecodes is a software outsourcing studio building fast, reliable websites, web & enterprise apps, SaaS, REST APIs, and AI automation (AI integration & MCP servers) for startups and enterprises worldwide.",
+    "Bitecodes is a software outsourcing studio building fast, reliable websites, web and enterprise apps, SaaS, REST APIs, and AI automation for growing businesses.",
   path: "/",
 });
 

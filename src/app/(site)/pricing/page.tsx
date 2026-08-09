@@ -25,9 +25,9 @@ import {
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
-  title: "Pricing — Software Development Rates (USD, INR, AUD, GBP)",
+  title: "Pricing — Development Rates & SaaS Credit Packs",
   description:
-    "Transparent starting-from pricing for Bitecodes software development services — websites, web apps, SaaS, APIs, AI, cloud, and DevOps. View rates in USD, INR, AUD, and GBP.",
+    "Transparent starting-from rates for custom software development, plus prepaid credit packs for our AI chatbot, forms, booking and email products.",
   path: "/pricing",
 });
 
