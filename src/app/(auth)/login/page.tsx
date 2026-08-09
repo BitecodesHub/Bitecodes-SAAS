@@ -68,22 +68,29 @@ export default async function LoginPage({
         </p>
       )}
 
-      {isGoogleSignInConfigured() && (
-        <div className="mt-6 space-y-4">
-          <GoogleButton next={next} />
-          <div className="flex items-center gap-3">
-            <span className="bg-border h-px flex-1" />
-            <span className="text-muted-foreground text-xs">
-              or with your email
-            </span>
-            <span className="bg-border h-px flex-1" />
-          </div>
-        </div>
-      )}
-
       <div className="mt-6">
         <LoginForm next={next} />
       </div>
+
+      {/*
+        Below the form, not above it.
+
+        Email and password is what most people here already have — the accounts
+        that predate Google sign-in, and everyone who chose a password. Putting
+        the social button first pushes the primary path under a fold on a phone
+        and invites somebody with a password account to press Google instead,
+        which lands them in the linking flow rather than signing them in.
+      */}
+      {isGoogleSignInConfigured() && (
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <span className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-xs">or</span>
+            <span className="bg-border h-px flex-1" />
+          </div>
+          <GoogleButton next={next} />
+        </div>
+      )}
 
       <p className="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
         <Link
