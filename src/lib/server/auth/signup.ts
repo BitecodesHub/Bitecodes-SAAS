@@ -44,6 +44,23 @@ import { siteConfig } from "@/lib/site";
 const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
 
 /**
+ * The chatbot product's own conversion factor, in one place.
+ *
+ * Forms, bookings and email spend one credit per submission, booking, or
+ * message sent, so a raw credit count IS a unit count a customer recognises.
+ * Chat spends tokens, many per reply, so a token count on its own promises
+ * nothing legible — `/signup` needs to say "100 chatbot replies", and whatever
+ * number backs that promise has to be tokens, because tokens are what the
+ * wallet actually holds and what a real exchange actually spends.
+ *
+ * `packsFor("chatbot")`'s own Starter pack prices itself at "roughly 500
+ * answers" per 250,000 tokens, so 500 is not invented here — it is that same
+ * ratio, named once so the bonus and the page that advertises it are always
+ * computed from the same number rather than kept in sync by hand.
+ */
+export const TOKENS_PER_CHATBOT_ANSWER = 500;
+
+/**
  * What a verified account starts with, per product.
  *
  * A free allowance rather than a free trial with an expiry: credits that vanish
@@ -52,10 +69,17 @@ const VERIFY_TTL_MS = 48 * 60 * 60 * 1000;
  * thing, embed it, and watch it work — not enough to run a business on.
  *
  * Placeholder amounts, exactly like `PACKS_ARE_PLACEHOLDER_PRICING`. This is the
- * one place to change them.
+ * one place to change them — except `chatbot`, which is derived below rather
+ * than typed directly. It was `100`: enough for a fraction of a single answer,
+ * against a signup page promising "100 chatbot replies" in the same breath. A
+ * real customer's very first message through the widget emptied the balance in
+ * one exchange, and every message after it was refused as out of tokens — which
+ * read as the balance being broken, when it was actually a units mismatch of
+ * roughly 2,500×. `100` was a reply count that was never converted to the
+ * tokens the wallet actually measures in.
  */
 export const SIGNUP_BONUS: Record<WalletProduct, number> = {
-  chatbot: 100,
+  chatbot: 100 * TOKENS_PER_CHATBOT_ANSWER,
   forms: 25,
   bookings: 10,
   email: 25,

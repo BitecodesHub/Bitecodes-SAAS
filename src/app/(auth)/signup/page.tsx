@@ -3,7 +3,10 @@ import Link from "next/link";
 import { Check } from "lucide-react";
 import { SignupForm } from "@/components/account/signup-form";
 import { createMetadata } from "@/lib/seo";
-import { SIGNUP_BONUS } from "@/lib/server/auth/signup";
+import {
+  SIGNUP_BONUS,
+  TOKENS_PER_CHATBOT_ANSWER,
+} from "@/lib/server/auth/signup";
 import { GoogleButton } from "@/components/account/google-button";
 import { isGoogleSignInConfigured } from "@/lib/server/auth/google-oauth";
 
@@ -18,11 +21,14 @@ export const metadata: Metadata = createMetadata({
  * The free allowance, described in the units a person recognises.
  *
  * Read from `SIGNUP_BONUS` rather than retyped, so the page cannot promise
- * something different from what verification actually grants.
+ * something different from what verification actually grants. Chat is the one
+ * entry that needs converting back: the wallet holds tokens, not replies, so
+ * the number shown here is derived through the same `TOKENS_PER_CHATBOT_ANSWER`
+ * the bonus itself was built from, rather than printing the raw token count.
  */
 const INCLUDED: { product: string; body: string }[] = [
   {
-    product: `${SIGNUP_BONUS.chatbot} chatbot replies`,
+    product: `${SIGNUP_BONUS.chatbot / TOKENS_PER_CHATBOT_ANSWER} chatbot replies`,
     body: "Train it on your own pages and embed it with one line.",
   },
   {
