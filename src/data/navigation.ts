@@ -1,6 +1,7 @@
 import {
   AppWindow,
   BrainCircuit,
+  CalendarClock,
   ClipboardList,
   Cloud,
   Code2,
@@ -89,6 +90,12 @@ export const mainNav: NavItem[] = [
             href: "/forms",
             description: "Embeddable form builder",
             icon: ClipboardList,
+          },
+          {
+            title: "Booking",
+            href: "/booking",
+            description: "Embeddable booking calendar",
+            icon: CalendarClock,
           },
           {
             title: "AI Integration",
@@ -263,6 +270,7 @@ export const footerNav: FooterColumn[] = [
     links: [
       { title: "AI Chatbot", href: "/ai-chatbot" },
       { title: "Forms", href: "/forms" },
+      { title: "Booking", href: "/booking" },
       { title: "Pricing", href: "/pricing" },
       { title: "Free Tools", href: "/tools" },
       { title: "Website Audit", href: "/website-audit" },
