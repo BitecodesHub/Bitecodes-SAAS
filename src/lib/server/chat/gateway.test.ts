@@ -27,9 +27,10 @@ vi.mock("@/lib/server/ai-provider", () => ({
 /** A provider that yields two deltas and reports usage. */
 function stubProvider(reply = "Refunds are available within 30 days.") {
   streamMock.mockImplementation(
-    async (input: { system: string; model?: string }) => {
+    async (input: { system: string; model?: string; maxTokens?: number }) => {
       capturedSystem = input.system;
       capturedModel = input.model;
+      capturedMaxTokens = input.maxTokens;
       return {
         model: input.model ?? "stub",
         stream: (async function* () {
@@ -44,6 +45,7 @@ function stubProvider(reply = "Refunds are available within 30 days.") {
 
 let capturedSystem = "";
 let capturedModel: string | undefined;
+let capturedMaxTokens: number | undefined;
 
 async function drain(stream: AsyncGenerator<string, void, unknown>) {
   let text = "";
@@ -214,6 +216,11 @@ describeWithDatabase("chat gateway", () => {
     // to quote the contact details it had just been handed, on live.
     expect(capturedSystem).not.toContain("untrusted");
     expect(capturedSystem).toContain("state them directly");
+    // A real match was found, so the model is not warned that the context
+    // might be unrelated to the question — it genuinely is related.
+    expect(capturedSystem).not.toContain(
+      "specifically matched to this question",
+    );
   });
 
   it("reports ungrounded when nothing relevant is stored", async () => {
@@ -249,8 +256,15 @@ describeWithDatabase("chat gateway", () => {
     expect(capturedSystem).toContain("Bitecodes builds websites");
     // ...and it must NOT be told the assistant is unconfigured.
     expect(capturedSystem).not.toContain("nothing is stored");
-    // ...but nothing actually matched, so the operator sees that honestly.
+    // ...but nothing actually matched, so the operator sees that honestly...
     expect(outcome.grounded).toBe(false);
+    // ...and the model itself is told the same thing: this is the knowledge
+    // base handed over as a best effort, not material chosen for this
+    // question, so it should say so rather than forcing an answer out of
+    // whatever is closest. This is the fix for answers that felt "off topic" —
+    // the model previously received this exact unranked dump with no signal
+    // that it might not apply.
+    expect(capturedSystem).toContain("specifically matched to this question");
   });
 
   it("tells the model plainly when no knowledge exists at all", async () => {
@@ -278,6 +292,24 @@ describeWithDatabase("chat gateway", () => {
     expect(outcome.kind).toBe("ok");
     if (outcome.kind !== "ok") return;
     expect(outcome.grounded).toBe(false);
+  });
+
+  it("caps the reply length regardless of the model's own configured maximum", async () => {
+    // Reported on live: very long, rambling answers from a widget whose system
+    // prompt only ever *asked* for one or two sentences. A soft instruction is
+    // a preference; this is what actually bounds it. The seeded catalogue
+    // models all carry `maxOutput: 900` — nine hundred tokens of headroom for
+    // an assistant meant to answer in a sentence or two — so the ceiling has
+    // to win over that, not merely apply when a model asks for less.
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    const { listModels } = await import("@/lib/server/chatbot/models");
+    await fund(1_000);
+    const [seeded] = await listModels();
+    expect(seeded?.maxOutput).toBe(900);
+
+    const outcome = await handleChat(baseRequest());
+    expect(outcome.kind).toBe("ok");
+    expect(capturedMaxTokens).toBeLessThanOrEqual(320);
   });
 
   it("uses the catalogue default rather than the env model", async () => {
