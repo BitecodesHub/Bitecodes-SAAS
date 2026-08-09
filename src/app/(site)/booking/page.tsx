@@ -20,13 +20,14 @@ import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
 import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { formatPackPrice, packsFor } from "@/lib/server/billing/packs";
+import { siteConfig } from "@/lib/site";
 
 const BOOKING_PACKS = packsFor("bookings");
 
 export const metadata: Metadata = createMetadata({
-  title: "Booking Widget for Any Website — Embed a Calendar, Take Appointments",
+  title: "Booking Calendar for Any Website — Free Credits",
   description:
-    "Bitecodes Booking lets you publish your real availability, embed a calendar on any website with one line of code, and take appointments straight into your diary. Timezone-correct, double-booking proof, domain-locked, with prepaid credits and no monthly lock-in.",
+    "Publish your real availability and embed a booking calendar on any website with one line of code. Timezone-correct, impossible to double-book, free credits to start.",
   path: "/booking",
 });
 
@@ -128,6 +129,34 @@ export default function BookingPage() {
           { name: "Home", path: "/" },
           { name: "Booking", path: "/booking" },
         ])}
+      />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: `${siteConfig.name} Booking`,
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Any",
+          url: `${siteConfig.url}/booking`,
+          description:
+            "Embeddable booking calendar: timezone-correct availability, double-booking-proof scheduling, a customisable widget, and prepaid per-booking pricing.",
+          // Derived from the packs a customer can actually buy — see the same
+          // note on /ai-chatbot: a fictional price here would be published
+          // misinformation, since this is machine-read by search engines and
+          // AI assistants, not just marketing copy a person skims past.
+          offers: BOOKING_PACKS.map((pack) => ({
+            "@type": "Offer",
+            name: `${pack.label} — ${pack.credits.toLocaleString()} bookings`,
+            price: (pack.amount / 100).toFixed(2),
+            priceCurrency: pack.currency,
+            url: `${siteConfig.url}/booking`,
+          })),
+          provider: {
+            "@type": "Organization",
+            "@id": `${siteConfig.url}/#organization`,
+            name: siteConfig.name,
+          },
+        }}
       />
       <JsonLd data={faqSchema(FAQS)} />
 

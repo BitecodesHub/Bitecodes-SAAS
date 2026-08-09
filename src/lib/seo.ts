@@ -31,18 +31,50 @@ interface PageMetaInput {
   description?: string;
   /** Path beginning with "/", used for canonical + OG url. */
   path?: string;
+  /**
+   * Open Graph / Twitter image. Defaults to the generic branded image at
+   * `/opengraph-image`. Pass `false` for a route segment that already has its
+   * own `opengraph-image.tsx` file sitting next to `page.tsx` — see the note
+   * below on why the two cannot both be left to Next to resolve.
+   */
+  image?: string | false;
 }
 
 /**
  * Build per-page Metadata with sensible, SEO-complete defaults
- * (canonical, Open Graph, Twitter). metadataBase is set in the root layout,
- * and the Open Graph image is supplied by the file-based `opengraph-image`
- * convention, so it does not need to be repeated here.
+ * (canonical, Open Graph, Twitter). metadataBase is set in the root layout.
+ *
+ * `openGraph.images` is set here explicitly, to a route that is guaranteed to
+ * exist and resolve — `/opengraph-image` — because leaving it to the file-based
+ * convention alone does not work. That convention is scoped to the exact folder
+ * `opengraph-image.tsx` sits in: the app's OWN copy lives at `src/app/`, one
+ * level above the actual homepage at `src/app/(site)/page.tsx`, and a route
+ * group is a real folder for this purpose even though it disappears from the
+ * URL. So it generated a real image, reachable at `/opengraph-image` directly,
+ * that not one page's `<head>` ever referenced — confirmed live: `curl` on
+ * production showed zero `og:image` tags on the home page and on every one of
+ * the four product pages, while the file itself served a 200 PNG to a direct
+ * request the whole time. Sharing any of those pages produced a blank preview
+ * card on every platform that generates one.
+ *
+ * Three segments — `blog/[slug]`, `services/[slug]`, `portfolio/[slug]` —
+ * genuinely do have their own colocated `opengraph-image.tsx`, generating a
+ * distinct image per post/service/project, and that already works. Confirmed
+ * on local dev that setting `openGraph.images` here REPLACES what the file
+ * convention would have produced for that same segment, rather than the two
+ * merging — so those three callers pass `image: false` to keep their own image
+ * instead of silently losing it to this generic one.
+ *
+ * `twitter.images` is deliberately left unset: Next falls back to
+ * `openGraph.images` for Twitter when a segment has no dedicated
+ * `twitter-image.tsx` (confirmed on local dev — none exist in this codebase),
+ * so setting it a second time here would just be the same value twice.
  */
 export function createMetadata({
   title,
   description = siteConfig.description,
   path = "/",
+  image = "/opengraph-image",
 }: PageMetaInput = {}): Metadata {
   const fullTitle = title
     ? `${title} — ${siteConfig.name}`
@@ -64,6 +96,7 @@ export function createMetadata({
       description,
       url,
       locale: siteConfig.locale,
+      ...(image !== false && { images: [image] }),
     },
     twitter: {
       card: "summary_large_image",

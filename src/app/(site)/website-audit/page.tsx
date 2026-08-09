@@ -7,7 +7,7 @@ import { Section } from "@/components/section";
 import { breadcrumbSchema, createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
-  title: "Free Website Audit — SEO, Performance, Accessibility & Security",
+  title: "Free Website Audit — SEO, Performance & Security",
   description:
     "Run a free passive website audit for SEO, initial response performance, accessibility markup, HTTPS, and defensive security headers. No sign-up required.",
   path: "/website-audit",

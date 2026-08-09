@@ -33,6 +33,7 @@ export function toPublicPost(doc: BlogPostDoc): BlogPost {
     faq: doc.faq,
     internalLinks: doc.internalLinks,
     aiAssisted: doc.aiAssisted,
+    updatedAt: doc.updatedAt.toISOString(),
   };
 }
 

@@ -10,7 +10,7 @@ import { isGoogleSignInConfigured } from "@/lib/server/auth/google-oauth";
 export const metadata: Metadata = createMetadata({
   title: "Create your account",
   description:
-    "Sign up for Bitecodes and get free credits on every product: an AI chatbot, embeddable forms, a booking calendar, and transactional email. No card required, and credits never expire.",
+    "Sign up free — credits on every product: AI chatbot, forms, booking calendar, and transactional email. No card required, and credits never expire.",
   path: "/signup",
 });
 
