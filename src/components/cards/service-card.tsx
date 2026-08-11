@@ -15,14 +15,10 @@ export function ServiceCard({
     <Link
       href={`/services/${service.slug}`}
       className={cn(
-        "group gradient-ring bg-card hover:glow-primary focus-visible:ring-ring border-border relative flex flex-col overflow-hidden rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:outline-none",
+        "group bg-card focus-visible:ring-ring border-border relative flex flex-col rounded-2xl border p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:ring-2 focus-visible:outline-none",
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className="from-primary/10 pointer-events-none absolute inset-x-0 -top-20 h-28 bg-gradient-to-b to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-      />
       <div className="flex items-center justify-between">
         <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
           <Icon className="size-5" />

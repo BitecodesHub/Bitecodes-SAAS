@@ -138,9 +138,7 @@ export default function CareersPage() {
             {hiringProcess.map((step, i) => (
               <Reveal key={step.step} delay={i * 0.05}>
                 <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="text-gradient text-3xl font-semibold">
-                    0{step.step}
-                  </span>
+                  <span className="text-3xl font-semibold">0{step.step}</span>
                   <h3 className="mt-3 font-semibold">{step.title}</h3>
                   <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
                     {step.description}

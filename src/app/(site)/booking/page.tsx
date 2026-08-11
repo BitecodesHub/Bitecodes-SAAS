@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Palette,
   Clock,
-  Sparkles,
+  Layers,
   Check,
   ArrowRight,
 } from "lucide-react";
@@ -71,7 +71,7 @@ const FEATURES = [
     body: "Set the accent colour and button text; the calendar renders inside a shadow root so your CSS and ours can never fight.",
   },
   {
-    icon: Sparkles,
+    icon: Layers,
     title: "Two ways to embed",
     body: "A script tag for an inline calendar, or an iframe for zero JavaScript on your page. Same diary, same bookings.",
   },
@@ -172,13 +172,13 @@ export default function BookingPage() {
 
       <Section spacing="sm">
         <div className="container-page flex flex-wrap gap-3">
-          <Button asChild variant="gradient" size="lg">
+          <Button asChild size="lg">
             <Link href="/signup">
               Get started free
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <Button asChild variant="glass" size="lg">
+          <Button asChild variant="secondary" size="lg">
             <Link href="#pricing">See pricing</Link>
           </Button>
         </div>
@@ -314,7 +314,7 @@ export default function BookingPage() {
       </Section>
 
       <CtaSection
-        title="Let people book you without the back and forth"
+        title="Take your first booking today."
         description="Tell us the hours you work and we will have a calendar live on your site."
         primary={{ label: "Create your account", href: "/signup" }}
         secondary={{ label: "Talk to us first", href: "/contact" }}

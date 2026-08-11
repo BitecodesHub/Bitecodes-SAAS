@@ -9,7 +9,6 @@ import {
   IndianRupee,
   Loader2,
   RefreshCw,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -221,13 +220,7 @@ export function ProjectConsultant() {
           an AI provider to generate this response and is not intentionally
           stored by Bitecodes in this flow.
         </p>
-        <Button
-          type="submit"
-          variant="gradient"
-          size="lg"
-          disabled={pending}
-          className="shrink-0"
-        >
+        <Button type="submit" size="lg" disabled={pending} className="shrink-0">
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
@@ -235,7 +228,7 @@ export function ProjectConsultant() {
             </>
           ) : (
             <>
-              <Sparkles className="size-4" />
+              <ArrowRight className="size-4" />
               Generate recommendation
             </>
           )}
@@ -281,7 +274,7 @@ function Recommendation({
               {recommendation.summary}
             </p>
           </div>
-          <Button asChild variant="gradient">
+          <Button asChild>
             <Link href={contactHref}>
               Request detailed proposal
               <ArrowRight className="size-4" />

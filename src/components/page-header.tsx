@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Reveal } from "@/components/motion/reveal";
 import { cn } from "@/lib/utils";
 
 export interface Crumb {
@@ -23,14 +21,7 @@ export function PageHeader({
   align?: "center" | "left";
 }) {
   return (
-    <section className="border-border relative overflow-hidden border-b">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-      >
-        <div className="bg-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)] opacity-40" />
-        <div className="bg-mesh absolute inset-0" />
-      </div>
+    <section className="border-border relative border-b">
       <div className="container-page py-16 sm:py-20">
         <div
           className={cn(
@@ -65,12 +56,12 @@ export function PageHeader({
             </nav>
           )}
           {eyebrow && (
-            <Reveal direction="none">
-              <Badge>{eyebrow}</Badge>
-            </Reveal>
+            <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+              {eyebrow}
+            </p>
           )}
           {/* Heading + description render immediately (LCP-critical, no JS gate). */}
-          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
             {title}
           </h1>
           {description && (

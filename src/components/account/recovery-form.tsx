@@ -81,7 +81,6 @@ function RecoveryButtons() {
         type="submit"
         name="mode"
         value="link"
-        variant="gradient"
         className="w-full"
         disabled={pending}
       >

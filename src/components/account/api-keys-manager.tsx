@@ -147,7 +147,7 @@ export function ApiKeysManager({ keys }: { keys: ApiKeyRow[] }) {
               maxLength={80}
             />
           </div>
-          <Button onClick={create} disabled={pending} variant="gradient">
+          <Button onClick={create} disabled={pending}>
             {pending ? (
               <Loader2 aria-hidden="true" className="animate-spin" />
             ) : (

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Section, SectionHeader } from "@/components/section";
 import { Button } from "@/components/ui/button";
 import { formatPrice, getPricing } from "@/lib/pricing";
@@ -82,15 +82,12 @@ export function PricingPreviewSection() {
             );
           })}
         </div>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild variant="gradient" size="lg">
-            <Link href="/project-cost-calculator">
-              <Calculator className="size-4" />
-              Calculate project cost
-            </Link>
-          </Button>
+        <div className="mt-10 flex justify-center">
           <Button asChild variant="outline" size="lg">
-            <Link href="/pricing">View all service pricing</Link>
+            <Link href="/pricing">
+              View all service pricing
+              <ArrowRight className="size-4" />
+            </Link>
           </Button>
         </div>
       </div>

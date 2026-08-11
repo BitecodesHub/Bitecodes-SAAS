@@ -254,11 +254,7 @@ export function BlogEditor({ post }: { post: EditorPost }) {
       </label>
 
       <div className="border-border flex flex-wrap items-center gap-2 border-t pt-5">
-        <Button
-          onClick={() => save("published")}
-          disabled={pending}
-          variant="gradient"
-        >
+        <Button onClick={() => save("published")} disabled={pending}>
           {pending ? (
             <Loader2 className="animate-spin" />
           ) : (

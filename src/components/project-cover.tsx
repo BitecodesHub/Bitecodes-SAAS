@@ -28,7 +28,6 @@ export function ProjectCover({
     <div
       className={cn("relative overflow-hidden bg-[#100e17]", aspect, rounded)}
     >
-      <div className="bg-grid absolute inset-0 opacity-15" />
       {project.image ? (
         <>
           <Image

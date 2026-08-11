@@ -17,13 +17,6 @@ export const metadata: Metadata = {
 export default function MaintenancePage() {
   return (
     <section className="relative flex min-h-[70vh] items-center overflow-hidden">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-      >
-        <div className="bg-grid absolute inset-0 opacity-40" />
-        <div className="bg-mesh absolute inset-0" />
-      </div>
       <div className="container-page">
         <div className="border-border bg-card mx-auto max-w-2xl rounded-3xl border p-8 text-center shadow-[var(--shadow-lift)] sm:p-12">
           <span className="bg-primary/10 text-primary mx-auto flex size-16 items-center justify-center rounded-2xl">
@@ -50,7 +43,7 @@ export default function MaintenancePage() {
             </span>
           </div>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild variant="gradient" size="lg">
+            <Button asChild size="lg">
               <Link href="/contact">Contact Bitecodes</Link>
             </Button>
             <Button asChild variant="outline" size="lg">

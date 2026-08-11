@@ -40,8 +40,7 @@ export default function WebsiteAuditPage() {
         eyebrow="Free website audit"
         title={
           <>
-            Find what is holding your website{" "}
-            <span className="text-gradient">back.</span>
+            Find what is holding your website <span>back.</span>
           </>
         }
         description="Check one public webpage for practical SEO, response performance, accessibility, HTTPS, and defensive-header improvements—without an account or invasive scan."

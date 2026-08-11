@@ -76,7 +76,7 @@ export function MobileNav() {
         </nav>
         <div className="space-y-2">
           <DialogClose asChild>
-            <Button asChild variant="gradient" size="lg" className="w-full">
+            <Button asChild size="lg" className="w-full">
               <Link href="/signup">
                 Get started free
                 <ArrowRight className="size-4" />

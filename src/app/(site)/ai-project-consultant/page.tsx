@@ -40,8 +40,7 @@ export default function AiProjectConsultantPage() {
         eyebrow="AI project consultant"
         title={
           <>
-            Turn a rough idea into a{" "}
-            <span className="text-gradient">credible project direction.</span>
+            Turn a rough idea into a <span>credible project direction.</span>
           </>
         }
         description="Get an AI-assisted recommendation grounded in Bitecodes services and published pricing—then bring it to a human for discovery and a final proposal."

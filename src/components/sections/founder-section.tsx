@@ -39,7 +39,9 @@ export function FounderSection() {
           </Reveal>
 
           <Reveal direction="left">
-            <Badge className="mb-4">Founder</Badge>
+            <p className="text-muted-foreground mb-4 text-xs font-semibold tracking-[0.16em] uppercase">
+              Founder
+            </p>
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
               Meet {founder.name}
             </h2>

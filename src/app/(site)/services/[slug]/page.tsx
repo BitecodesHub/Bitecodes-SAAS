@@ -120,9 +120,9 @@ export default async function ServiceDetailPage({
               </div>
             </div>
             <ServicePricing slug={service.slug} />
-            <div className="border-border from-brand-1 via-brand-2 to-brand-3 rounded-2xl border bg-gradient-to-br p-6 text-white">
+            <div className="bg-primary text-primary-foreground rounded-2xl p-6">
               <h3 className="text-lg font-semibold">Ready to start?</h3>
-              <p className="mt-2 text-sm text-white/85">
+              <p className="text-primary-foreground/85 mt-2 text-sm">
                 Book a short call and we’ll scope it together.
               </p>
               <Button

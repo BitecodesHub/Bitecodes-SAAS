@@ -45,12 +45,7 @@ function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button
-      type="submit"
-      variant="gradient"
-      className="w-full"
-      disabled={pending}
-    >
+    <Button type="submit" className="w-full" disabled={pending}>
       {pending && <Loader2 aria-hidden="true" className="animate-spin" />}
       {pending ? "Signing in…" : "Complete sign-in"}
     </Button>

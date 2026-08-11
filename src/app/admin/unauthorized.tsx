@@ -26,7 +26,7 @@ export default function AdminUnauthorized() {
           continue.
         </p>
         <div className="mt-6 flex justify-center">
-          <Button asChild variant="gradient">
+          <Button asChild>
             {/*
               Via sign-out, not straight to the form. A session revoked
               elsewhere leaves the cookie behind, and the proxy would bounce

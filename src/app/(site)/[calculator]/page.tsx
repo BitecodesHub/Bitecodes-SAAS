@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Calculator, ShieldCheck, Sparkles } from "lucide-react";
+import { Calculator, PackageCheck, ShieldCheck } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { ProjectCostCalculator } from "@/components/calculators/project-cost-calculator";
 import { PageHeader } from "@/components/page-header";
@@ -75,8 +75,7 @@ export default async function CalculatorPage({
         eyebrow={config.eyebrow}
         title={
           <>
-            {config.title}{" "}
-            <span className="text-gradient">{config.accent}</span>
+            {config.title} <span>{config.accent}</span>
           </>
         }
         description={config.description}
@@ -103,7 +102,7 @@ export default async function CalculatorPage({
               description="No login or contact details are required."
             />
             <TrustItem
-              icon={Sparkles}
+              icon={PackageCheck}
               title="Delivery-aware"
               description="Includes a complete cross-functional product team."
             />
@@ -154,7 +153,7 @@ function TrustItem({
         <Icon className="size-5" />
       </span>
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h3 className="text-sm font-semibold">{title}</h3>
         <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
           {description}
         </p>

@@ -18,7 +18,7 @@ export default function AuthLayout({
   return (
     <main
       id="main"
-      className="bg-mesh flex min-h-screen flex-1 items-center justify-center px-4 py-14"
+      className="flex min-h-screen flex-1 items-center justify-center px-4 py-14"
     >
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center">

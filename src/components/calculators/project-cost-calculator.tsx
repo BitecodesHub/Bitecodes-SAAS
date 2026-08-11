@@ -229,7 +229,7 @@ export function ProjectCostCalculator({
             </li>
           ))}
         </ul>
-        <Button asChild variant="gradient" size="lg" className="mt-7 w-full">
+        <Button asChild size="lg" className="mt-7 w-full">
           <Link href={contactHref}>
             Get a detailed quote
             <ArrowRight className="size-4" />

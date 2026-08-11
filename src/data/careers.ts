@@ -2,9 +2,9 @@ import {
   Globe2,
   GraduationCap,
   HeartHandshake,
+  KeyRound,
   Laptop,
   Plane,
-  Sparkles,
 } from "lucide-react";
 import type { JobOpening } from "@/types/content";
 import type { LucideIcon } from "lucide-react";
@@ -57,7 +57,7 @@ export const benefits: Benefit[] = [
   {
     title: "Real ownership",
     description: "Meaningful work with real responsibility from day one.",
-    icon: Sparkles,
+    icon: KeyRound,
   },
   {
     title: "Time to recharge",

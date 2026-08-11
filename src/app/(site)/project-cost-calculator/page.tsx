@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Calculator, ShieldCheck, Sparkles } from "lucide-react";
+import { Calculator, PackageCheck, ShieldCheck } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { ProjectCostCalculator } from "@/components/calculators/project-cost-calculator";
 import { PageHeader } from "@/components/page-header";
@@ -67,8 +67,7 @@ export default function ProjectCostCalculatorPage() {
         eyebrow="Free planning tool"
         title={
           <>
-            Software development cost calculator{" "}
-            <span className="text-gradient">for India</span>
+            Software development cost calculator <span>for India</span>
           </>
         }
         description="Configure your project and get an immediate, realistic investment range, delivery window, and suggested team. No account or email required."
@@ -90,7 +89,7 @@ export default function ProjectCostCalculatorPage() {
             description="Explore privately before sharing your brief."
           />
           <TrustItem
-            icon={Sparkles}
+            icon={PackageCheck}
             title="Built for real delivery"
             description="Includes design, engineering, QA, and launch."
           />
@@ -137,7 +136,7 @@ function TrustItem({
         <Icon className="size-5" />
       </span>
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
+        <h3 className="text-sm font-semibold">{title}</h3>
         <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
           {description}
         </p>

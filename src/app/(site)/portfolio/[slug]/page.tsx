@@ -179,7 +179,7 @@ export default async function ProjectDetailPage({
                   controlled by that site.
                 </p>
               </div>
-              <Button asChild variant="gradient" className="shrink-0">
+              <Button asChild className="shrink-0">
                 <a
                   href={project.liveUrl}
                   target="_blank"

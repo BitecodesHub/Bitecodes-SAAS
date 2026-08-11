@@ -85,7 +85,7 @@ export function BlogIndex({
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group border-border bg-card hover:border-primary/30 focus-visible:ring-ring flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-glow)] focus-visible:ring-2 focus-visible:outline-none"
+              className="group border-border bg-card hover:border-primary/30 focus-visible:ring-ring flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:outline-none"
             >
               <div className="flex items-center justify-between">
                 <Badge>{post.category}</Badge>

@@ -30,8 +30,7 @@ export default function FaqPage() {
         eyebrow="FAQ"
         title={
           <>
-            Clear answers before you{" "}
-            <span className="text-gradient">start.</span>
+            Clear answers before you <span>start.</span>
           </>
         }
         description="Search the questions we hear most often about scope, delivery, pricing, technology, quality, and ongoing support."
@@ -54,7 +53,7 @@ export default function FaqPage() {
             Share the goal, users, scope, and timing. We respond with practical
             next steps rather than a generic sales script.
           </p>
-          <Button asChild variant="gradient" size="lg" className="mt-6">
+          <Button asChild size="lg" className="mt-6">
             <Link href="/contact">
               Ask Bitecodes
               <ArrowRight className="size-4" />
