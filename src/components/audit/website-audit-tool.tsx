@@ -87,7 +87,6 @@ export function WebsiteAuditTool() {
           />
           <Button
             type="submit"
-            variant="gradient"
             size="lg"
             disabled={pending}
             className="shrink-0"
@@ -155,7 +154,7 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
               {result.finalUrl}
             </p>
           </div>
-          <Button asChild variant="gradient">
+          <Button asChild>
             <Link href={contactHref}>
               Get a remediation quote
               <ArrowRight className="size-4" />

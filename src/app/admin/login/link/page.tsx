@@ -23,7 +23,7 @@ export default async function LoginLinkPage({
   const valid = token ? await peekToken(token, "login-link") : false;
 
   return (
-    <main className="bg-mesh flex min-h-screen items-center justify-center px-4 py-16">
+    <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <Logo href="/" />

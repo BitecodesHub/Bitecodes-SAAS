@@ -1,6 +1,5 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Reveal } from "@/components/motion/reveal";
 
 interface SectionProps extends React.HTMLAttributes<HTMLElement> {
@@ -54,11 +53,11 @@ export function SectionHeader({
       )}
     >
       {eyebrow && (
-        <Badge variant="default" className="w-fit">
+        <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
           {eyebrow}
-        </Badge>
+        </p>
       )}
-      <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-[2.75rem] md:leading-[1.1]">
+      <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl md:leading-[1.08]">
         {title}
       </h2>
       {description && (

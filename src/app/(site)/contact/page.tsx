@@ -115,7 +115,6 @@ export default function ContactPage() {
               referrerPolicy="no-referrer"
               className="border-border bg-card group hover:border-primary/40 relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border transition-colors"
             >
-              <div className="bg-grid absolute inset-0 opacity-40" />
               <div className="relative flex flex-col items-center gap-2 text-center">
                 <MapPin className="text-primary size-7 transition-transform group-hover:-translate-y-0.5" />
                 <p className="text-sm font-medium">

@@ -85,7 +85,7 @@ export function AutopilotPanel({
             )}
           </p>
         </div>
-        <Button onClick={runNow} disabled={pending} variant="gradient">
+        <Button onClick={runNow} disabled={pending}>
           {pending ? (
             <Loader2 className="animate-spin" />
           ) : (

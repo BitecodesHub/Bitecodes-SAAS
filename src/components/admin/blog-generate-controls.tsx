@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, Zap } from "lucide-react";
+import { Loader2, PenLine, Zap } from "lucide-react";
 import {
   generateDraftAction,
   runBlogGenerateNowAction,
@@ -50,7 +50,7 @@ export function BlogGenerateControls() {
     <div className="border-border bg-card space-y-4 rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
       <div>
         <h2 className="flex items-center gap-2 text-base font-semibold">
-          <Sparkles className="text-primary size-4" />
+          <PenLine className="text-primary size-4" />
           Write with AI
         </h2>
         <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
@@ -72,7 +72,7 @@ export function BlogGenerateControls() {
           {drafting ? (
             <Loader2 className="animate-spin" />
           ) : (
-            <Sparkles className="size-4" />
+            <PenLine className="size-4" />
           )}
           Draft for review
         </Button>

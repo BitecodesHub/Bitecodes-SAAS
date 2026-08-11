@@ -4,11 +4,12 @@
 /*
  * Bitecodes design system — "Quiet Confidence".
  *
- * A light-first, minimalist identity: a warm paper-white canvas, pure-white
- * surfaces separated by hairline borders and very soft shadows, a single
- * confident indigo accent, and generous rounded corners. Typography is a
- * single clean grotesque (Inter) for body and display, with tighter optical
- * tracking on headings for a confident, modern rhythm.
+ * A light-first, minimalist identity in the Apple mold: a pure-white canvas
+ * alternating with a light-gray band surface, near-black ink, hairline
+ * borders, flat solid-accent actions, and typography that carries the brand
+ * (large, semibold, tightly tracked headings). One indigo accent, reserved
+ * for actions and links — never for decoration. No gradient text, no glow
+ * shadows, no mesh/grid backdrops: whitespace and hierarchy do that work.
  *
  * Dark mode is supported (next-themes, class strategy) but light is the
  * canonical brand surface. OKLCH tokens throughout for perceptual uniformity.
@@ -18,9 +19,12 @@
 :root {
   --radius: 1.25rem;
 
-  /* Light theme — warm paper white, near-black ink, single indigo accent */
-  --background: oklch(0.992 0.004 95);
+  /* Light theme — pure white canvas, near-black ink, single indigo accent */
+  --background: oklch(1 0 0);
   --foreground: oklch(0.18 0.014 281);
+
+  /* Alternating band surface for quiet section separation (Apple #f5f5f7). */
+  --surface-2: oklch(0.972 0.002 286);
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.014 281);
@@ -124,6 +128,8 @@
   --brand-2: oklch(0.68 0.18 276);
   --brand-3: oklch(0.74 0.15 260);
 
+  --surface-2: oklch(0.185 0.018 281);
+
   --glow: oklch(0.68 0.2 287 / 0.4);
 
   /*
@@ -173,6 +179,7 @@
   --color-brand-1: var(--brand-1);
   --color-brand-2: var(--brand-2);
   --color-brand-3: var(--brand-3);
+  --color-surface-2: var(--surface-2);
 
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
@@ -188,12 +195,9 @@
     0 1px 2px oklch(0.2 0.02 281 / 0.04), 0 8px 24px oklch(0.2 0.02 281 / 0.06);
   --shadow-lift:
     0 1px 2px oklch(0.2 0.02 281 / 0.05), 0 18px 48px oklch(0.2 0.02 281 / 0.1);
-  --shadow-glow: 0 0 0 1px var(--glow), 0 18px 60px var(--glow);
+  /* Legacy alias — glow shadows are retired; hovers lift neutrally instead. */
+  --shadow-glow: var(--shadow-lift);
 
-  --animate-marquee: marquee 40s linear infinite;
-  --animate-aurora: aurora 18s ease-in-out infinite alternate;
-  --animate-float: float 7s ease-in-out infinite;
-  --animate-shimmer: shimmer 2.4s linear infinite;
   --animate-accordion-down: accordion-down 0.3s ease-out;
   --animate-accordion-up: accordion-up 0.3s ease-out;
 }
@@ -272,55 +276,25 @@
     }
   }
 
-  /* Restrained two-stop accent gradient for emphasis words. */
+  /*
+   * Retired decoration utilities.
+   *
+   * These classes used to paint the "AI-generated" tells: gradient-clipped
+   * headline text, a graph-paper grid, and a radial accent mesh. They are
+   * kept as no-op (or near-no-op) definitions so the ~30 existing call sites
+   * degrade to the quiet look instantly; call sites are being removed as each
+   * page is reworked. Do not use in new code.
+   */
   .text-gradient {
-    background-image: linear-gradient(
-      110deg,
-      var(--color-brand-1),
-      var(--color-brand-3)
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-foreground);
   }
 
-  /* Fine grid texture — barely-there on white. */
   .bg-grid {
-    background-image:
-      linear-gradient(
-        to right,
-        oklch(0.45 0.2 282 / 0.05) 1px,
-        transparent 1px
-      ),
-      linear-gradient(
-        to bottom,
-        oklch(0.45 0.2 282 / 0.05) 1px,
-        transparent 1px
-      );
-    background-size: 56px 56px;
+    background-image: none;
   }
 
-  .dark .bg-grid {
-    background-image:
-      linear-gradient(to right, oklch(0.7 0.2 287 / 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, oklch(0.7 0.2 287 / 0.07) 1px, transparent 1px);
-  }
-
-  /* Hero ambient — a single, soft accent wash rather than a busy mesh. */
   .bg-mesh {
-    background-image: radial-gradient(
-      60% 70% at 50% 0%,
-      oklch(0.45 0.2 282 / 0.1),
-      transparent 70%
-    );
-  }
-
-  .dark .bg-mesh {
-    background-image: radial-gradient(
-      60% 70% at 50% 0%,
-      oklch(0.68 0.2 287 / 0.22),
-      transparent 70%
-    );
+    background-image: none;
   }
 
   /* Frosted glass surface — white-tinted, subtle. */
@@ -334,7 +308,10 @@
     background-color: oklch(0.198 0.02 282 / 0.62);
   }
 
-  /* Hairline gradient border via mask compositing. */
+  /*
+   * Retired: was a gradient hairline ring. Now a plain hairline border via
+   * the same ::before so existing call sites keep their geometry.
+   */
   .gradient-ring {
     position: relative;
   }
@@ -345,29 +322,18 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(
-      135deg,
-      var(--color-brand-1),
-      var(--color-brand-3)
-    );
+    background: var(--color-border);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
-    opacity: 0.4;
-    transition: opacity 0.3s ease;
     pointer-events: none;
   }
 
-  .gradient-ring:hover::before {
-    opacity: 1;
-  }
-
+  /* Retired: was an indigo glow. Hovers lift with a neutral shadow instead. */
   .glow-primary {
-    box-shadow:
-      0 0 0 1px var(--glow),
-      0 16px 50px var(--glow);
+    box-shadow: var(--shadow-soft);
   }
 
   .mask-fade-x {
@@ -380,6 +346,23 @@
     );
   }
 
+  /*
+   * Scroll reveal — pure CSS, progressive enhancement.
+   *
+   * Content is always rendered visible. Browsers that support scroll-driven
+   * animations play a short fade-rise as the element enters the viewport;
+   * everything else (older Safari/Firefox, reduced-motion users via the
+   * global media query above) just sees the content. No JS, no hydration
+   * dependency, nothing hidden if scripts fail.
+   */
+  @supports (animation-timeline: view()) {
+    .reveal-in {
+      animation: reveal-rise ease-out both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+
   /* Pure-CSS scroll progress bar (no JS). */
   .scroll-progress {
     position: fixed;
@@ -389,11 +372,7 @@
     height: 2px;
     transform-origin: left;
     transform: scaleX(0);
-    background: linear-gradient(
-      to right,
-      var(--color-brand-1),
-      var(--color-brand-3)
-    );
+    background: var(--color-primary);
   }
 
   @supports (animation-timeline: scroll()) {
@@ -413,42 +392,14 @@
   }
 }
 
-@keyframes marquee {
+@keyframes reveal-rise {
   from {
-    transform: translateX(0);
+    opacity: 0;
+    transform: translateY(12px);
   }
   to {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes aurora {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(4%, -3%, 0) scale(1.15);
-    opacity: 0.8;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes shimmer {
-  from {
-    background-position: -200% 0;
-  }
-  to {
-    background-position: 200% 0;
+    opacity: 1;
+    transform: none;
   }
 }
 

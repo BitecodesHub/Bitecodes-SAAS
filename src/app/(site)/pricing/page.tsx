@@ -126,7 +126,7 @@ export default function PricingPage() {
                 </p>
               </div>
             </div>
-            <Button asChild variant="gradient" className="shrink-0">
+            <Button asChild className="shrink-0">
               <Link href="/project-cost-calculator">
                 Calculate project cost
                 <ArrowRight className="size-4" />

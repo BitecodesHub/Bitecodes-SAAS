@@ -1,7 +1,4 @@
-"use client";
-
 import * as React from "react";
-import { m, useReducedMotion, type Variants } from "motion/react";
 import { cn } from "@/lib/utils";
 
 type Direction = "up" | "down" | "left" | "right" | "none";
@@ -9,7 +6,7 @@ type Direction = "up" | "down" | "left" | "right" | "none";
 interface RevealProps {
   children: React.ReactNode;
   className?: string;
-  /** Stagger helper — multiplies a base delay. */
+  /** Retained for call-site compatibility; staggering is retired. */
   delay?: number;
   direction?: Direction;
   /** Render as a different element (e.g. "li", "span"). */
@@ -17,77 +14,34 @@ interface RevealProps {
   once?: boolean;
 }
 
-const offset = 24;
-
-function getInitial(direction: Direction) {
-  switch (direction) {
-    case "up":
-      return { opacity: 0, y: offset };
-    case "down":
-      return { opacity: 0, y: -offset };
-    case "left":
-      return { opacity: 0, x: offset };
-    case "right":
-      return { opacity: 0, x: -offset };
-    default:
-      return { opacity: 0 };
-  }
-}
-
 /**
- * Fade/slide content into view on scroll. Disables motion automatically when
- * the user prefers reduced motion. Animation stays off the critical path.
+ * Fade/slide content into view on scroll — pure CSS, no JavaScript.
+ *
+ * The previous implementation used motion/react's `whileInView`, which
+ * server-renders everything at `opacity: 0` and reveals it after hydration.
+ * That meant blank sections for anyone without JavaScript, a hydration-sized
+ * delay before content appeared, and animation work on the main thread.
+ *
+ * Now the element renders visible and, in browsers that support CSS
+ * scroll-driven animations (`animation-timeline: view()`), plays a short
+ * fade-rise as it enters the viewport. Elsewhere — and under
+ * `prefers-reduced-motion` — content is simply visible. Server components can
+ * use it directly; no client boundary required.
  */
 export function Reveal({
   children,
   className,
-  delay = 0,
   direction = "up",
-  as = "div",
-  once = true,
+  as: Tag = "div",
 }: RevealProps) {
-  const reduce = useReducedMotion();
-  const MotionTag = m[as];
-
-  if (reduce) {
-    const Tag = as;
-    return <Tag className={className}>{children}</Tag>;
-  }
-
   return (
-    <MotionTag
-      className={cn(className)}
-      initial={getInitial(direction)}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once, margin: "0px 0px -10% 0px" }}
-      transition={{
-        duration: 0.6,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-    >
+    <Tag className={cn(direction !== "none" && "reveal-in", className)}>
       {children}
-    </MotionTag>
+    </Tag>
   );
 }
 
-/** Container that staggers direct Reveal children via CSS-free orchestration. */
-const containerVariants: Variants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.08 },
-  },
-};
-
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  },
-};
-
+/** Compatibility wrapper — grouping no longer orchestrates anything. */
 export function StaggerGroup({
   children,
   className,
@@ -95,21 +49,10 @@ export function StaggerGroup({
   children: React.ReactNode;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-  return (
-    <m.div
-      className={className}
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-    >
-      {children}
-    </m.div>
-  );
+  return <div className={className}>{children}</div>;
 }
 
+/** Compatibility wrapper — each item reveals independently via CSS. */
 export function StaggerItem({
   children,
   className,
@@ -117,11 +60,5 @@ export function StaggerItem({
   children: React.ReactNode;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-  if (reduce) return <div className={className}>{children}</div>;
-  return (
-    <m.div className={className} variants={itemVariants}>
-      {children}
-    </m.div>
-  );
+  return <div className={cn("reveal-in", className)}>{children}</div>;
 }

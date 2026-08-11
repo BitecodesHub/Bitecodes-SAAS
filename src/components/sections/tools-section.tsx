@@ -19,7 +19,8 @@ export function ToolsSection() {
           </h2>
           <p className="text-background/65 mt-4 max-w-2xl leading-relaxed">
             Configure a website, mobile app, SaaS MVP, enterprise platform, or
-            AI workflow. See the estimate immediately—no account or email wall.
+            AI workflow. See the estimate immediately — no account or email
+            wall.
           </p>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm">
             <span className="flex items-center gap-2">
@@ -37,7 +38,11 @@ export function ToolsSection() {
           </div>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-          <Button asChild variant="gradient" size="lg">
+          <Button
+            asChild
+            size="lg"
+            className="bg-background text-foreground hover:bg-background/90"
+          >
             <Link href="/project-cost-calculator">
               Calculate project cost
               <ArrowRight className="size-4" />

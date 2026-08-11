@@ -2,10 +2,8 @@ import { organizationSchema, websiteSchema } from "@/lib/seo";
 import { SiteHeader } from "@/components/navigation/site-header";
 import { SiteFooter } from "@/components/navigation/site-footer";
 import { ScrollProgress } from "@/components/scroll-progress";
-import { BackToTop } from "@/components/back-to-top";
 import { WhatsAppButton } from "@/components/whatsapp-button";
 import { JsonLd } from "@/components/json-ld";
-import { MotionProvider } from "@/components/motion/motion-provider";
 
 /**
  * Layout for the public marketing site.
@@ -27,15 +25,12 @@ export default function SiteLayout({
       <JsonLd data={organizationSchema()} />
       <JsonLd data={websiteSchema()} />
       <ScrollProgress />
-      <MotionProvider>
-        <SiteHeader />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
-        <BackToTop />
-        <WhatsAppButton />
-      </MotionProvider>
+      <SiteHeader />
+      <main id="main" className="flex-1">
+        {children}
+      </main>
+      <SiteFooter />
+      <WhatsAppButton />
     </>
   );
 }

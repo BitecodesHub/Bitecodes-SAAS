@@ -174,7 +174,7 @@ export default async function AppOverviewPage() {
           while your account is open. There is no monthly fee and nothing renews
           on its own.
         </p>
-        <Button asChild variant="gradient" className="mt-4">
+        <Button asChild className="mt-4">
           <Link href="/app/billing">
             Buy credits
             <ArrowRight aria-hidden="true" className="size-4" />

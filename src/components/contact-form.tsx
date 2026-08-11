@@ -200,7 +200,6 @@ export function ContactForm() {
       ) : null}
       <Button
         type="submit"
-        variant="gradient"
         size="lg"
         disabled={isSubmitting}
         className="mt-6 w-full sm:w-auto"

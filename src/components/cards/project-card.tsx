@@ -18,7 +18,7 @@ export function ProjectCard({
     <Link
       href={`/portfolio/${project.slug}`}
       className={cn(
-        "group gradient-ring bg-card hover:glow-primary focus-visible:ring-ring border-border relative flex flex-col overflow-hidden rounded-2xl border shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:outline-none",
+        "group bg-card focus-visible:ring-ring border-border relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:ring-2 focus-visible:outline-none",
         className,
       )}
     >

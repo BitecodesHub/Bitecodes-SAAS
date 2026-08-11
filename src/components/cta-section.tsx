@@ -37,20 +37,7 @@ export function CtaSection({
   return (
     <section className={cn("container-page py-20 sm:py-28", className)}>
       <Reveal>
-        <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-3xl px-6 py-16 text-center shadow-[var(--shadow-lift)] sm:px-16 sm:py-20">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 opacity-[0.14]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-              backgroundSize: "48px 48px",
-              maskImage:
-                "radial-gradient(ellipse at center, black, transparent 72%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse at center, black, transparent 72%)",
-            }}
-          />
+        <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:px-16 sm:py-20">
           <div className="relative mx-auto max-w-2xl">
             <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
               {title}

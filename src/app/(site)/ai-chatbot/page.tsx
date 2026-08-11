@@ -10,8 +10,8 @@ import {
   Globe,
   MessagesSquare,
   Palette,
+  PenLine,
   ShieldCheck,
-  Sparkles,
   Upload,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -48,7 +48,7 @@ const STEPS = [
     body: "Upload PDFs, docs, or a spreadsheet — or paste a URL and we crawl the site. It is chunked, embedded, and indexed automatically.",
   },
   {
-    icon: Sparkles,
+    icon: PenLine,
     title: "Write the system prompt",
     body: "Shape its tone and rules with a template and variables like {{company_name}}. Version history lets you restore any earlier prompt.",
   },
@@ -175,7 +175,7 @@ export default function AiChatbotPage() {
         title={
           <>
             An AI chatbot for your website,{" "}
-            <span className="text-gradient">live in one line of code.</span>
+            <span>live in one line of code.</span>
           </>
         }
         description="Train it on your content, style it to match your brand, and embed it anywhere. Multiple AI models, a real knowledge base, analytics, and honest token pricing — built and hosted by Bitecodes."
@@ -187,7 +187,7 @@ export default function AiChatbotPage() {
 
       <Section spacing="sm">
         <div className="container-page flex flex-wrap gap-3">
-          <Button asChild variant="gradient" size="lg">
+          <Button asChild size="lg">
             <Link href="/contact">
               Start free <ArrowRight className="size-4" />
             </Link>
@@ -345,7 +345,7 @@ export default function AiChatbotPage() {
                 </p>
                 <Button
                   asChild
-                  variant={pack.popular ? "gradient" : "outline"}
+                  variant={pack.popular ? "default" : "outline"}
                   className="mt-5 w-full"
                 >
                   <Link href="/signup">Get started free</Link>
@@ -385,6 +385,8 @@ export default function AiChatbotPage() {
       </Section>
 
       <CtaSection
+        title="Put an assistant on your site today."
+        description="Create your account, train it on your content, and paste one line of code. Free credits included — no card required."
         primary={{ label: "Create your account", href: "/signup" }}
         secondary={{ label: "Talk to us first", href: "/contact" }}
       />

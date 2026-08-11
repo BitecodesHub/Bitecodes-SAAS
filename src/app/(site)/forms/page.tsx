@@ -7,10 +7,10 @@ import {
   Code2,
   Download,
   Globe,
+  Layers,
   Mail,
   Palette,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
@@ -78,7 +78,7 @@ const FEATURES = [
     body: "Submissions are yours. Export to CSV whenever you like, safely escaped so spreadsheets cannot execute what a visitor typed.",
   },
   {
-    icon: Sparkles,
+    icon: Layers,
     title: "Two ways to embed",
     body: "A script tag for an inline form, or an iframe for zero JavaScript on your page. Same form, same submissions.",
   },
@@ -166,8 +166,7 @@ export default function FormsProductPage() {
         eyebrow="Forms"
         title={
           <>
-            Put a working form on any site,{" "}
-            <span className="text-gradient">in one line of code.</span>
+            Put a working form on any site, <span>in one line of code.</span>
           </>
         }
         description="Build the form here, lock it to your domains, and paste one line into your website. Submissions arrive in your inbox and dashboard. You pay per submission — no monthly fee."
@@ -179,13 +178,13 @@ export default function FormsProductPage() {
 
       <Section spacing="sm">
         <div className="container-page flex flex-wrap gap-3">
-          <Button asChild variant="gradient" size="lg">
+          <Button asChild size="lg">
             <Link href="/signup">
               Get started free
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <Button asChild variant="glass" size="lg">
+          <Button asChild variant="secondary" size="lg">
             <Link href="#pricing">See pricing</Link>
           </Button>
         </div>
@@ -330,7 +329,7 @@ export default function FormsProductPage() {
                 </p>
                 <Button
                   asChild
-                  variant={pack.popular ? "gradient" : "outline"}
+                  variant={pack.popular ? "default" : "outline"}
                   className="mt-5 w-full"
                 >
                   <Link href="/signup">Get started free</Link>
@@ -372,6 +371,8 @@ export default function FormsProductPage() {
       </Section>
 
       <CtaSection
+        title="Collect your first submission today."
+        description="Build the form, lock it to your domains, and paste one line into your site. Free credits included — no card required."
         primary={{ label: "Create your account", href: "/signup" }}
         secondary={{ label: "Talk to us first", href: "/contact" }}
       />

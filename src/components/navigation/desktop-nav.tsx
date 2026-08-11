@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export function DesktopNav() {
   return (
-    <NavigationMenu className="bg-background/80 hidden rounded-full border px-1.5 shadow-sm backdrop-blur-md lg:flex">
+    <NavigationMenu className="hidden lg:flex">
       <NavigationMenuList>
         {mainNav.map((item) =>
           item.sections ? (
@@ -67,19 +67,6 @@ export function DesktopNav() {
                       href={item.featured.href}
                       className="bg-primary text-primary-foreground relative flex w-56 shrink-0 flex-col justify-end overflow-hidden rounded-xl p-5"
                     >
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 opacity-[0.14]"
-                        style={{
-                          backgroundImage:
-                            "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-                          backgroundSize: "40px 40px",
-                          maskImage:
-                            "radial-gradient(ellipse at 70% 20%, black, transparent 75%)",
-                          WebkitMaskImage:
-                            "radial-gradient(ellipse at 70% 20%, black, transparent 75%)",
-                        }}
-                      />
                       <div className="relative">
                         <p className="text-base font-semibold">
                           {item.featured.title}

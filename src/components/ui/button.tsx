@@ -8,16 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow-[var(--shadow-soft)] hover:bg-primary/90 hover:shadow-[var(--shadow-glow)]",
-        gradient:
-          "bg-gradient-to-r from-brand-1 to-brand-3 text-primary-foreground shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-glow)] hover:brightness-110",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        /* Legacy alias — gradients are retired; renders as the solid primary. */
+        gradient: "bg-primary text-primary-foreground hover:bg-primary/90",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         outline:
           "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
-        glass:
-          "glass gradient-ring border border-border/60 hover:text-foreground text-foreground/90",
+        /* Legacy alias — frosted pill retired; renders as the quiet secondary. */
+        glass: "bg-secondary text-secondary-foreground hover:bg-secondary/70",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline rounded-none",
       },

@@ -17,13 +17,6 @@ export const metadata: Metadata = {
 export default function ThankYouPage() {
   return (
     <section className="relative flex min-h-[70vh] items-center overflow-hidden pt-16">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-      >
-        <div className="bg-grid absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)] opacity-30" />
-        <div className="from-brand-1/20 via-brand-2/15 absolute top-1/3 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-gradient-to-br to-transparent blur-3xl" />
-      </div>
       <div className="container-page">
         <Reveal className="mx-auto flex max-w-xl flex-col items-center text-center">
           <span className="bg-primary/10 text-primary flex size-16 items-center justify-center rounded-full">
@@ -38,7 +31,7 @@ export default function ThankYouPage() {
             building.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button asChild variant="gradient" size="lg">
+            <Button asChild size="lg">
               <Link href="/portfolio">
                 Explore our work
                 <ArrowRight className="size-4" />

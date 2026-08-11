@@ -23,7 +23,7 @@ export default function AppUnauthorized() {
           pick up where you left off.
         </p>
         <div className="mt-6 flex justify-center">
-          <Button asChild variant="gradient">
+          <Button asChild>
             <Link href="/login">
               <LogIn aria-hidden="true" />
               Sign in

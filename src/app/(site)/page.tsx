@@ -1,14 +1,9 @@
 import { Hero } from "@/components/sections/hero";
 import { ServicesSection } from "@/components/sections/services-section";
-import { WhyChooseSection } from "@/components/sections/why-choose-section";
 import { ToolsSection } from "@/components/sections/tools-section";
 import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
-import { BlogPreviewSection } from "@/components/sections/blog-preview-section";
 import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
-import { TechSection } from "@/components/sections/tech-section";
-import { IndustriesSection } from "@/components/sections/industries-section";
 import { ProcessSection } from "@/components/sections/process-section";
-import { FounderSection } from "@/components/sections/founder-section";
 import { StatsSection } from "@/components/sections/stats-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { CtaSection } from "@/components/cta-section";
@@ -25,20 +20,21 @@ export const metadata = createMetadata({
 export default function HomePage() {
   return (
     <>
+      {/*
+        Deliberately lean: promise → services → proof → numbers → process →
+        tools → pricing → FAQ → close. Industries, the tech stack, the blog,
+        and the founder each have a dedicated page; repeating them here only
+        made the homepage longer, not more convincing.
+      */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
       <ServicesSection />
-      <ToolsSection />
-      <WhyChooseSection />
       <FeaturedWorkSection />
       <StatsSection />
-      <TechSection />
-      <IndustriesSection />
       <ProcessSection />
+      <ToolsSection />
       <PricingPreviewSection />
-      <BlogPreviewSection />
-      <FounderSection />
-      <FaqSection />
+      <FaqSection limit={6} />
       <CtaSection />
     </>
   );

@@ -4,7 +4,6 @@ import { ArrowRight, Bot, Calculator, Gauge, ShieldCheck } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { Section, SectionHeader } from "@/components/section";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { calculatorPages } from "@/data/calculator-pages";
 import { breadcrumbSchema, createMetadata } from "@/lib/seo";
@@ -38,8 +37,7 @@ export default function ToolsPage() {
         eyebrow="Free tools"
         title={
           <>
-            Plan smarter before you{" "}
-            <span className="text-gradient">spend.</span>
+            Plan smarter before you <span>spend.</span>
           </>
         }
         description="Practical, no-login tools for estimating software investment and understanding what a production-ready project involves."
@@ -85,7 +83,9 @@ export default function ToolsPage() {
               <span className="bg-primary text-primary-foreground flex size-11 items-center justify-center rounded-xl">
                 <Gauge className="size-5" />
               </span>
-              <Badge className="mt-5">Available now</Badge>
+              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+                Available now
+              </p>
               <h2 className="mt-4 text-lg font-semibold">
                 Website audit & improvement report
               </h2>
@@ -93,7 +93,7 @@ export default function ToolsPage() {
                 Review initial SEO, response performance, accessibility markup,
                 HTTPS, and defensive headers with clear limitations.
               </p>
-              <Button asChild variant="gradient" className="mt-6">
+              <Button asChild className="mt-6">
                 <Link href="/website-audit">
                   Run free audit
                   <ArrowRight className="size-4" />
@@ -104,7 +104,9 @@ export default function ToolsPage() {
               <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                 <Bot className="size-5" />
               </span>
-              <Badge className="mt-5">Available now</Badge>
+              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+                Available now
+              </p>
               <h2 className="mt-4 text-lg font-semibold">
                 AI project consultant
               </h2>
@@ -127,9 +129,9 @@ export default function ToolsPage() {
                 <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
                   <tool.icon className="size-5" />
                 </span>
-                <Badge variant="secondary" className="mt-5">
+                <p className="text-muted-foreground/70 mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
                   In development
-                </Badge>
+                </p>
                 <h2 className="mt-4 text-lg font-semibold">{tool.title}</h2>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   {tool.description}
@@ -171,7 +173,7 @@ function ToolCard({
       </p>
       <Button
         asChild
-        variant={featured ? "gradient" : "outline"}
+        variant={featured ? "default" : "outline"}
         className="mt-6"
       >
         <Link href={href}>

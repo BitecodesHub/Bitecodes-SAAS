@@ -4,6 +4,8 @@ import { RecoveryForm } from "@/components/account/recovery-form";
 
 export const metadata: Metadata = {
   title: "Get back into your account",
+  description:
+    "Request a sign-in link or reset your Bitecodes account password.",
   robots: { index: false, follow: false },
 };
 

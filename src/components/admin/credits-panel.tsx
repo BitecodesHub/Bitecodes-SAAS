@@ -207,7 +207,7 @@ export function CreditsPanel({
               <Button
                 onClick={() => buy(pack.packId)}
                 disabled={pending}
-                variant={pack.popular ? "gradient" : "outline"}
+                variant={pack.popular ? "default" : "outline"}
                 className="mt-3 w-full"
               >
                 {pending ? (
