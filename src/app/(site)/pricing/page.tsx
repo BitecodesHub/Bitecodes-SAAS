@@ -92,7 +92,7 @@ const PRODUCTS = [
     href: "/notes",
     icon: NotebookPen,
     title: "Notes",
-    body: "A private, local-first AI assistant on your desktop. Free download for Windows during early access; macOS coming soon.",
+    body: "A private, local-first AI assistant on your desktop. Free download for Windows and macOS during early access.",
     cta: "Download free",
   },
 ];
