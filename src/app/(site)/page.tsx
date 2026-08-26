@@ -1,4 +1,5 @@
 import { Hero } from "@/components/sections/hero";
+import { NotesSection } from "@/components/sections/notes-section";
 import { ServicesSection } from "@/components/sections/services-section";
 import { ToolsSection } from "@/components/sections/tools-section";
 import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
@@ -21,13 +22,15 @@ export default function HomePage() {
   return (
     <>
       {/*
-        Deliberately lean: promise → services → proof → numbers → process →
-        tools → pricing → FAQ → close. Industries, the tech stack, the blog,
-        and the founder each have a dedicated page; repeating them here only
-        made the homepage longer, not more convincing.
+        Deliberately lean: promise → product launch → services → proof →
+        numbers → process → tools → pricing → FAQ → close. Industries, the
+        tech stack, the blog, and the founder each have a dedicated page;
+        repeating them here only made the homepage longer, not more
+        convincing.
       */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
+      <NotesSection />
       <ServicesSection />
       <FeaturedWorkSection />
       <StatsSection />
