@@ -19,6 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/ai-chatbot", priority: 0.9 },
     { path: "/forms", priority: 0.9 },
     { path: "/booking", priority: 0.9 },
+    { path: "/notes", priority: 0.9 },
     { path: "/portfolio", priority: 0.9 },
     { path: "/pricing", priority: 0.8 },
     // The way in. Listed high because "bitecodes sign up" and "bitecodes login"

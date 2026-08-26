@@ -185,6 +185,8 @@ export const RATE_LIMITS = {
   /** Re-sending a verification link, capped per address as well as per IP. */
   verifyResend: { max: 4, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
+  /** Password attempts for the gated Notes installer download, per IP. */
+  notesDownload: { max: 10, windowMs: HOUR_MS },
   unsubscribe: { max: 30, windowMs: HOUR_MS },
   analytics: { max: 200, windowMs: HOUR_MS },
 } as const;
