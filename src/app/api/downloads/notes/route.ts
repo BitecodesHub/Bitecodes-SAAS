@@ -20,13 +20,19 @@ const PASSWORD_SHA256 =
   "5a5cc6c0b44678aafa53871da85541fb8cf500abf5c3f856def10c843d7b334e";
 
 /**
- * The installer is a GitHub release asset rather than a file in `public/`
- * because at 104 MB it exceeds both GitHub's 100 MB in-repo file limit and
- * Vercel's static deployment ceiling. The URL is only revealed after the
- * password check passes.
+ * The installers are GitHub release assets rather than files in `public/`
+ * because at 104–239 MB they exceed both GitHub's 100 MB in-repo file limit
+ * and Vercel's static deployment ceiling. The URLs are only revealed after
+ * the password check passes.
  */
-const WINDOWS_INSTALLER_URL =
-  "https://github.com/BitecodesHub/Bitecodes-SAAS/releases/download/notes-v1.1.0/Notes-Setup-1.1.0.exe";
+const RELEASE_BASE =
+  "https://github.com/BitecodesHub/Bitecodes-SAAS/releases/download/notes-v1.1.0";
+
+const INSTALLER_URLS = {
+  windows: `${RELEASE_BASE}/Notes-Setup-1.1.0.exe`,
+  macIntel: `${RELEASE_BASE}/Notes-1.1.0.dmg`,
+  macArm64: `${RELEASE_BASE}/Notes-1.1.0-arm64.dmg`,
+} as const;
 
 const bodySchema = z.object({
   password: z.string().min(1).max(256),
@@ -36,7 +42,7 @@ export interface NotesDownloadResponse {
   ok: boolean;
   code?: "INVALID" | "WRONG_PASSWORD" | "RATE_LIMITED";
   message?: string;
-  url?: string;
+  urls?: typeof INSTALLER_URLS;
 }
 
 function json(body: NotesDownloadResponse, status: number) {
@@ -106,5 +112,5 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  return json({ ok: true, url: WINDOWS_INSTALLER_URL }, 200);
+  return json({ ok: true, urls: INSTALLER_URLS }, 200);
 }

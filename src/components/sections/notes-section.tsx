@@ -48,7 +48,7 @@ export function NotesSection() {
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Button asChild size="lg">
               <Link href="/notes#download">
-                Download for Windows
+                Download free
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -56,7 +56,7 @@ export function NotesSection() {
               <Link href="/notes">Learn more</Link>
             </Button>
             <p className="text-muted-foreground text-center text-xs">
-              macOS coming soon
+              For Windows and macOS
             </p>
           </div>
         </div>

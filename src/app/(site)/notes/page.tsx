@@ -19,14 +19,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
-import { NotesDownloadForm } from "@/components/product/notes-download";
+import { NotesDownloads } from "@/components/product/notes-download";
 import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
   title: "Notes — Private, Local-First AI Assistant for Your Desktop",
   description:
-    "Notes is a private AI assistant that lives in a quiet overlay on your desktop. Capture your screen, ask in plain language, and get streaming answers from a model running on your own machine. Free download for Windows; macOS coming soon.",
+    "Notes is a private AI assistant that lives in a quiet overlay on your desktop. Capture your screen, ask in plain language, and get streaming answers from a model running on your own machine. Free download for Windows and macOS (Intel and Apple silicon).",
   path: "/notes",
 });
 
@@ -101,7 +101,7 @@ const FAQS = [
   {
     question: "Is Notes free?",
     answer:
-      "Yes. Notes 1.1.0 is a free download for Windows. It is in early access, so the download is behind a password — ask us for one through the contact page or WhatsApp and we will send it over.",
+      "Yes. Notes 1.1.0 is a free download for Windows and macOS. It is in early access, so the downloads are behind a password — ask us for one through the contact page or WhatsApp and we will send it over.",
   },
   {
     question: "Does anything leave my machine?",
@@ -116,12 +116,12 @@ const FAQS = [
   {
     question: "What are the system requirements?",
     answer:
-      "Windows 10 or 11 and about 104 MB of disk for the installer. For fully local answers you also need Ollama with at least one model pulled — llama3.2 for text and llava for screenshots is a good start. If you would rather use a hosted model, configure any OpenAI-compatible endpoint instead.",
+      "Windows 10 or 11 (about 104 MB), or a Mac on either Apple silicon or Intel (about 232–239 MB). For fully local answers you also need Ollama with at least one model pulled — llama3.2 for text and llava for screenshots is a good start. If you would rather use a hosted model, configure any OpenAI-compatible endpoint instead.",
   },
   {
-    question: "When is the macOS version coming?",
+    question: "Which Mac download should I pick?",
     answer:
-      "It is in progress, built for both Intel and Apple silicon. Tell us you want it through the contact page and we will email you the moment it ships.",
+      "M-series Macs (M1 and later) take the Apple silicon disk image; Macs with an Intel processor take the Intel one. If you are unsure, open the Apple menu and choose About This Mac — the Chip or Processor line tells you which you have.",
   },
   {
     question: "Why is the download password-protected?",
@@ -150,7 +150,7 @@ export default function NotesPage() {
           "@type": "SoftwareApplication",
           name: `${siteConfig.name} Notes`,
           applicationCategory: "ProductivityApplication",
-          operatingSystem: "Windows 10, Windows 11",
+          operatingSystem: "Windows 10, Windows 11, macOS",
           softwareVersion: "1.1.0",
           fileSize: "104MB",
           url: `${siteConfig.url}/notes`,
@@ -189,7 +189,7 @@ export default function NotesPage() {
         <div className="container-page flex flex-wrap items-center gap-3">
           <Button asChild size="lg">
             <Link href="#download">
-              Download for Windows
+              Download free
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -197,8 +197,12 @@ export default function NotesPage() {
             <Link href="/contact">Get the access password</Link>
           </Button>
           <Badge variant="muted">
+            <Monitor className="size-3.5" />
+            Windows
+          </Badge>
+          <Badge variant="muted">
             <Apple className="size-3.5" />
-            macOS coming soon
+            macOS · Intel &amp; Apple silicon
           </Badge>
         </div>
       </Section>
@@ -295,59 +299,29 @@ export default function NotesPage() {
             </Link>{" "}
             and we will send it over.
           </p>
-          <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
-                    <Monitor className="size-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">Windows</h3>
-                    <p className="text-muted-foreground text-xs">
-                      Version 1.1.0 · ~104 MB · Windows 10 and 11
-                    </p>
-                  </div>
-                </div>
-                <Badge>Available now</Badge>
-              </div>
-              <div className="mt-6">
-                <NotesDownloadForm />
-              </div>
-            </div>
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
-                    <Apple className="size-4.5" />
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">macOS</h3>
-                    <p className="text-muted-foreground text-xs">
-                      Intel and Apple silicon
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="muted">Coming soon</Badge>
-              </div>
-              <p className="text-muted-foreground mt-6 text-sm leading-relaxed">
-                The Mac build is in progress. Tell us you want it and we will
-                email you the moment it ships — no list, no spam, one email.
-              </p>
-              <Button asChild variant="secondary" className="mt-4">
-                <Link href="/contact">
-                  Notify me
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-            </div>
+          <div className="mt-8">
+            <NotesDownloads />
           </div>
-          <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
-            SHA-512 of the Windows installer:{" "}
-            <code className="break-all">
-              RGokyM3MNXjXfm35gRHQtHpJShmVwA8P1qDJsEYAuOxOWno9ewkLHwtX+vq9gNpZnp+qbEj8NH7pLxNNX2JMxw==
-            </code>
-          </p>
+          <div className="text-muted-foreground mt-4 space-y-1 text-xs leading-relaxed">
+            <p>
+              SHA-512, Windows installer:{" "}
+              <code className="break-all">
+                RGokyM3MNXjXfm35gRHQtHpJShmVwA8P1qDJsEYAuOxOWno9ewkLHwtX+vq9gNpZnp+qbEj8NH7pLxNNX2JMxw==
+              </code>
+            </p>
+            <p>
+              SHA-512, macOS Apple silicon:{" "}
+              <code className="break-all">
+                ySUQ1OqQDuZ4qycrEyK5GNOnKSpXyDaempA64Bf8OMYxhy8kfAGD70jcZRc7TwQ+u4YXo8lY8U9VWVa0QMsmXg==
+              </code>
+            </p>
+            <p>
+              SHA-512, macOS Intel:{" "}
+              <code className="break-all">
+                W3u295Aax3vDsBQB78oD8rJRoCeOpcQmzW2O5yvEZCNRcJQQ0rheH4j5MaJjeV2r2Am4DEpTRWICtDrJ+gI6Qw==
+              </code>
+            </p>
+          </div>
         </div>
       </Section>
 
@@ -371,8 +345,8 @@ export default function NotesPage() {
 
       <CtaSection
         title="Put a private AI on your desktop today."
-        description="Free for Windows during early access. Ask us for the password and you will be running it in minutes."
-        primary={{ label: "Download for Windows", href: "/notes#download" }}
+        description="Free for Windows and macOS during early access. Ask us for the password and you will be running it in minutes."
+        primary={{ label: "Download Notes", href: "/notes#download" }}
         secondary={{ label: "Get the password", href: "/contact" }}
       />
     </>
