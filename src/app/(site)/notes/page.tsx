@@ -302,26 +302,6 @@ export default function NotesPage() {
           <div className="mt-8">
             <NotesDownloads />
           </div>
-          <div className="text-muted-foreground mt-4 space-y-1 text-xs leading-relaxed">
-            <p>
-              SHA-512, Windows installer:{" "}
-              <code className="break-all">
-                RGokyM3MNXjXfm35gRHQtHpJShmVwA8P1qDJsEYAuOxOWno9ewkLHwtX+vq9gNpZnp+qbEj8NH7pLxNNX2JMxw==
-              </code>
-            </p>
-            <p>
-              SHA-512, macOS Apple silicon:{" "}
-              <code className="break-all">
-                ySUQ1OqQDuZ4qycrEyK5GNOnKSpXyDaempA64Bf8OMYxhy8kfAGD70jcZRc7TwQ+u4YXo8lY8U9VWVa0QMsmXg==
-              </code>
-            </p>
-            <p>
-              SHA-512, macOS Intel:{" "}
-              <code className="break-all">
-                W3u295Aax3vDsBQB78oD8rJRoCeOpcQmzW2O5yvEZCNRcJQQ0rheH4j5MaJjeV2r2Am4DEpTRWICtDrJ+gI6Qw==
-              </code>
-            </p>
-          </div>
         </div>
       </Section>
 
