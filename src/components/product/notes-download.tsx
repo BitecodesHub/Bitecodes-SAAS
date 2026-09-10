@@ -121,7 +121,7 @@ export function NotesDownloads() {
               <div>
                 <h3 className="font-semibold">Windows</h3>
                 <p className="text-muted-foreground text-xs">
-                  Version 1.1.0 · ~104 MB · Windows 10 and 11
+                  Version 1.2.0 · ~88 MB · Windows 10 and 11
                 </p>
               </div>
             </div>

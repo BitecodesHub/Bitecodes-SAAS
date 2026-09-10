@@ -101,7 +101,7 @@ const FAQS = [
   {
     question: "Is Notes free?",
     answer:
-      "Yes. Notes 1.1.0 is a free download for Windows and macOS. It is in early access, so the downloads are behind a password — ask us for one through the contact page or WhatsApp and we will send it over.",
+      "Yes. Notes is a free download for Windows and macOS. It is in early access, so the downloads are behind a password — ask us for one through the contact page or WhatsApp and we will send it over.",
   },
   {
     question: "Does anything leave my machine?",
@@ -151,8 +151,8 @@ export default function NotesPage() {
           name: `${siteConfig.name} Notes`,
           applicationCategory: "ProductivityApplication",
           operatingSystem: "Windows 10, Windows 11, macOS",
-          softwareVersion: "1.1.0",
-          fileSize: "104MB",
+          softwareVersion: "1.2.0",
+          fileSize: "88MB",
           url: `${siteConfig.url}/notes`,
           downloadUrl: `${siteConfig.url}/notes#download`,
           description:
@@ -289,8 +289,9 @@ export default function NotesPage() {
             Download Notes
           </h2>
           <p className="text-muted-foreground mt-2 max-w-2xl">
-            Version 1.1.0 · free during early access. The download is
-            password-protected while we roll it out in small groups —{" "}
+            Windows 1.2.0 and macOS 1.1.0 · free during early access. The
+            download is password-protected while we roll it out in small groups
+            —{" "}
             <Link
               href="/contact"
               className="text-primary underline-offset-4 hover:underline"

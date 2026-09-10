@@ -21,17 +21,21 @@ const PASSWORD_SHA256 =
 
 /**
  * The installers are GitHub release assets rather than files in `public/`
- * because at 104–239 MB they exceed both GitHub's 100 MB in-repo file limit
+ * because at 88–239 MB they exceed both GitHub's 100 MB in-repo file limit
  * and Vercel's static deployment ceiling. The URLs are only revealed after
  * the password check passes.
+ *
+ * Each platform points at the release that actually carries its newest build:
+ * Windows has moved on to 1.2.0 while macOS is still on 1.1.0, so the two
+ * bases deliberately differ. Bump only the platform you have rebuilt.
  */
-const RELEASE_BASE =
-  "https://github.com/BitecodesHub/Bitecodes-SAAS/releases/download/notes-v1.1.0";
+const RELEASES =
+  "https://github.com/BitecodesHub/Bitecodes-SAAS/releases/download";
 
 const INSTALLER_URLS = {
-  windows: `${RELEASE_BASE}/Notes-Setup-1.1.0.exe`,
-  macIntel: `${RELEASE_BASE}/Notes-1.1.0.dmg`,
-  macArm64: `${RELEASE_BASE}/Notes-1.1.0-arm64.dmg`,
+  windows: `${RELEASES}/notes-v1.2.0/Notes-Setup-1.2.0-x64.exe`,
+  macIntel: `${RELEASES}/notes-v1.1.0/Notes-1.1.0.dmg`,
+  macArm64: `${RELEASES}/notes-v1.1.0/Notes-1.1.0-arm64.dmg`,
 } as const;
 
 const bodySchema = z.object({
