@@ -6,7 +6,6 @@ import {
   Bot,
   ClipboardList,
   CalendarClock,
-  NotebookPen,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
@@ -63,8 +62,7 @@ function pricingCatalogSchema() {
  * The products, listed here because this is the page people open when they
  * want to know what things cost. Forms and Booking were sellable and
  * unmentioned on it, so a visitor comparing prices saw project work and the
- * chatbot and concluded that was everything. Notes is free rather than
- * metered, but a price page that hides a free product undersells it.
+ * chatbot and concluded that was everything.
  */
 const PRODUCTS = [
   {
@@ -87,13 +85,6 @@ const PRODUCTS = [
     title: "Booking",
     body: "A calendar people can book directly, correct in every timezone and impossible to double-book. One credit per confirmed booking.",
     cta: "See booking pricing",
-  },
-  {
-    href: "/notes",
-    icon: NotebookPen,
-    title: "Notes",
-    body: "A private, local-first AI assistant on your desktop. Free download for Windows and macOS during early access.",
-    cta: "Download free",
   },
 ];
 

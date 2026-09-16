@@ -9,7 +9,6 @@ import {
   Layers,
   MessagesSquare,
   Newspaper,
-  NotebookPen,
   Rocket,
   Server,
   Users,
@@ -97,12 +96,6 @@ export const mainNav: NavItem[] = [
             href: "/booking",
             description: "Embeddable booking calendar",
             icon: CalendarClock,
-          },
-          {
-            title: "Notes",
-            href: "/notes",
-            description: "Private AI desktop assistant",
-            icon: NotebookPen,
           },
           {
             title: "AI Integration",
@@ -278,7 +271,6 @@ export const footerNav: FooterColumn[] = [
       { title: "AI Chatbot", href: "/ai-chatbot" },
       { title: "Forms", href: "/forms" },
       { title: "Booking", href: "/booking" },
-      { title: "Notes", href: "/notes" },
       { title: "Pricing", href: "/pricing" },
       { title: "Free Tools", href: "/tools" },
       { title: "Website Audit", href: "/website-audit" },
