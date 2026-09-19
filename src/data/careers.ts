@@ -97,6 +97,25 @@ export const hiringProcess = [
 
 export const jobOpenings: JobOpening[] = [
   {
+    slug: "business-development-intern",
+    title: "Business Development Intern (Sales & Marketing)",
+    department: "Sales & Marketing",
+    type: "Internship · 3 months · ₹1,000–5,000/mo + commission",
+    location: "Remote",
+    summary:
+      "Find companies that need a website, app or AI tool built, reach out, and get them on a call with us. Work directly with the founder.",
+    responsibilities: [
+      "Research target companies and find the right person to contact",
+      "Reach out on LinkedIn, email and Upwork, then follow up",
+      "Post about our work on LinkedIn and Instagram a few times a week",
+    ],
+    requirements: [
+      "English good enough to email a US or UK client unsupervised",
+      "Comfortable messaging strangers and hearing no",
+      "Some interest in tech; you do not need to code",
+    ],
+  },
+  {
     slug: "senior-fullstack-engineer",
     title: "Senior Full-Stack Engineer",
     department: "Engineering",
