@@ -3,7 +3,7 @@ import { siteConfig } from "@/lib/site";
 import { technologies } from "@/data/technologies";
 import { founder } from "@/data/founder";
 import { getPricing, CURRENCIES, convertPrice } from "@/lib/pricing";
-import type { Service } from "@/types/content";
+import type { JobOpening, Service } from "@/types/content";
 
 // priceValidUntil: ~4 months ahead, computed once at module load. Stale
 // dates trigger Google structured-data warnings, so derive rather than
@@ -286,5 +286,87 @@ export function breadcrumbSchema(items: { name: string; path: string }[]) {
       name: item.name,
       item: `${siteConfig.url}${item.path}`,
     })),
+  };
+}
+
+/**
+ * JobPosting JSON-LD for Google for Jobs.
+ *
+ * The role is work from home but open only to people living in the listed
+ * cities, so it carries BOTH `jobLocationType: TELECOMMUTE` (remote-job
+ * searches) and one `jobLocation` per city (local "jobs in Ahmedabad"
+ * searches), plus `applicantLocationRequirements` naming the same cities.
+ * Every value here is also rendered visibly on the role page, which Google
+ * requires for the posting to stay eligible.
+ */
+export function jobPostingSchema(job: JobOpening) {
+  const url = `${siteConfig.url}/careers/${job.slug}`;
+  const list = (items: string[]) =>
+    `<ul>${items.map((i) => `<li>${i}</li>`).join("")}</ul>`;
+  const description = [
+    `<p>${job.summary}</p>`,
+    `<p><strong>What you will do</strong></p>`,
+    list(job.responsibilities),
+    `<p><strong>What we look for</strong></p>`,
+    list(job.requirements),
+    `<p><strong>Who can apply</strong></p>`,
+    list(job.whoCanApply),
+    `<p><strong>Perks</strong></p>`,
+    list(job.perks),
+    `<p>Duration: ${job.duration}. Hours: ${job.hours}. Openings: ${job.openings}.</p>`,
+  ].join("");
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    description,
+    identifier: {
+      "@type": "PropertyValue",
+      name: siteConfig.name,
+      value: job.slug,
+    },
+    datePosted: job.datePosted,
+    validThrough: `${job.validThrough}T23:59:59+05:30`,
+    employmentType: job.employmentType,
+    hiringOrganization: {
+      "@type": "Organization",
+      "@id": `${siteConfig.url}/#organization`,
+      name: siteConfig.name,
+      sameAs: siteConfig.url,
+      logo: `${siteConfig.url}/icon-512.png`,
+    },
+    ...(job.workFromHome && { jobLocationType: "TELECOMMUTE" }),
+    jobLocation: job.cities.map((city) => ({
+      "@type": "Place",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: city,
+        addressRegion: siteConfig.contact.address.region,
+        addressCountry: "IN",
+      },
+    })),
+    applicantLocationRequirements: job.cities.map((city) => ({
+      "@type": "City",
+      name: `${city}, ${siteConfig.contact.address.region}, India`,
+    })),
+    baseSalary: {
+      "@type": "MonetaryAmount",
+      currency: job.stipend.currency,
+      value: {
+        "@type": "QuantitativeValue",
+        minValue: job.stipend.min,
+        maxValue: job.stipend.max,
+        unitText: job.stipend.unit,
+      },
+    },
+    directApply: true,
+    industry: "Software Development",
+    occupationalCategory: "Sales and Marketing",
+    workHours: job.hours,
+    skills: job.skills.join(", "),
+    jobBenefits: job.perks.join(", "),
+    totalJobOpenings: job.openings,
+    url,
   };
 }

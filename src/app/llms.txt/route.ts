@@ -1,4 +1,5 @@
 import { siteConfig } from "@/lib/site";
+import { jobOpenings } from "@/data/careers";
 import { services } from "@/data/services";
 import { projects } from "@/data/projects";
 import { technologies } from "@/data/technologies";
@@ -113,6 +114,11 @@ export function GET() {
     `- [Blog](${url}/blog) — RSS: ${url}/rss.xml, Atom: ${url}/atom.xml`,
   );
   lines.push(`- [Careers](${url}/careers)`);
+  for (const job of jobOpenings) {
+    lines.push(
+      `- [${job.title} — ${job.location}](${url}/careers/${job.slug}): ${job.seoDescription}`,
+    );
+  }
   lines.push(`- [Contact](${url}/contact)`);
   lines.push("");
 

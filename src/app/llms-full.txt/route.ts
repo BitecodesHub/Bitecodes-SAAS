@@ -1,4 +1,5 @@
 import { siteConfig } from "@/lib/site";
+import { jobOpenings } from "@/data/careers";
 import { services, serviceCategories } from "@/data/services";
 import { projects } from "@/data/projects";
 import { technologies, techCategories } from "@/data/technologies";
@@ -182,6 +183,11 @@ export async function GET() {
   push(`- About: ${url}/about`);
   push(`- Blog: ${url}/blog`);
   push(`- Careers: ${url}/careers`);
+  for (const job of jobOpenings) {
+    push(
+      `- Hiring: ${job.title}, ${job.location}, ${job.stipend.currency} ${job.stipend.min}–${job.stipend.max} per month plus commission, ${job.duration}. Apply: ${url}/careers/${job.slug}`,
+    );
+  }
   push(`- Contact: ${url}/contact`);
   push(`- Concise LLM summary: ${url}/llms.txt`);
   push(`- Sitemap index: ${url}/sitemap-index.xml`);

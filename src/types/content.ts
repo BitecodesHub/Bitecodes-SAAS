@@ -154,4 +154,23 @@ export interface JobOpening {
   summary: string;
   responsibilities: string[];
   requirements: string[];
+  /** Search-facing title and description for the role's own page. */
+  seoTitle: string;
+  seoDescription: string;
+  /** schema.org JobPosting employmentType, e.g. "INTERN". */
+  employmentType: "INTERN" | "FULL_TIME" | "PART_TIME" | "CONTRACTOR";
+  /** ISO dates. `validThrough` must be moved forward or the role removed once it passes. */
+  datePosted: string;
+  validThrough: string;
+  stipend: { currency: "INR"; min: number; max: number; unit: "MONTH" };
+  /** Cities candidates must live in. Work itself is from home. */
+  cities: string[];
+  workFromHome: boolean;
+  duration: string;
+  hours: string;
+  openings: number;
+  skills: string[];
+  perks: string[];
+  whoCanApply: string[];
+  faqs: { question: string; answer: string }[];
 }
