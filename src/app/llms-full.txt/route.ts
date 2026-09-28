@@ -185,7 +185,7 @@ export async function GET() {
   push(`- Careers: ${url}/careers`);
   for (const job of jobOpenings) {
     push(
-      `- Hiring: ${job.title}, ${job.location}, ${job.stipend.currency} ${job.stipend.min}–${job.stipend.max} per month plus commission, ${job.duration}. Apply: ${url}/careers/${job.slug}`,
+      `- Hiring: ${job.title}, ${job.location}, ${job.stipend.currency} ${job.stipend.min}–${job.stipend.max} per month plus incentives, ${job.duration}. Apply: ${url}/careers/${job.slug}`,
     );
   }
   push(`- Contact: ${url}/contact`);

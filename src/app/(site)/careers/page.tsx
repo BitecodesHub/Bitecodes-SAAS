@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   ...createMetadata({
     title: "Careers: Work-from-Home Sales Internship, Ahmedabad & Gandhinagar",
     description:
-      "Bitecodes is hiring sales and marketing interns in Ahmedabad and Gandhinagar. Work from home, ₹2,000–5,000/month plus commission, certificate and a full-time offer.",
+      "Bitecodes is hiring sales and marketing interns in Ahmedabad and Gandhinagar. Work from home, ₹2,000–5,000/month plus incentives, certificate and a full-time offer.",
     path: "/careers",
   }),
   keywords: [
@@ -47,7 +47,7 @@ export default function CareersPage() {
       <PageHeader
         eyebrow="Careers · Now hiring interns"
         title="Learn sales on real software deals"
-        description="We are hiring sales and marketing interns in Ahmedabad and Gandhinagar. Work from home, ₹2,000–5,000 a month plus commission, and you work directly with the founder."
+        description="We are hiring sales and marketing interns in Ahmedabad and Gandhinagar. Work from home, ₹2,000–5,000 a month plus incentives, and you work directly with the founder."
         breadcrumbs={[
           { name: "Home", href: "/" },
           { name: "Careers", href: "/careers" },
@@ -81,7 +81,7 @@ export default function CareersPage() {
         <div className="container-page">
           <SectionHeader
             eyebrow="What you get"
-            title="Stipend, commission and more"
+            title="Stipend, incentives and more"
           />
           <StaggerGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {benefits.map((b) => (
@@ -132,7 +132,7 @@ export default function CareersPage() {
                         {job.location}
                       </span>
                       <span>{job.type}</span>
-                      <span>{formatStipend(job.stipend)} + commission</span>
+                      <span>{formatStipend(job.stipend)} + incentives</span>
                     </div>
                   </div>
                   <Button

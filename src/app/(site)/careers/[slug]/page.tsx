@@ -89,7 +89,7 @@ export default async function JobOpeningPage({
     {
       icon: BadgeIndianRupee,
       label: "Stipend",
-      value: `${formatStipend(job.stipend)} + commission`,
+      value: `${formatStipend(job.stipend)} + incentives`,
     },
     { icon: House, label: "Work mode", value: "Work from home" },
     { icon: MapPin, label: "Open to", value: `Candidates in ${cities}` },
