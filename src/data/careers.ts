@@ -59,9 +59,8 @@ export const benefits: Benefit[] = [
     icon: BadgeIndianRupee,
   },
   {
-    title: "Commission on every deal",
-    description:
-      "A cut of every client you bring in, on top of the stipend. The percentage is agreed before you join.",
+    title: "Incentives",
+    description: "Performance incentives on top of the monthly stipend.",
     icon: Handshake,
   },
   {
@@ -117,10 +116,10 @@ export const jobOpenings: JobOpening[] = [
     type: "Internship · Work from home",
     location: "Ahmedabad & Gandhinagar · Work from home",
     summary:
-      "Find companies that need a website, app or AI tool built, reach out, and get them on a call with us. Work from home, ₹2,000–5,000 a month plus commission.",
+      "Find companies that need a website, app or AI tool built, reach out, and get them on a call with us. Work from home, ₹2,000–5,000 a month plus incentives.",
     seoTitle: "Sales & Marketing Internship, Ahmedabad & Gandhinagar (WFH)",
     seoDescription:
-      "Work-from-home sales and marketing internship at Bitecodes for students and freshers in Ahmedabad and Gandhinagar. ₹2,000–5,000/month stipend plus commission, 3 months, certificate and full-time offer.",
+      "Work-from-home sales and marketing internship at Bitecodes for students and freshers in Ahmedabad and Gandhinagar. ₹2,000–5,000/month stipend plus incentives, 3 months, certificate and full-time offer.",
     employmentType: "INTERN",
     datePosted: "2026-09-28",
     validThrough: "2026-12-31",
@@ -159,7 +158,7 @@ export const jobOpenings: JobOpening[] = [
     ],
     perks: [
       "₹2,000–5,000 monthly stipend",
-      "Commission on every closed deal",
+      "Performance incentives",
       "Internship certificate",
       "Letter of recommendation",
       "Flexible hours",
@@ -174,7 +173,7 @@ export const jobOpenings: JobOpening[] = [
       {
         question: "What is the stipend for this internship?",
         answer:
-          "The stipend is ₹2,000 to ₹5,000 a month, depending on your hours and experience. On top of that you earn a commission on every client you bring in, with the percentage agreed in writing before you start.",
+          "The stipend is ₹2,000 to ₹5,000 a month, depending on your hours and experience, plus performance incentives.",
       },
       {
         question: "Do I need sales experience to apply?",

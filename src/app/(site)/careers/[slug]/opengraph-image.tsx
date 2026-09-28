@@ -22,7 +22,7 @@ export default async function Image({
     eyebrow: "We are hiring · Internship",
     title: job ? "Sales & Marketing Intern" : "Careers at Bitecodes",
     subtitle: job
-      ? `Work from home · ${job.cities.join(" & ")} · ${formatStipend(job.stipend)} + commission`
+      ? `Work from home · ${job.cities.join(" & ")} · ${formatStipend(job.stipend)} + incentives`
       : undefined,
   });
 }
