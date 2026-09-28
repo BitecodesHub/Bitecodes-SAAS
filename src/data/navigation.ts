@@ -212,7 +212,7 @@ export const mainNav: NavItem[] = [
           {
             title: "Careers",
             href: "/careers",
-            description: "Join the team",
+            description: "Hiring sales interns · WFH",
             icon: Rocket,
           },
           {

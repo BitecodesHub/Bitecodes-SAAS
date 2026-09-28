@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/site";
 import { services } from "@/data/services";
 import { projects } from "@/data/projects";
+import { jobOpenings } from "@/data/careers";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 
 // Dynamic so newly published (including AI-published) posts appear without a
@@ -40,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/industries", priority: 0.7 },
     { path: "/process", priority: 0.7 },
     { path: "/blog", priority: 0.7 },
-    { path: "/careers", priority: 0.6 },
+    { path: "/careers", priority: 0.8 },
     { path: "/contact", priority: 0.8 },
     { path: "/faq", priority: 0.7 },
     { path: "/privacy", priority: 0.3 },
@@ -68,6 +69,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Open roles change weekly while hiring is active, and Google for Jobs
+  // re-crawls postings far more often than marketing pages.
+  const jobRoutes: MetadataRoute.Sitemap = jobOpenings.map((j) => ({
+    url: `${base}/careers/${j.slug}`,
+    lastModified: new Date(j.datePosted),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
   const projectRoutes: MetadataRoute.Sitemap = projects.map((p) => ({
     url: `${base}/portfolio/${p.slug}`,
     lastModified: now,
@@ -85,5 +95,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...routes, ...serviceRoutes, ...projectRoutes, ...blogRoutes];
+  return [
+    ...routes,
+    ...jobRoutes,
+    ...serviceRoutes,
+    ...projectRoutes,
+    ...blogRoutes,
+  ];
 }

@@ -1,34 +1,42 @@
 import {
+  Award,
+  BadgeIndianRupee,
   Globe2,
-  GraduationCap,
-  HeartHandshake,
-  KeyRound,
-  Laptop,
-  Plane,
+  Handshake,
+  House,
+  Rocket,
 } from "lucide-react";
 import type { JobOpening } from "@/types/content";
 import type { LucideIcon } from "lucide-react";
 
+/**
+ * Careers content. Bitecodes is hiring for one role only: a work-from-home
+ * sales and marketing internship for candidates in Ahmedabad and Gandhinagar.
+ * Everything on /careers and /careers/[slug] — including the JobPosting
+ * structured data Google for Jobs reads — is generated from this file, so the
+ * visible page and the markup can never disagree.
+ */
+
 export const cultureValues = [
   {
-    title: "Ownership over hand-offs",
+    title: "Work with the founder",
     description:
-      "Everyone owns outcomes, not just tickets. You ship, you support, you improve.",
+      "No layers. You report to the person who runs the company and see how deals are really won.",
   },
   {
-    title: "Craft is the standard",
+    title: "Real clients, real stakes",
     description:
-      "We sweat the details — clean code, thoughtful UX, real performance — because clients feel them.",
+      "You talk to businesses in India, the US, the UK and the Middle East — not practice accounts.",
   },
   {
-    title: "Async, remote-first",
+    title: "Say what happened",
     description:
-      "We optimize for focused work and clear writing over meetings and presence.",
+      "A short daily update, good or bad. Honest numbers beat polished excuses.",
   },
   {
-    title: "Always learning",
+    title: "Try it your way",
     description:
-      "New tools, new domains, new patterns. Curiosity is part of the job description.",
+      "No fixed script. If you find a better way to reach people, we test it.",
   },
 ];
 
@@ -40,155 +48,169 @@ export interface Benefit {
 
 export const benefits: Benefit[] = [
   {
-    title: "Remote-first",
-    description: "Work from anywhere with flexible hours and async defaults.",
+    title: "Work from home",
+    description:
+      "Fully remote. Flexible hours, minimum four hours a day, from anywhere in Ahmedabad or Gandhinagar.",
+    icon: House,
+  },
+  {
+    title: "₹2,000–5,000 a month",
+    description: "A fixed monthly stipend based on hours and experience.",
+    icon: BadgeIndianRupee,
+  },
+  {
+    title: "Commission on every deal",
+    description:
+      "A cut of every client you bring in, on top of the stipend. The percentage is agreed before you join.",
+    icon: Handshake,
+  },
+  {
+    title: "Certificate and recommendation",
+    description:
+      "An internship certificate and a letter of recommendation from the founder.",
+    icon: Award,
+  },
+  {
+    title: "International exposure",
+    description:
+      "Pitch software projects to startups and businesses across four continents.",
     icon: Globe2,
   },
   {
-    title: "Modern equipment",
-    description: "The hardware and tools you need to do your best work.",
-    icon: Laptop,
-  },
-  {
-    title: "Learning budget",
-    description: "Courses, books, and conferences — we invest in your growth.",
-    icon: GraduationCap,
-  },
-  {
-    title: "Real ownership",
-    description: "Meaningful work with real responsibility from day one.",
-    icon: KeyRound,
-  },
-  {
-    title: "Time to recharge",
-    description: "Generous, genuinely-encouraged paid time off.",
-    icon: Plane,
-  },
-  {
-    title: "Supportive team",
-    description: "Mentorship, code review, and people who have your back.",
-    icon: HeartHandshake,
+    title: "Full-time offer",
+    description: "Strong interns get a full-time business development role.",
+    icon: Rocket,
   },
 ];
 
 export const hiringProcess = [
   {
     step: 1,
-    title: "Application",
-    description: "Send us your CV and a note on what you would love to build.",
+    title: "Apply",
+    description:
+      "Send your name, college or background, and two lines on why sales interests you.",
   },
   {
     step: 2,
-    title: "Intro call",
-    description: "A relaxed conversation about your experience and goals.",
+    title: "Short task",
+    description:
+      "Write the first message you would send to two small businesses. Twenty minutes, no trick questions.",
   },
   {
     step: 3,
-    title: "Technical conversation",
+    title: "30-minute call",
     description:
-      "A practical discussion or small exercise — no trick questions.",
+      "A video call with the founder about how you think, talk and handle a no.",
   },
   {
     step: 4,
     title: "Offer",
-    description: "We move quickly and make it easy to say yes.",
+    description: "We decide the same day and you can start within the week.",
   },
 ];
 
 export const jobOpenings: JobOpening[] = [
   {
-    slug: "business-development-intern",
-    title: "Business Development Intern (Sales & Marketing)",
+    slug: "sales-marketing-internship-ahmedabad-gandhinagar",
+    title: "Sales & Marketing Intern (Business Development)",
     department: "Sales & Marketing",
-    type: "Internship · 3 months · ₹1,000–5,000/mo + commission",
-    location: "Remote",
+    type: "Internship · Work from home",
+    location: "Ahmedabad & Gandhinagar · Work from home",
     summary:
-      "Find companies that need a website, app or AI tool built, reach out, and get them on a call with us. Work directly with the founder.",
+      "Find companies that need a website, app or AI tool built, reach out, and get them on a call with us. Work from home, ₹2,000–5,000 a month plus commission.",
+    seoTitle: "Sales & Marketing Internship, Ahmedabad & Gandhinagar (WFH)",
+    seoDescription:
+      "Work-from-home sales and marketing internship at Bitecodes for students and freshers in Ahmedabad and Gandhinagar. ₹2,000–5,000/month stipend plus commission, 3 months, certificate and full-time offer.",
+    employmentType: "INTERN",
+    datePosted: "2026-09-28",
+    validThrough: "2026-12-31",
+    stipend: { currency: "INR", min: 2000, max: 5000, unit: "MONTH" },
+    cities: ["Ahmedabad", "Gandhinagar"],
+    workFromHome: true,
+    duration: "3 months",
+    hours: "Minimum 4 hours a day, flexible timing",
+    openings: 2,
     responsibilities: [
-      "Research target companies and find the right person to contact",
-      "Reach out on LinkedIn, email and Upwork, then follow up",
+      "Research companies that need a website, mobile app or AI tool, and find the right person to talk to",
+      "Reach out on LinkedIn, email and Upwork, and book discovery calls with the founder",
+      "Follow up — most deals come from the third or fourth message, not the first",
       "Post about our work on LinkedIn and Instagram a few times a week",
+      "Keep a simple sheet of who you contacted and what happened",
     ],
     requirements: [
-      "English good enough to email a US or UK client unsupervised",
+      "English good enough to email a client in the US or UK without anyone checking it",
       "Comfortable messaging strangers and hearing no",
-      "Some interest in tech; you do not need to code",
+      "Interest in technology — you do not need to code, but you can explain what a web app is",
+      "A laptop and a stable internet connection at home",
     ],
-  },
-  {
-    slug: "senior-fullstack-engineer",
-    title: "Senior Full-Stack Engineer",
-    department: "Engineering",
-    type: "Full-time",
-    location: "Remote",
-    summary:
-      "Build polished, high-performance web applications end to end with Next.js, TypeScript, and modern backends.",
-    responsibilities: [
-      "Design and build features across the stack",
-      "Own quality — tests, reviews, and performance",
-      "Collaborate directly with clients and design",
+    whoCanApply: [
+      "Students and freshers living in Ahmedabad or Gandhinagar",
+      "Any stream — BBA, BCom, MBA, BTech, BA or anything else",
+      "Available for at least 4 hours a day for 3 months",
+      "Can start immediately",
     ],
-    requirements: [
-      "Strong TypeScript and React/Next.js experience",
-      "Comfort with backend APIs and databases",
-      "An eye for UX detail and performance",
+    skills: [
+      "Lead generation",
+      "Cold email",
+      "LinkedIn outreach",
+      "Social media marketing",
+      "Spoken and written English",
+      "Google Sheets / Excel",
     ],
-  },
-  {
-    slug: "backend-engineer-java",
-    title: "Backend Engineer (Java / Spring Boot)",
-    department: "Engineering",
-    type: "Full-time",
-    location: "Remote",
-    summary:
-      "Engineer reliable, well-architected services and APIs for enterprise-grade systems.",
-    responsibilities: [
-      "Build and maintain Spring Boot services",
-      "Model data and design clean API contracts",
-      "Add observability and harden for production",
+    perks: [
+      "₹2,000–5,000 monthly stipend",
+      "Commission on every closed deal",
+      "Internship certificate",
+      "Letter of recommendation",
+      "Flexible hours",
+      "Full-time job offer for strong performers",
     ],
-    requirements: [
-      "Solid Java and Spring Boot experience",
-      "Relational database and API design skills",
-      "Familiarity with Docker and cloud deployment",
-    ],
-  },
-  {
-    slug: "ai-engineer",
-    title: "AI Engineer",
-    department: "AI & Automation",
-    type: "Full-time",
-    location: "Remote",
-    summary:
-      "Embed LLMs, retrieval, and agentic workflows into real products — with evaluation and guardrails.",
-    responsibilities: [
-      "Integrate LLMs and build MCP servers",
-      "Design evaluations and guardrails",
-      "Optimize for quality, latency, and cost",
-    ],
-    requirements: [
-      "Experience integrating LLMs into products",
-      "Strong Python or TypeScript skills",
-      "A pragmatic, evaluation-driven mindset",
-    ],
-  },
-  {
-    slug: "product-designer",
-    title: "Product Designer (UI/UX)",
-    department: "Design",
-    type: "Contract / Full-time",
-    location: "Remote",
-    summary:
-      "Shape premium, accessible product experiences from research through high-fidelity design.",
-    responsibilities: [
-      "Run research and map user flows",
-      "Design wireframes and high-fidelity UI",
-      "Partner closely with engineering on fidelity",
-    ],
-    requirements: [
-      "A strong portfolio of shipped product work",
-      "Fluency in modern design tools and systems",
-      "Understanding of accessibility and motion",
+    faqs: [
+      {
+        question: "Is this internship work from home?",
+        answer:
+          "Yes. The internship is fully work from home. We hire candidates who live in Ahmedabad or Gandhinagar so we can meet in person when it helps, but you never need to commute to an office.",
+      },
+      {
+        question: "What is the stipend for this internship?",
+        answer:
+          "The stipend is ₹2,000 to ₹5,000 a month, depending on your hours and experience. On top of that you earn a commission on every client you bring in, with the percentage agreed in writing before you start.",
+      },
+      {
+        question: "Do I need sales experience to apply?",
+        answer:
+          "No. We care more about clear English, comfort talking to strangers and consistency than about past experience. Freshers and first-year students are welcome.",
+      },
+      {
+        question: "Who can apply from Ahmedabad and Gandhinagar?",
+        answer:
+          "Any student or fresher living in Ahmedabad or Gandhinagar, from any college and any stream — BBA, BCom, MBA, engineering or arts.",
+      },
+      {
+        question: "How long is the internship and what are the hours?",
+        answer:
+          "The internship runs for three months. You choose your hours, with a minimum of four hours a day, so it fits around college.",
+      },
+      {
+        question: "Will I get a certificate and a job offer?",
+        answer:
+          "Every intern who completes the three months gets a certificate and a letter of recommendation. Interns who bring in clients are offered a full-time business development role.",
+      },
+      {
+        question: "How do I apply?",
+        answer:
+          "Use the Apply button on this page. Tell us your name, college or background and why sales interests you. We reply to every application within two working days.",
+      },
     ],
   },
 ];
+
+export function getJobOpening(slug: string): JobOpening | undefined {
+  return jobOpenings.find((j) => j.slug === slug);
+}
+
+/** Formats a stipend range as "₹2,000–5,000 / month". */
+export function formatStipend(stipend: JobOpening["stipend"]): string {
+  const fmt = (n: number) => n.toLocaleString("en-IN");
+  return `₹${fmt(stipend.min)}–${fmt(stipend.max)} / month`;
+}
