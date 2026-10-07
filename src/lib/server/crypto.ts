@@ -1,10 +1,13 @@
 import "server-only";
 
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
   createHmac,
   randomBytes,
   scrypt as scryptCallback,
+  scryptSync,
   timingSafeEqual,
   type ScryptOptions,
 } from "node:crypto";
@@ -189,4 +192,84 @@ export function validatePasswordStrength(password: string): string[] {
     problems.push("Include a symbol.");
   }
   return problems;
+}
+
+// ---------------------------------------------------------------------------
+// Authenticated encryption (AES-256-GCM)
+// ---------------------------------------------------------------------------
+
+/**
+ * Reversible secret storage, for values the server must later present to a
+ * third party in the clear — currently the upstream AI-provider API keys the
+ * operator configures for the desktop app. A one-way hash cannot be used here
+ * because the plaintext key has to be handed to NVIDIA / OpenRouter / AWS.
+ *
+ * AES-256-GCM: confidentiality plus an authentication tag, so a tampered
+ * ciphertext fails to decrypt rather than yielding garbage. The key is derived
+ * from AUTH_SECRET so no new secret needs provisioning, with a fixed
+ * application salt — AUTH_SECRET is already high-entropy, and a per-value salt
+ * would have to be stored alongside the ciphertext for no added protection
+ * against an attacker who already has the database.
+ *
+ * Format: `v1.<iv>.<tag>.<ciphertext>`, each segment base64url. The version
+ * prefix lets the scheme rotate later without guessing a stored value's age.
+ */
+
+const ENCRYPTION_VERSION = "v1";
+const ENCRYPTION_SALT = "bitecodes.secret.v1";
+
+let cachedEncryptionKey: Buffer | null = null;
+function encryptionKey(): Buffer {
+  if (!cachedEncryptionKey) {
+    cachedEncryptionKey = scryptSync(getSigningSecret(), ENCRYPTION_SALT, 32);
+  }
+  return cachedEncryptionKey;
+}
+
+/** Encrypts a UTF-8 string. Returns the versioned, self-describing token. */
+export function encryptSecret(plaintext: string): string {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const ciphertext = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return [
+    ENCRYPTION_VERSION,
+    base64UrlEncode(iv),
+    base64UrlEncode(tag),
+    base64UrlEncode(ciphertext),
+  ].join(".");
+}
+
+/**
+ * Decrypts a token produced by {@link encryptSecret}. Returns null for any
+ * malformed, wrong-version, or tampered input rather than throwing, so a single
+ * corrupt row cannot take down a request that reads several secrets.
+ */
+export function decryptSecret(token: string | null | undefined): string | null {
+  if (!token || typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 4 || parts[0] !== ENCRYPTION_VERSION) return null;
+  try {
+    const iv = base64UrlDecode(parts[1]);
+    const tag = base64UrlDecode(parts[2]);
+    const ciphertext = base64UrlDecode(parts[3]);
+    const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), iv);
+    decipher.setAuthTag(tag);
+    const plaintext = Buffer.concat([
+      decipher.update(ciphertext),
+      decipher.final(),
+    ]);
+    return plaintext.toString("utf8");
+  } catch {
+    return null;
+  }
+}
+
+/** Last four characters of a secret, for display (e.g. "…a1b2"). Never the key. */
+export function secretHint(plaintext: string): string {
+  const tail = plaintext.slice(-4);
+  return tail.length === 4 ? tail : "";
 }

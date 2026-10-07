@@ -14,6 +14,9 @@ import type {
   ChatbotApiKeyDoc,
   ChatbotDoc,
   ChatbotModelDoc,
+  DesktopProviderDoc,
+  DesktopTokenDoc,
+  DesktopPromptLogDoc,
   BillingEventDoc,
   BillingOrderDoc,
   BookingConfigDoc,
@@ -151,6 +154,13 @@ export const billingOrders = () =>
   collection<BillingOrderDoc>(COLLECTIONS.billingOrders);
 export const billingEvents = () =>
   collection<BillingEventDoc>(COLLECTIONS.billingEvents);
+
+export const desktopProviders = () =>
+  collection<DesktopProviderDoc>(COLLECTIONS.desktopProviders);
+export const desktopTokens = () =>
+  collection<DesktopTokenDoc>(COLLECTIONS.desktopTokens);
+export const desktopPromptLog = () =>
+  collection<DesktopPromptLogDoc>(COLLECTIONS.desktopPromptLog);
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

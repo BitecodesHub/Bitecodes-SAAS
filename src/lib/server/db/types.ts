@@ -1140,3 +1140,97 @@ export interface BookingDoc {
   createdAt: Date;
   cancelledAt: Date | null;
 }
+
+// ---------------------------------------------------------------------------
+// Desktop companion app
+// ---------------------------------------------------------------------------
+
+/** Upstream AI provider the desktop "Bitecodes model" routes through. */
+export type DesktopProviderId = "nvidia" | "openrouter" | "bedrock";
+
+/**
+ * One configured upstream provider, or the routing document.
+ *
+ * Provider docs use `_id` = the provider id; the routing doc uses the sentinel
+ * `_id` = "__routing__". A discriminated union keeps both in one collection
+ * without a nullable grab-bag of fields.
+ */
+export type DesktopProviderDoc = DesktopProviderEntryDoc | DesktopRoutingDoc;
+
+export interface DesktopProviderEntryDoc extends Timestamped {
+  _id: DesktopProviderId;
+  kind: "provider";
+  enabled: boolean;
+  /** AES-GCM ciphertext of the provider API key (see crypto.encryptSecret). */
+  apiKeyCipher: string | null;
+  /** Last 4 chars of the key, for display only. */
+  apiKeyHint: string | null;
+  /** OpenAI-compatible base URL (nvidia/openrouter), else null. */
+  baseUrl: string | null;
+  /** AWS region (bedrock), else null. */
+  region: string | null;
+  /** Text model id sent upstream. Hidden from desktop users. */
+  model: string;
+  /** Vision-capable model for screenshot requests ("" if this provider has none). */
+  visionModel: string;
+}
+
+export interface DesktopRoutingDoc extends Timestamped {
+  _id: "__routing__";
+  kind: "routing";
+  /** Whether the desktop integration is live at all. */
+  enabled: boolean;
+  /** Provider tried first. */
+  defaultProvider: DesktopProviderId;
+  /** Providers tried, in order, if the default fails. */
+  fallback: DesktopProviderId[];
+}
+
+/**
+ * A device token issued to the desktop app after a browser login.
+ *
+ * Mirrors the API-key pattern: only a SHA-256 hash of the secret is stored. The
+ * pairing code (short-lived, one-time) is how the browser hands the token back
+ * to the waiting desktop app without the app ever seeing the user's password.
+ */
+export interface DesktopTokenDoc extends Timestamped {
+  _id?: ObjectId;
+  userId: string;
+  /** Human label, e.g. the device/OS, for the user's session list. */
+  label: string;
+  tokenHash: string | null;
+  tokenPrefix: string | null;
+  /** Hash of the one-time pairing code; cleared once redeemed. */
+  pairingCodeHash: string | null;
+  /** Pairing state: awaiting browser approval, or an active token. */
+  status: "pending" | "active" | "revoked";
+  lastUsedAt: Date | null;
+  /** TTL: a pending pairing expires in minutes; an active token in weeks. */
+  expiresAt: Date;
+}
+
+/** One desktop request, logged for the operator with full prompt + timing. */
+export interface DesktopPromptLogDoc {
+  _id?: ObjectId;
+  userId: string;
+  tokenId: string | null;
+  /** Provider+model actually used (operator sees it; the end user never does). */
+  provider: DesktopProviderId | null;
+  model: string | null;
+  /** The provider chain that was attempted, in order. */
+  attempted: { provider: DesktopProviderId; model: string; outcome: string }[];
+  hadImage: boolean;
+  promptChars: number;
+  /** Full prompt text, as the operator asked to track everything. */
+  prompt: string;
+  /** Full response text (truncated to a sane ceiling). */
+  response: string;
+  status: "ok" | "error";
+  error: string | null;
+  promptTokens: number | null;
+  completionTokens: number | null;
+  latencyMs: number;
+  createdAt: Date;
+  /** TTL anchor; set to createdAt + retention window. */
+  expiresAt: Date;
+}
