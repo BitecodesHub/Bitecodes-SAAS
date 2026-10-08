@@ -4,6 +4,7 @@ import {
   clientIpKey,
   desktopJson,
   readJsonObject,
+  requestLocation,
 } from "@/lib/server/desktop/http";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { getSiteUrl } from "@/lib/server/env";
@@ -32,8 +33,11 @@ export async function POST(request: Request) {
   const pairing = await startPairing({
     label: body.label,
     ctx: clientContext(request),
+    requestedFrom: requestLocation(request),
   });
-  const verificationUrl = `${getSiteUrl()}/app/desktop?code=${encodeURIComponent(pairing.userCode)}`;
+  // Deliberately WITHOUT the code: the user types the code shown in their own
+  // app, so a pairing link sent by someone else cannot be approved in one click.
+  const verificationUrl = `${getSiteUrl()}/app/desktop`;
   return desktopJson({
     ok: true,
     deviceCode: pairing.deviceCode,

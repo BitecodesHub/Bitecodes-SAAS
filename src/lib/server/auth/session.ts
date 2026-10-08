@@ -223,6 +223,10 @@ export async function revokeAllSessions(userId: string): Promise<number> {
     { userId, revokedAt: null },
     { $set: { revokedAt: new Date() } },
   );
+  // Desktop app sign-ins are sessions too: "sign out everywhere" includes them.
+  const { revokeAllDesktopTokens } =
+    await import("@/lib/server/desktop/devices");
+  await revokeAllDesktopTokens(userId);
   return result.modifiedCount;
 }
 

@@ -50,7 +50,7 @@ export default async function DesktopLogsPage({
     user?: string;
   }>;
 }) {
-  await requireCapability("manage_settings");
+  await requireCapability("view_desktop_prompts");
   const sp = await searchParams;
   const status =
     sp.status === "ok" || sp.status === "error" || sp.status === "cancelled"

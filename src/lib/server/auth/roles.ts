@@ -46,6 +46,12 @@ export const CAPABILITIES = [
    * controls for our outreach machinery.
    */
   "manage_email",
+  /**
+   * Read desktop users' full prompts and answers (the desktop prompt log).
+   * Owner-only: it is other people's private text, so configuring the desktop
+   * app (`manage_settings`) does not by itself grant reading it.
+   */
+  "view_desktop_prompts",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];

@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/server/auth/dal";
-import { decidePairing, revokeDevice } from "@/lib/server/desktop/devices";
+import {
+  decidePairing,
+  findPendingPairing,
+  normalizeUserCode,
+  revokeDevice,
+} from "@/lib/server/desktop/devices";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
 
@@ -49,4 +54,50 @@ export async function revokeDeviceAction(id: string): Promise<{ ok: boolean }> {
   const ok = await revokeDevice(session.userId, String(id ?? ""));
   revalidatePath("/app/desktop");
   return { ok };
+}
+
+export type PairLookup =
+  | {
+      ok: true;
+      pending: {
+        label: string;
+        userCode: string;
+        requestedFrom: string | null;
+        createdAtIso: string;
+      };
+    }
+  | { ok: false; error: string };
+
+/**
+ * Looks up the sign-in request behind a code the user TYPED (never one from a
+ * link). Shares the approval rate limit, so codes cannot be enumerated.
+ */
+export async function lookupPairingAction(code: string): Promise<PairLookup> {
+  const session = await requireAdminSession();
+  const limit = await consumeNamedRateLimit("desktopApprove", session.userId);
+  if (!limit.allowed)
+    return { ok: false, error: "Too many attempts. Try again shortly." };
+  if (!normalizeUserCode(String(code ?? ""))) {
+    return {
+      ok: false,
+      error: "Enter the 8-character code shown in the desktop app.",
+    };
+  }
+  const pending = await findPendingPairing(String(code));
+  if (!pending) {
+    return {
+      ok: false,
+      error:
+        "No sign-in is waiting for that code. Check it, or start sign-in again from the app.",
+    };
+  }
+  return {
+    ok: true,
+    pending: {
+      label: pending.label,
+      userCode: pending.userCode,
+      requestedFrom: pending.requestedFrom,
+      createdAtIso: pending.createdAt.toISOString(),
+    },
+  };
 }

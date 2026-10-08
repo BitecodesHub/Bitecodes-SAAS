@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { requireCapability } from "@/lib/server/auth/dal";
+import { hasCapability, requireCapability } from "@/lib/server/auth/dal";
 import {
   desktopUsageByUser,
   EVENT_RETENTION_DAYS,
@@ -51,6 +51,7 @@ export default async function DesktopActivityPage({
 }) {
   await requireCapability("manage_settings");
   const sp = await searchParams;
+  const canReadPrompts = await hasCapability("view_desktop_prompts");
   const type = EVENT_TYPES.includes(sp.type as DesktopEventType)
     ? (sp.type as DesktopEventType)
     : undefined;
@@ -153,12 +154,14 @@ export default async function DesktopActivityPage({
                       {fmt(u.lastActiveAt)}
                     </td>
                     <td className={`${td} space-x-3 text-xs`}>
-                      <Link
-                        className="hover:underline"
-                        href={`/admin/desktop/logs?user=${u.userId}`}
-                      >
-                        Prompts
-                      </Link>
+                      {canReadPrompts && (
+                        <Link
+                          className="hover:underline"
+                          href={`/admin/desktop/logs?user=${u.userId}`}
+                        >
+                          Prompts
+                        </Link>
+                      )}
                       <Link
                         className="hover:underline"
                         href={qs({ user: u.userId, before: undefined })}

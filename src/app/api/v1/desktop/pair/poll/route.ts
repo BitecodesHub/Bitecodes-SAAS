@@ -1,9 +1,11 @@
 import { pollPairing } from "@/lib/server/desktop/devices";
 import {
   clientContext,
+  clientIpKey,
   desktopJson,
   readJsonObject,
 } from "@/lib/server/desktop/http";
+import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 
 /**
  * POST /api/v1/desktop/pair/poll — the app checks whether its pairing was
@@ -13,6 +15,15 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const limit = await consumeNamedRateLimit(
+    "desktopPoll",
+    clientIpKey(request),
+  );
+  if (!limit.allowed) {
+    return desktopJson({ ok: false, code: "RATE_LIMITED" }, 429, {
+      "Retry-After": String(limit.retryAfterSeconds),
+    });
+  }
   const body = await readJsonObject(request, 1024);
   const deviceCode =
     typeof body?.deviceCode === "string" ? body.deviceCode : "";

@@ -49,6 +49,8 @@ export const COLLECTIONS = {
   desktopTokens: "desktop_tokens",
   desktopPromptLog: "desktop_prompt_log",
   desktopEvents: "desktop_events",
+  desktopUsageDaily: "desktop_usage_daily",
+  desktopAlerts: "desktop_alerts",
   // Prepaid credits, shared by every metered product (chatbot, forms).
   walletLedger: "wallet_ledger",
   walletBalances: "wallet_balances",
@@ -309,6 +311,12 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     { key: { type: 1, createdAt: -1 } },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
+  // Daily quota counters keyed by `${day}|${scope}`; kept ~40 days.
+  [COLLECTIONS.desktopUsageDaily]: [
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+  ],
+  // Alert throttle state, one doc per alert kind (_id); tiny, no extra index.
+  [COLLECTIONS.desktopAlerts]: [],
   [COLLECTIONS.walletLedger]: [
     // The usage/billing history read: one owner's rows for one product.
     { key: { ownerId: 1, product: 1, createdAt: -1 } },

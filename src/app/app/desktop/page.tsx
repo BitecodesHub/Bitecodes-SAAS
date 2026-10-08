@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/server/auth/dal";
-import {
-  findPendingPairing,
-  listDevices,
-  normalizeUserCode,
-} from "@/lib/server/desktop/devices";
+import { listDevices } from "@/lib/server/desktop/devices";
+import { requestLocation } from "@/lib/server/desktop/http";
 import { DesktopPairing } from "@/components/desktop/desktop-pairing";
 
 export const metadata: Metadata = {
@@ -19,35 +17,23 @@ export const dynamic = "force-dynamic";
  *
  * Signed-out visitors are redirected to sign-in and brought straight back, so
  * every existing method (password, magic link, Google, 2FA) works unchanged.
- * Lives outside the (dash) group so it renders as a focused standalone card.
+ *
+ * The code is TYPED by the user from their own app, never taken from the URL:
+ * a pairing link someone else sends cannot be approved with one click (the
+ * classic device-code phishing attack). Any ?code= from older builds is ignored.
  */
-export default async function DesktopConnectPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ code?: string }>;
-}) {
-  const { code } = await searchParams;
-  const userCode = normalizeUserCode(code ?? "");
+export default async function DesktopConnectPage() {
   const session = await getAdminSession();
-  if (!session) {
-    const back = userCode
-      ? `/app/desktop?code=${encodeURIComponent(userCode)}`
-      : "/app/desktop";
-    redirect(`/login?next=${encodeURIComponent(back)}`);
-  }
+  if (!session) redirect(`/login?next=${encodeURIComponent("/app/desktop")}`);
 
-  const [pending, devices] = await Promise.all([
-    userCode ? findPendingPairing(userCode) : Promise.resolve(null),
-    listDevices(session.userId),
-  ]);
+  const h = await headers();
+  const here = requestLocation(new Request("http://local", { headers: h }));
+  const devices = await listDevices(session.userId);
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <DesktopPairing
-        requestedCode={userCode}
-        pending={
-          pending ? { label: pending.label, userCode: pending.userCode } : null
-        }
+        yourLocation={here}
         devices={devices.map((d) => ({
           id: d.id,
           label: d.label,

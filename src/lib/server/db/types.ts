@@ -1155,7 +1155,51 @@ export type DesktopProviderId = "nvidia" | "openrouter" | "groq" | "bedrock";
  * `_id` = "__routing__". A discriminated union keeps both in one collection
  * without a nullable grab-bag of fields.
  */
-export type DesktopProviderDoc = DesktopProviderEntryDoc | DesktopRoutingDoc;
+export type DesktopProviderDoc =
+  | DesktopProviderEntryDoc
+  | DesktopRoutingDoc
+  | DesktopLimitsDoc
+  | DesktopReleaseDoc;
+
+/** The desktop app's update feed, set by the operator. */
+export interface DesktopReleaseDoc extends Timestamped {
+  _id: "__release__";
+  kind: "release";
+  /** Newest version, e.g. "1.8.0". Empty = no update offered. */
+  latestVersion: string;
+  /** Builds below this must update before they can be used. Empty = none. */
+  minimumVersion: string;
+  notes: string;
+  /** https download links per platform build. */
+  downloads: {
+    macArm64: string;
+    macX64: string;
+    winX64: string;
+    winArm64: string;
+  };
+}
+
+/** Operator-set daily caps for the desktop app. 0 = unlimited. */
+export interface DesktopLimitsDoc extends Timestamped {
+  _id: "__limits__";
+  kind: "limits";
+  userDailyRequests: number;
+  userDailyTokens: number;
+  globalDailyTokens: number;
+  /** Who may use the Bitecodes model: every account, or staff (non-customer) only. */
+  access?: "everyone" | "staff";
+}
+
+/** Per-day usage counter; _id is `${day}|${userId}` or `${day}|*` (all users). */
+export interface DesktopUsageDailyDoc {
+  _id: string;
+  day: string;
+  scope: string;
+  requests: number;
+  tokens: number;
+  /** TTL anchor. */
+  expiresAt: Date;
+}
 
 export interface DesktopProviderEntryDoc extends Timestamped {
   _id: DesktopProviderId;
@@ -1209,6 +1253,13 @@ export interface DesktopTokenDoc extends Timestamped {
   tokenPrefix: string | null;
   status: "pending" | "approved" | "denied" | "active" | "revoked";
   lastUsedAt: Date | null;
+  /**
+   * The approving user's sessionEpoch. A password reset bumps the user's epoch,
+   * which invalidates this token exactly like it invalidates browser sessions.
+   */
+  userEpoch?: number;
+  /** Where the pairing was started (Vercel geo headers), shown on approval. */
+  requestedFrom?: string | null;
   /** Last app build seen on this device, e.g. "Notes/1.7.0 (darwin; arm64)". */
   lastClient?: string | null;
   /** Hashed (never raw) IP of the last request, via crypto.hashIp. */
@@ -1288,4 +1339,11 @@ export interface DesktopEventDoc {
   createdAt: Date;
   /** TTL anchor; createdAt + retention window. */
   expiresAt: Date;
+}
+
+/** Throttle record for an operator alert; _id is the alert kind. */
+export interface DesktopAlertDoc {
+  _id: string;
+  lastSentAt: Date;
+  lastDetail: string;
 }

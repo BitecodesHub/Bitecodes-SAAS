@@ -17,6 +17,9 @@ import {
 import { decryptSecret } from "@/lib/server/crypto";
 import { desktopProviders } from "@/lib/server/db/collections";
 import { adminRevokeDevice } from "@/lib/server/desktop/devices";
+import { setLimits } from "@/lib/server/desktop/quota";
+import { setRelease } from "@/lib/server/desktop/release";
+import { validBaseUrl } from "@/lib/server/desktop/providers";
 import {
   PROVIDER_DEFAULTS,
   type ResolvedProvider,
@@ -49,12 +52,11 @@ const providerSchema = z.object({
   visionModel: z.string().trim().max(200),
 });
 
-function validBaseUrl(url: string): boolean {
+function hostOf(url: string | null | undefined): string | null {
   try {
-    const u = new URL(url);
-    return u.protocol === "https:" && !u.username && !u.password;
+    return url ? new URL(url).host.toLowerCase() : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -72,14 +74,35 @@ export async function saveDesktopProviderAction(
 
   if (v.id !== "bedrock") {
     if (!v.baseUrl || !validBaseUrl(v.baseUrl))
-      return { ok: false, error: "Base URL must be an https:// URL." };
+      return {
+        ok: false,
+        error:
+          "Base URL must be a public https:// address (no localhost or private networks).",
+      };
   } else if (!v.region || !/^[a-z]{2}(?:-gov)?-[a-z]+-\d$/.test(v.region)) {
     return { ok: false, error: "Choose a valid AWS region." };
   }
 
+  // Moving a provider to a different host without supplying a key drops the
+  // stored key: otherwise the next request would hand it to the new host.
+  const before = await (await desktopProviders()).findOne({ _id: v.id });
+  const oldHost =
+    before && before.kind === "provider"
+      ? hostOf((before as DesktopProviderEntryDoc).baseUrl)
+      : null;
+  const newHost = v.id === "bedrock" ? null : hostOf(v.baseUrl);
+  const hostChanged =
+    v.id !== "bedrock" && oldHost !== null && newHost !== oldHost;
+  const keyUpdate =
+    v.apiKey !== undefined
+      ? { apiKey: v.apiKey }
+      : hostChanged
+        ? { apiKey: "" }
+        : {};
+
   await upsertProvider(v.id, {
     enabled: v.enabled,
-    ...(v.apiKey !== undefined ? { apiKey: v.apiKey } : {}),
+    ...keyUpdate,
     baseUrl: v.id === "bedrock" ? null : (v.baseUrl ?? null),
     region: v.id === "bedrock" ? (v.region ?? null) : null,
     model: v.model,
@@ -93,11 +116,18 @@ export async function saveDesktopProviderAction(
       enabled: v.enabled,
       model: v.model,
       visionModel: v.visionModel,
-      keyChanged: v.apiKey !== undefined,
+      keyChanged: v.apiKey !== undefined || hostChanged,
+      ...(hostChanged ? { hostChanged: { from: oldHost, to: newHost } } : {}),
     },
   });
   revalidatePath("/admin/desktop");
-  return { ok: true, message: "Saved." };
+  return {
+    ok: true,
+    message:
+      hostChanged && v.apiKey === undefined
+        ? "Saved. The base URL moved to a new host, so the stored key was removed — paste the key for the new host."
+        : "Saved.",
+  };
 }
 
 const routingSchema = z.object({
@@ -197,4 +227,78 @@ export async function adminRevokeDeviceAction(
   });
   revalidatePath("/admin/desktop/activity");
   return { ok: true, message: "Device disconnected" };
+}
+
+const limitsSchema = z.object({
+  userDailyRequests: z.number().int().min(0).max(1_000_000_000),
+  userDailyTokens: z.number().int().min(0).max(1_000_000_000),
+  globalDailyTokens: z.number().int().min(0).max(1_000_000_000),
+  access: z.enum(["everyone", "staff"]),
+});
+
+/** Daily caps for the Bitecodes model (0 = unlimited). */
+export async function saveDesktopLimitsAction(
+  input: z.input<typeof limitsSchema>,
+): Promise<AdminResult> {
+  const session = await requireCapability("manage_settings");
+  const parsed = limitsSchema.safeParse(input);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: "Limits must be whole numbers (0 = unlimited).",
+    };
+  const saved = await setLimits(parsed.data);
+  await recordAudit({
+    actorId: session.userId,
+    action: AUDIT_ACTIONS.desktopProvidersChanged,
+    target: { type: "desktop_limits", id: "limits" },
+    detail: { ...saved },
+  });
+  revalidatePath("/admin/desktop");
+  return { ok: true, message: "Limits saved." };
+}
+
+const versionField = z.union([
+  z.literal(""),
+  z.string().regex(/^\d{1,4}\.\d{1,4}\.\d{1,4}$/, "Versions look like 1.8.0"),
+]);
+const urlField = z.union([
+  z.literal(""),
+  z.string().url().startsWith("https://", "Download links must be https://"),
+]);
+const releaseSchema = z.object({
+  latestVersion: versionField,
+  minimumVersion: versionField,
+  notes: z.string().max(2000),
+  downloads: z.object({
+    macArm64: urlField,
+    macX64: urlField,
+    winX64: urlField,
+    winArm64: urlField,
+  }),
+});
+
+/** Publish the desktop app's update feed (latest/minimum version, download links). */
+export async function saveDesktopReleaseAction(
+  input: z.input<typeof releaseSchema>,
+): Promise<AdminResult> {
+  const session = await requireCapability("manage_settings");
+  const parsed = releaseSchema.safeParse(input);
+  if (!parsed.success)
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid release.",
+    };
+  const saved = await setRelease(parsed.data);
+  await recordAudit({
+    actorId: session.userId,
+    action: AUDIT_ACTIONS.desktopProvidersChanged,
+    target: { type: "desktop_release", id: "release" },
+    detail: {
+      latestVersion: saved.latestVersion,
+      minimumVersion: saved.minimumVersion,
+    },
+  });
+  revalidatePath("/admin/desktop");
+  return { ok: true, message: "Release published." };
 }

@@ -70,3 +70,26 @@ export function clientContext(request: Request): {
   const ipHash = clientIpKey(request);
   return { client, ipHash: ipHash === "unknown" ? null : ipHash };
 }
+
+/** Approximate location from Vercel's edge geo headers, e.g. "Sydney, NSW, AU". */
+export function requestLocation(request: Request): string | null {
+  const h = request.headers;
+  const decode = (v: string | null) => {
+    if (!v) return null;
+    try {
+      return (
+        decodeURIComponent(v)
+          .replace(/[^\p{L}\p{N} .'-]/gu, "")
+          .slice(0, 60) || null
+      );
+    } catch {
+      return null;
+    }
+  };
+  const parts = [
+    decode(h.get("x-vercel-ip-city")),
+    decode(h.get("x-vercel-ip-country-region")),
+    decode(h.get("x-vercel-ip-country")),
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}

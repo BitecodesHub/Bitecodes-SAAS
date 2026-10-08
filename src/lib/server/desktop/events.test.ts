@@ -1,5 +1,6 @@
 import { beforeEach, expect, it } from "vitest";
 import { describeWithDatabase, useTestDatabase } from "@/test/mongo";
+import { createTestUser } from "@/test/desktop";
 
 describeWithDatabase("desktop activity tracking", () => {
   useTestDatabase();
@@ -14,21 +15,22 @@ describeWithDatabase("desktop activity tracking", () => {
   const events = () => import("@/lib/server/desktop/events");
   const ctx = { client: "Notes/1.7.0 (darwin; arm64)", ipHash: "iphash123" };
 
-  async function signIn(userId = "user-1") {
+  async function signIn(userId?: string) {
+    const uid = userId ?? (await createTestUser());
     const { startPairing, decidePairing, pollPairing } = await devices();
     const p = await startPairing({ label: "Notes on macOS", ctx });
-    await decidePairing({ userCode: p.userCode, userId, approve: true });
+    await decidePairing({ userCode: p.userCode, userId: uid, approve: true });
     const r = (await pollPairing(p.deviceCode, new Date(), ctx)) as {
       token: string;
       tokenId: string;
     };
-    return r;
+    return { ...r, userId: uid };
   }
 
   it("records the whole device lifecycle, newest first, with build and hashed IP", async () => {
     const { revokeDesktopToken } = await devices();
     const { listDesktopEvents } = await events();
-    const { token } = await signIn();
+    const { token, userId } = await signIn();
     await revokeDesktopToken(token, ctx);
 
     const { rows } = await listDesktopEvents();
@@ -40,7 +42,7 @@ describeWithDatabase("desktop activity tracking", () => {
     ]);
     const signedIn = rows.find((r) => r.type === "signed_in")!;
     expect(signedIn).toMatchObject({
-      userId: "user-1",
+      userId,
       label: "Notes on macOS",
       client: ctx.client,
       ipHash: ctx.ipHash,

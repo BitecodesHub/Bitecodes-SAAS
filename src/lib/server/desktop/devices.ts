@@ -2,7 +2,7 @@ import "server-only";
 
 import { ObjectId } from "mongodb";
 import { randomBytes } from "node:crypto";
-import { desktopTokens } from "@/lib/server/db/collections";
+import { adminUsers, desktopTokens } from "@/lib/server/db/collections";
 import type { DesktopTokenDoc } from "@/lib/server/db/types";
 import { randomToken, sha256Hex } from "@/lib/server/crypto";
 import {
@@ -49,12 +49,67 @@ export function normalizeUserCode(input: string): string | null {
   return `${raw.slice(0, 4)}-${raw.slice(4)}`;
 }
 
+/** "Notes on macOS" etc. from the build the app reports; never free text. */
+function deviceLabel(client: string | null, fallback: unknown): string {
+  const os = /\(darwin/.test(client ?? "")
+    ? "macOS"
+    : /\(win32/.test(client ?? "")
+      ? "Windows"
+      : /\(linux/.test(client ?? "")
+        ? "Linux"
+        : null;
+  if (os) return `Notes on ${os}`;
+  // Older builds send no client header; accept only their known labels.
+  const legacy = cleanLabel(fallback);
+  return /^Notes on (macOS|Windows|Linux)$/.test(legacy)
+    ? legacy
+    : "Notes desktop app";
+}
+
 function cleanLabel(label: unknown): string {
   const text =
     typeof label === "string"
       ? label.replace(/[\u0000-\u001f]/g, "").trim()
       : "";
   return text.slice(0, 80) || "Desktop app";
+}
+
+async function currentEpoch(userId: string): Promise<number | undefined> {
+  if (!ObjectId.isValid(userId)) return undefined;
+  const user = await (
+    await adminUsers()
+  ).findOne({ _id: new ObjectId(userId) }, { projection: { sessionEpoch: 1 } });
+  return typeof user?.sessionEpoch === "number" ? user.sessionEpoch : undefined;
+}
+
+/** The token's account if it may still use the desktop app, else null. */
+async function accountStillValid(
+  userId: string,
+  tokenEpoch: number | undefined,
+): Promise<{ role: string } | null> {
+  if (!ObjectId.isValid(userId)) return null;
+  const user = await (
+    await adminUsers()
+  ).findOne(
+    { _id: new ObjectId(userId) },
+    { projection: { status: 1, sessionEpoch: 1, role: 1 } },
+  );
+  if (!user || user.status !== "active") return null;
+  // Tokens minted before epochs were recorded carry none; status still applies.
+  if (typeof tokenEpoch === "number" && user.sessionEpoch !== tokenEpoch)
+    return null;
+  return { role: String(user.role ?? "") };
+}
+
+/** Signs a user out of every desktop device (password reset, disable, "sign out everywhere"). */
+export async function revokeAllDesktopTokens(userId: string): Promise<number> {
+  const result = await (
+    await desktopTokens()
+  ).updateMany(
+    { userId, status: "active" },
+    { $set: { status: "revoked", updatedAt: new Date() } },
+  );
+  return result.modifiedCount;
 }
 
 // ---------------------------------------------------------------------------
@@ -72,6 +127,8 @@ export async function startPairing(input: {
   label?: unknown;
   now?: Date;
   ctx?: EventContext;
+  /** Approximate origin of the request ("Sydney, NSW, AU"), shown on approval. */
+  requestedFrom?: string | null;
 }): Promise<PairingStarted> {
   const now = input.now ?? new Date();
   const deviceCode = `${DEVICE_CODE_PREFIX}${randomToken(32)}`;
@@ -79,7 +136,10 @@ export async function startPairing(input: {
   const expiresAt = new Date(now.getTime() + PAIRING_TTL_MS);
   const doc: Omit<DesktopTokenDoc, "_id"> = {
     userId: "",
-    label: cleanLabel(input.label),
+    // Server-chosen from the reported platform: a pairing link sent by an
+    // attacker cannot pose as "Your work laptop".
+    label: deviceLabel(input.ctx?.client ?? null, input.label),
+    requestedFrom: input.requestedFrom ?? null,
     deviceCodeHash: sha256Hex(deviceCode),
     pairingCodeHash: sha256Hex(userCode),
     tokenHash: null,
@@ -112,6 +172,8 @@ export interface PendingPairing {
   label: string;
   userCode: string;
   expiresAt: Date;
+  createdAt: Date;
+  requestedFrom: string | null;
 }
 
 /** The pending pairing behind a user code, for the approval page. */
@@ -134,6 +196,8 @@ export async function findPendingPairing(
     label: doc.label,
     userCode: code,
     expiresAt: doc.expiresAt,
+    createdAt: doc.createdAt,
+    requestedFrom: doc.requestedFrom ?? null,
   };
 }
 
@@ -147,6 +211,9 @@ export async function decidePairing(input: {
   const code = normalizeUserCode(input.userCode);
   if (!code || !input.userId) return "not-found";
   const now = input.now ?? new Date();
+  const userEpoch = input.approve
+    ? await currentEpoch(input.userId)
+    : undefined;
   const doc = await (
     await desktopTokens()
   ).findOneAndUpdate(
@@ -159,6 +226,7 @@ export async function decidePairing(input: {
       $set: {
         status: input.approve ? "approved" : "denied",
         userId: input.approve ? input.userId : "",
+        ...(userEpoch !== undefined ? { userEpoch } : {}),
         // The user code has done its job; it can never be approved twice.
         pairingCodeHash: null,
         updatedAt: now,
@@ -262,6 +330,8 @@ export interface VerifiedDevice {
   tokenId: string;
   userId: string;
   label: string;
+  /** The account's role, for access policy (e.g. staff-only). */
+  role: string;
 }
 
 /** Verifies a presented device token. Touches lastUsedAt (best effort). */
@@ -276,6 +346,10 @@ export async function verifyDesktopToken(
   const doc = await col.findOne({ tokenHash: sha256Hex(token) });
   if (!doc?._id || doc.status !== "active" || !doc.userId) return null;
   if (doc.expiresAt <= now) return null;
+  // The account is authoritative: a disabled user or a password reset (epoch
+  // bump) kills desktop tokens just as it kills browser sessions.
+  const account = await accountStillValid(doc.userId, doc.userEpoch);
+  if (!account) return null;
   const touch: Partial<DesktopTokenDoc> = { lastUsedAt: now };
   if (ctx?.client) touch.lastClient = ctx.client;
   if (ctx?.ipHash) touch.lastIpHash = ctx.ipHash;
@@ -284,6 +358,7 @@ export async function verifyDesktopToken(
     tokenId: doc._id.toHexString(),
     userId: doc.userId,
     label: doc.label,
+    role: account.role,
   };
 }
 
@@ -400,11 +475,15 @@ export async function recordRejectedToken(
       { projection: { userId: 1, label: 1 } },
     )
     .catch(() => null);
+  // Only tokens we actually issued (now revoked/expired) are worth a row.
+  // Random "bcd_…" strings are dropped, so the endpoint cannot be used to
+  // flood the activity log.
+  if (!doc?._id) return;
   await recordDesktopEvent({
     type: "token_rejected",
-    userId: doc?.userId ?? "",
-    tokenId: doc?._id?.toHexString() ?? null,
-    label: doc?.label ?? null,
+    userId: doc.userId,
+    tokenId: doc._id.toHexString(),
+    label: doc.label,
     ...ctx,
   });
 }

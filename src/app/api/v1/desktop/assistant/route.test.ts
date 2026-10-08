@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { describeWithDatabase, useTestDatabase } from "@/test/mongo";
+import { createTestUser } from "@/test/desktop";
 
 process.env.AUTH_SECRET =
   process.env.AUTH_SECRET ?? "test-auth-secret-at-least-32-chars-long-xx";
@@ -53,6 +54,7 @@ describeWithDatabase("POST /api/v1/desktop/assistant", () => {
       c.desktopTokens,
       c.desktopPromptLog,
       c.desktopEvents,
+      c.desktopUsageDaily,
     ])
       await (await col()).deleteMany({});
     const { rateLimits } = c as unknown as {
@@ -63,7 +65,8 @@ describeWithDatabase("POST /api/v1/desktop/assistant", () => {
     if (rateLimits) await (await rateLimits()).deleteMany({});
   });
 
-  async function pairedToken(userId = "507f1f77bcf86cd799439011") {
+  async function pairedToken(userId?: string) {
+    userId = userId ?? (await createTestUser());
     const d = await import("@/lib/server/desktop/devices");
     const p = await d.startPairing({ label: "Notes on macOS" });
     await d.decidePairing({ userCode: p.userCode, userId, approve: true });
@@ -269,6 +272,39 @@ describeWithDatabase("POST /api/v1/desktop/assistant", () => {
       await (
         await c.desktopEvents()
       ).countDocuments({ type: "token_rejected" }),
+    ).toBe(1);
+  });
+
+  it("returns 429 QUOTA_EXCEEDED once the daily cap is reached, and logs the refusal", async () => {
+    const p = await import("@/lib/server/desktop/providers");
+    await p.upsertProvider("groq", { enabled: true, apiKey: "gsk-key" });
+    await p.setRouting({
+      enabled: true,
+      defaultProvider: "groq",
+      fallback: [],
+    });
+    const q = await import("@/lib/server/desktop/quota");
+    await q.setLimits({
+      userDailyRequests: 1,
+      userDailyTokens: 0,
+      globalDailyTokens: 0,
+      access: "everyone",
+    });
+    const token = await pairedToken();
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(sse("ok")) as unknown as typeof fetch;
+    expect((await call(token, { prompt: "one" })).status).toBe(200);
+    const res = await call(token, { prompt: "two" });
+    expect(res.status).toBe(429);
+    const body = await res.json();
+    expect(body.code).toBe("QUOTA_EXCEEDED");
+    expect(body.message).toMatch(/resets at \d\d:\d\d UTC/);
+    const c = await import("@/lib/server/db/collections");
+    expect(
+      await (
+        await c.desktopPromptLog()
+      ).countDocuments({ error: "quota: user_requests" }),
     ).toBe(1);
   });
 });

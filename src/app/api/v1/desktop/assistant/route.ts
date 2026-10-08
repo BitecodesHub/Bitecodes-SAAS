@@ -10,6 +10,15 @@ import {
 } from "@/lib/server/desktop/gateway";
 import { logDesktopRequest } from "@/lib/server/desktop/logs";
 import {
+  admitRequest,
+  estimateTokens,
+  recordTokens,
+} from "@/lib/server/desktop/quota";
+import {
+  noteDesktopFailure,
+  runAfterResponse,
+} from "@/lib/server/desktop/alerts";
+import {
   bearerToken,
   clientContext,
   desktopJson,
@@ -139,6 +148,12 @@ export async function POST(request: Request) {
       completionTokens: null,
       latencyMs: Date.now() - started,
     });
+    runAfterResponse(() =>
+      noteDesktopFailure(
+        "NOT_CONFIGURED",
+        "No enabled provider with an API key.",
+      ),
+    );
     return desktopJson(
       {
         ok: false,
@@ -148,6 +163,58 @@ export async function POST(request: Request) {
       503,
     );
   }
+
+  // Daily caps (cost control). Checked after validation so malformed requests
+  // never count, and logged so the operator sees who hit a limit and when.
+  const quota = await admitRequest(device.userId, new Date(), device.role);
+  if (!quota.allowed) {
+    await logDesktopRequest({
+      ...meta,
+      provider: null,
+      model: null,
+      attempted: [],
+      ttftMs: null,
+      prompt,
+      response: "",
+      status: "error",
+      error: `quota: ${quota.reason}`,
+      promptTokens: null,
+      completionTokens: null,
+      latencyMs: Date.now() - started,
+    });
+    const resetTime = quota.resetsAt.toISOString().slice(11, 16);
+    return desktopJson(
+      {
+        ok: false,
+        code: "QUOTA_EXCEEDED",
+        message:
+          quota.reason === "no_access"
+            ? "Your Bitecodes account does not include the desktop app's Bitecodes model."
+            : quota.reason === "global_tokens"
+              ? "The Bitecodes model has reached its daily capacity. Please try again later."
+              : `You have reached today's limit for the Bitecodes model. It resets at ${resetTime} UTC.`,
+        resetsAt: quota.resetsAt.toISOString(),
+      },
+      429,
+      {
+        "Retry-After": String(
+          Math.max(
+            60,
+            Math.ceil((quota.resetsAt.getTime() - Date.now()) / 1000),
+          ),
+        ),
+      },
+    );
+  }
+
+  // Set by the stream on a real failure; alerting runs once the response ends.
+  let failure: { code: string; detail: string } | null = null;
+  let streamDone: () => void = () => {};
+  const finished = new Promise<void>((r) => (streamDone = r));
+  runAfterResponse(async () => {
+    await finished;
+    if (failure) await noteDesktopFailure(failure.code, failure.detail);
+  });
 
   const encoder = new TextEncoder();
   const abort = new AbortController();
@@ -206,6 +273,12 @@ export async function POST(request: Request) {
           completionTokens: result.usage.completionTokens,
           latencyMs: Date.now() - started,
         });
+        // Providers that do not report usage are estimated, so caps still bite.
+        const used =
+          (result.usage.promptTokens ?? 0) +
+            (result.usage.completionTokens ?? 0) ||
+          estimateTokens(prompt, result.text, images.length);
+        await recordTokens(device.userId, used);
       } catch (error) {
         const ge = error instanceof GatewayError ? error : null;
         attempted = ge?.attempted ?? attempted;
@@ -235,7 +308,20 @@ export async function POST(request: Request) {
           completionTokens: null,
           latencyMs: Date.now() - started,
         });
+        // A failed or cut-short answer still cost whatever was generated.
+        if (streamed)
+          await recordTokens(
+            device.userId,
+            estimateTokens(prompt, streamed, images.length),
+          );
+        if (code !== "CANCELLED" && !abort.signal.aborted) {
+          failure = {
+            code,
+            detail: error instanceof Error ? error.message : String(error),
+          };
+        }
       } finally {
+        streamDone();
         if (!closed) {
           closed = true;
           try {

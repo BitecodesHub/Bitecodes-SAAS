@@ -14,7 +14,7 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       slug="privacy"
-      updated="June 27, 2026"
+      updated="October 8, 2026"
       intro={`${siteConfig.name} ("we", "us") respects your privacy. This policy explains what information we collect when you use our website and how we handle it.`}
       sections={[
         {
@@ -29,6 +29,14 @@ export default function PrivacyPage() {
           body: [
             "We use the information you provide solely to respond to your enquiry, deliver the services you request, and communicate with you about your project.",
             "We do not sell your personal information, and we do not share it with third parties except as necessary to operate our business or comply with the law.",
+          ],
+        },
+        {
+          heading: "Notes desktop app",
+          body: [
+            "If you sign in to the Notes desktop app with your account, we store the prompts you send and the answers you receive, together with the time, the request type, the app version and operating system, token counts, and a one-way hash of your IP address. Screenshots you send are used only to produce the answer and are not stored.",
+            "To answer your requests, the text and screenshots you send are processed by third-party AI providers that we choose (such as NVIDIA, OpenRouter, Groq or Amazon Web Services). We ask providers not to retain or train on this data where they offer that option.",
+            "Desktop prompts, answers and sign-in activity are kept for 180 days and then deleted automatically. Access within our team is limited to account owners. You can disconnect any desktop device at any time from the Connect desktop app page.",
           ],
         },
         {

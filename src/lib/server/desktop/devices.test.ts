@@ -1,5 +1,6 @@
 import { beforeEach, expect, it } from "vitest";
 import { describeWithDatabase, useTestDatabase } from "@/test/mongo";
+import { createTestUser } from "@/test/desktop";
 
 describeWithDatabase("desktop device pairing", () => {
   useTestDatabase();
@@ -18,6 +19,7 @@ describeWithDatabase("desktop device pairing", () => {
   });
 
   it("full flow: start → pending → approve → token issued exactly once → verifies", async () => {
+    const owner = await createTestUser();
     const {
       startPairing,
       pollPairing,
@@ -35,7 +37,7 @@ describeWithDatabase("desktop device pairing", () => {
     expect(
       await decidePairing({
         userCode: p.userCode,
-        userId: "user-1",
+        userId: owner,
         approve: true,
       }),
     ).toBe("approved");
@@ -48,7 +50,7 @@ describeWithDatabase("desktop device pairing", () => {
     expect((await pollPairing(p.deviceCode)).status).toBe("expired");
 
     const device = await verifyDesktopToken(token);
-    expect(device?.userId).toBe("user-1");
+    expect(device?.userId).toBe(owner);
     expect(await verifyDesktopToken("bcd_wrong")).toBeNull();
   });
 

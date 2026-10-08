@@ -185,6 +185,8 @@ export const RATE_LIMITS = {
   // Desktop app pairing: starting one per IP, and approving one per user.
   desktopPair: { max: 20, windowMs: HOUR_MS },
   desktopApprove: { max: 20, windowMs: HOUR_MS },
+  // Polling while a sign-in is pending (every 2s for ≤10 min ≈ 300), per IP.
+  desktopPoll: { max: 900, windowMs: HOUR_MS },
   // Desktop inference, per signed-in user.
   desktopAssistant: { max: 600, windowMs: HOUR_MS },
   /** Re-sending a verification link, capped per address as well as per IP. */

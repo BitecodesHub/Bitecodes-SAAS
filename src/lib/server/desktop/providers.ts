@@ -292,3 +292,45 @@ export async function resolveDesktopChain(): Promise<ResolvedProvider[]> {
   }
   return chain;
 }
+
+/**
+ * A public https endpoint. Loopback, link-local, private-range and internal
+ * hostnames are refused: the server sends a provider key to this address, so
+ * it must not be pointable at the hosting network (SSRF).
+ */
+export function validBaseUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:" || u.username || u.password) return false;
+    const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+    if (
+      host === "localhost" ||
+      /\.(local|internal|localhost|lan|home|corp)$/.test(host)
+    )
+      return false;
+    if (!host.includes(".") && !host.includes(":")) return false; // bare intranet names
+    const v4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (v4) {
+      const [a, b] = [Number(v4[1]), Number(v4[2])];
+      if (a === 0 || a === 10 || a === 127 || a >= 224) return false;
+      if (a === 169 && b === 254) return false;
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      if (a === 192 && b === 168) return false;
+      if (a === 100 && b >= 64 && b <= 127) return false; // carrier-grade NAT
+    }
+    if (host.includes(":")) {
+      // IPv6 literal: refuse loopback, unique-local, link-local, mapped v4.
+      if (
+        host === "::1" ||
+        host === "::" ||
+        /^(fc|fd|fe8|fe9|fea|feb)/.test(host) ||
+        host.startsWith("::ffff:")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
