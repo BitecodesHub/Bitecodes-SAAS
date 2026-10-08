@@ -66,15 +66,15 @@ function httpsOrEmpty(url: string): string {
 const RELEASES =
   "https://github.com/BitecodesHub/notes-releases/releases/download";
 export const BUILT_IN_RELEASE: DesktopRelease = {
-  latestVersion: "1.8.0",
+  latestVersion: "1.8.1",
   minimumVersion: "",
   notes:
-    "Sign in with Bitecodes, screenshot explanations, chat and voice. Update checks, a draggable sign-in and security improvements.",
+    "Clearer messages when the Bitecodes model is briefly unavailable, plus everything in 1.8: sign in with Bitecodes, screenshot explanations, chat and voice.",
   downloads: {
-    macArm64: `${RELEASES}/v1.8.0/Notes-1.8.0-arm64.dmg`,
-    macX64: `${RELEASES}/v1.8.0/Notes-1.8.0.dmg`,
-    winX64: `${RELEASES}/v1.8.0/Notes-Setup-1.8.0-x64.exe`,
-    winArm64: `${RELEASES}/v1.8.0/Notes-Setup-1.8.0-arm64.exe`,
+    macArm64: `${RELEASES}/v1.8.1/Notes-1.8.1-arm64.dmg`,
+    macX64: `${RELEASES}/v1.8.1/Notes-1.8.1.dmg`,
+    winX64: `${RELEASES}/v1.8.1/Notes-Setup-1.8.1-x64.exe`,
+    winArm64: `${RELEASES}/v1.8.1/Notes-Setup-1.8.1-arm64.exe`,
   },
 };
 
