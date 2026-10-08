@@ -106,6 +106,11 @@ function RoutingCard({
     });
 
   const inChain = order.filter((p) => active.has(p));
+  const savedChain = [routing.defaultProvider, ...routing.fallback];
+  const routingDirty =
+    enabled !== routing.enabled ||
+    inChain.length !== savedChain.length ||
+    inChain.some((p, i) => p !== savedChain[i]);
 
   const save = () =>
     start(async () => {
@@ -215,7 +220,12 @@ function RoutingCard({
         })}
       </ol>
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex items-center justify-end gap-3">
+        {routingDirty && (
+          <span className="text-xs font-medium text-amber-600" role="status">
+            Unsaved changes
+          </span>
+        )}
         <Button onClick={save} disabled={pending}>
           {pending ? (
             <Loader2 className="animate-spin" aria-hidden="true" />
@@ -250,6 +260,15 @@ function ProviderCard({
     text: string;
   } | null>(null);
   const isBedrock = provider.id === "bedrock";
+  // Switches and fields only take effect on Save; say so, or it looks applied.
+  const dirty =
+    enabled !== provider.enabled ||
+    apiKey.trim() !== "" ||
+    model !== provider.model ||
+    visionModel !== provider.visionModel ||
+    (isBedrock
+      ? region !== (provider.region ?? "ap-southeast-2")
+      : baseUrl !== (provider.baseUrl ?? ""));
 
   const save = (opts: { clearKey?: boolean } = {}) =>
     start(async () => {
@@ -396,6 +415,11 @@ function ProviderCard({
         </p>
       )}
 
+      {dirty && (
+        <p className="mt-4 text-xs font-medium text-amber-600" role="status">
+          Unsaved changes — click Save to apply.
+        </p>
+      )}
       <div className="mt-auto flex flex-wrap gap-2 pt-5">
         <Button onClick={() => save()} disabled={pending}>
           {pending ? (

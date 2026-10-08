@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Activity, ScrollText } from "lucide-react";
 import { hasCapability, requireCapability } from "@/lib/server/auth/dal";
-import { getRouting, listProviderViews } from "@/lib/server/desktop/providers";
+import {
+  getRouting,
+  listProviderViews,
+  platformFallback,
+} from "@/lib/server/desktop/providers";
 import { desktopLogStats } from "@/lib/server/desktop/logs";
 import { getLimits, usageToday } from "@/lib/server/desktop/quota";
 import { desktopHealth } from "@/lib/server/desktop/alerts";
@@ -34,6 +38,8 @@ export default async function DesktopAdminPage() {
       desktopHealth(),
       getRelease(),
     ]);
+  const readyCount = providers.filter((p) => p.enabled && p.hasKey).length;
+  const platformReady = platformFallback() !== null;
   const fmt = (d: Date | null) =>
     d
       ? d.toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })
@@ -94,6 +100,35 @@ export default async function DesktopAdminPage() {
           </div>
         ))}
       </dl>
+      {!routing.enabled && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-800 dark:text-red-300"
+        >
+          <p>
+            <strong>The desktop app is switched off.</strong> Signed-in users
+            are told the Bitecodes model is not available. Turn on “Desktop app
+            enabled” in Routing and save.
+          </p>
+          <a
+            href="#routing-heading"
+            className="font-medium underline underline-offset-2"
+          >
+            Go to Routing
+          </a>
+        </div>
+      )}
+      {routing.enabled && readyCount === 0 && (
+        <div
+          role="status"
+          className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-300"
+        >
+          No desktop provider is enabled with a saved key, so requests use the
+          site&apos;s built-in AI key
+          {platformReady ? "" : " — which is not set either, so requests fail"}.
+          Enable a provider below and click its Save button.
+        </div>
+      )}
 
       <section
         className="bg-card rounded-lg border p-5"
