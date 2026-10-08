@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, expect, it } from "vitest";
 import { describeWithDatabase, useTestDatabase } from "@/test/mongo";
 
 beforeAll(() => {
@@ -18,7 +18,12 @@ describeWithDatabase("desktop provider config", () => {
     const { listProviderViews, getRouting } =
       await import("@/lib/server/desktop/providers");
     const views = await listProviderViews();
-    expect(views.map((v) => v.id)).toEqual(["nvidia", "openrouter", "bedrock"]);
+    expect(views.map((v) => v.id)).toEqual([
+      "nvidia",
+      "openrouter",
+      "groq",
+      "bedrock",
+    ]);
     expect(views.every((v) => !v.enabled && !v.hasKey)).toBe(true);
     // Defaults still surface so the admin form is pre-filled.
     expect(views[0].baseUrl).toContain("nvidia.com");
@@ -93,6 +98,21 @@ describeWithDatabase("desktop provider config", () => {
       fallback: [],
     });
     expect(await resolveDesktopChain()).toEqual([]);
+  });
+
+  it("resolves Groq as an OpenAI-compatible link with its verified defaults", async () => {
+    const { upsertProvider, setRouting, resolveDesktopChain } =
+      await import("@/lib/server/desktop/providers");
+    await upsertProvider("groq", { enabled: true, apiKey: "gsk_test_1234" });
+    await setRouting({ enabled: true, defaultProvider: "groq", fallback: [] });
+    const [link] = await resolveDesktopChain();
+    expect(link).toMatchObject({
+      id: "groq",
+      apiKey: "gsk_test_1234",
+      baseUrl: "https://api.groq.com/openai/v1",
+      model: "openai/gpt-oss-120b",
+      visionModel: "qwen/qwen3.8-27b",
+    });
   });
 
   it("sanitises routing: unknown ids rejected, default never duplicated in fallback", async () => {

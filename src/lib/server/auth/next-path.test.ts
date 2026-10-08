@@ -123,4 +123,14 @@ describe("safeNextPath in the customer area", () => {
       expect(safeNextPath(value, "/app"), value).toBe("/app");
     }
   });
+
+  it("lets either area land on the desktop approval page", () => {
+    const code = "/app/desktop?code=ABCD-EFGH";
+    expect(safeNextPath(code, "/admin")).toBe(code);
+    expect(safeNextPath(code, "/app")).toBe(code);
+    expect(safeNextPath("/app/desktop", "/admin")).toBe("/app/desktop");
+    // Segment-anchored: a lookalike is still refused.
+    expect(safeNextPath("/app/desktopx", "/admin")).toBe("/admin");
+    expect(safeNextPath("/app/billing", "/admin")).toBe("/admin");
+  });
 });

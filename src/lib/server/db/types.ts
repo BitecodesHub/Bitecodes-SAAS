@@ -1146,7 +1146,7 @@ export interface BookingDoc {
 // ---------------------------------------------------------------------------
 
 /** Upstream AI provider the desktop "Bitecodes model" routes through. */
-export type DesktopProviderId = "nvidia" | "openrouter" | "bedrock";
+export type DesktopProviderId = "nvidia" | "openrouter" | "groq" | "bedrock";
 
 /**
  * One configured upstream provider, or the routing document.
@@ -1165,7 +1165,7 @@ export interface DesktopProviderEntryDoc extends Timestamped {
   apiKeyCipher: string | null;
   /** Last 4 chars of the key, for display only. */
   apiKeyHint: string | null;
-  /** OpenAI-compatible base URL (nvidia/openrouter), else null. */
+  /** OpenAI-compatible base URL (nvidia/openrouter/groq), else null. */
   baseUrl: string | null;
   /** AWS region (bedrock), else null. */
   region: string | null;
@@ -1187,25 +1187,33 @@ export interface DesktopRoutingDoc extends Timestamped {
 }
 
 /**
- * A device token issued to the desktop app after a browser login.
+ * A desktop-app device: a pairing in progress, or an issued device token.
  *
- * Mirrors the API-key pattern: only a SHA-256 hash of the secret is stored. The
- * pairing code (short-lived, one-time) is how the browser hands the token back
- * to the waiting desktop app without the app ever seeing the user's password.
+ * Browser-login flow (no password ever touches the desktop app):
+ *  1. The app starts a pairing and holds a secret `deviceCode`; the browser is
+ *     opened on a short, human-readable `userCode`.
+ *  2. The signed-in user approves that userCode in the browser.
+ *  3. The app polls with its deviceCode and receives the token exactly once.
+ * Only SHA-256 hashes of the device code, user code and token are stored.
  */
 export interface DesktopTokenDoc extends Timestamped {
   _id?: ObjectId;
+  /** Empty until a signed-in user approves the pairing. */
   userId: string;
-  /** Human label, e.g. the device/OS, for the user's session list. */
+  /** Human label, e.g. "Notes on macOS", for the user's device list. */
   label: string;
+  deviceCodeHash: string | null;
+  /** Hash of the short code shown in the browser and in the app. */
+  pairingCodeHash: string | null;
   tokenHash: string | null;
   tokenPrefix: string | null;
-  /** Hash of the one-time pairing code; cleared once redeemed. */
-  pairingCodeHash: string | null;
-  /** Pairing state: awaiting browser approval, or an active token. */
-  status: "pending" | "active" | "revoked";
+  status: "pending" | "approved" | "denied" | "active" | "revoked";
   lastUsedAt: Date | null;
-  /** TTL: a pending pairing expires in minutes; an active token in weeks. */
+  /** Last app build seen on this device, e.g. "Notes/1.7.0 (darwin; arm64)". */
+  lastClient?: string | null;
+  /** Hashed (never raw) IP of the last request, via crypto.hashIp. */
+  lastIpHash?: string | null;
+  /** TTL anchor: minutes while pairing, weeks once active. */
   expiresAt: Date;
 }
 
@@ -1220,17 +1228,64 @@ export interface DesktopPromptLogDoc {
   /** The provider chain that was attempted, in order. */
   attempted: { provider: DesktopProviderId; model: string; outcome: string }[];
   hadImage: boolean;
+  /** How many screenshots were attached. */
+  imageCount?: number;
+  /** What the app was doing: chat, screenshot, solution, debug, … (app-reported). */
+  kind?: DesktopRequestKind | null;
+  /** App build, e.g. "Notes/1.7.0 (darwin; arm64)" (app-reported). */
+  client?: string | null;
+  /** Hashed (never raw) client IP. */
+  ipHash?: string | null;
+  /** Time to the first streamed token; null if none arrived. */
+  ttftMs?: number | null;
   promptChars: number;
   /** Full prompt text, as the operator asked to track everything. */
   prompt: string;
   /** Full response text (truncated to a sane ceiling). */
   response: string;
-  status: "ok" | "error";
+  /** "cancelled" = the user stopped it (or closed the app) mid-answer. */
+  status: "ok" | "error" | "cancelled";
   error: string | null;
   promptTokens: number | null;
   completionTokens: number | null;
   latencyMs: number;
   createdAt: Date;
   /** TTL anchor; set to createdAt + retention window. */
+  expiresAt: Date;
+}
+
+export type DesktopRequestKind =
+  | "chat"
+  | "screenshot"
+  | "solution"
+  | "debug"
+  | "other";
+
+export type DesktopEventType =
+  | "pair_started"
+  | "pair_approved"
+  | "pair_denied"
+  | "signed_in"
+  | "signed_out"
+  | "revoked_by_user"
+  | "revoked_by_admin"
+  | "token_rejected";
+
+/** One entry in the desktop app's account/device activity timeline. */
+export interface DesktopEventDoc {
+  _id?: ObjectId;
+  type: DesktopEventType;
+  /** Empty for events before a user is known (pair_started, token_rejected). */
+  userId: string;
+  tokenId: string | null;
+  /** Device label, e.g. "Notes on macOS". */
+  label: string | null;
+  client: string | null;
+  /** Hashed (never raw) IP. */
+  ipHash: string | null;
+  /** Who acted, when it was not the device owner (admin revocation). */
+  actorId: string | null;
+  createdAt: Date;
+  /** TTL anchor; createdAt + retention window. */
   expiresAt: Date;
 }

@@ -114,6 +114,16 @@ export const ADMIN_NAV: AdminNavSection[] = [
         matchPrefix: true,
       },
       {
+        label: "Desktop app",
+        href: "/admin/desktop",
+        icon: "Laptop",
+        capability: "manage_settings",
+        enabled: true,
+        description:
+          "AI providers, routing, and the prompt log for the desktop app",
+        matchPrefix: true,
+      },
+      {
         label: "Chatbots",
         href: "/admin/chatbots",
         icon: "MessagesSquare",

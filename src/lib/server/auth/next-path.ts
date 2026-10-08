@@ -19,6 +19,20 @@
  */
 export type SignedInArea = "/admin" | "/app";
 
+/**
+ * Pages that belong to the account rather than to one area, so either kind of
+ * sign-in may land on them. `/app/desktop` is where the desktop app's sign-in
+ * is approved — staff use the desktop app too, and dumping them on `/admin`
+ * would strand the pairing they started.
+ */
+const SHARED_PATHS = ["/app/desktop"];
+
+function isUnder(next: string, base: string): boolean {
+  return (
+    next === base || next.startsWith(`${base}/`) || next.startsWith(`${base}?`)
+  );
+}
+
 export function safeNextPath(
   next: string | undefined | null,
   area: SignedInArea = "/admin",
@@ -36,11 +50,7 @@ export function safeNextPath(
   // Confine to the area being signed in to. Anchored on the segment boundary so
   // "/adminx/evil" does not slip through on a bare prefix match, and "/apple"
   // does not pass as "/app".
-  if (
-    next !== area &&
-    !next.startsWith(`${area}/`) &&
-    !next.startsWith(`${area}?`)
-  ) {
+  if (!isUnder(next, area) && !SHARED_PATHS.some((p) => isUnder(next, p))) {
     return area;
   }
 

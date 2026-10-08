@@ -12,8 +12,8 @@ import { decryptSecret, encryptSecret, secretHint } from "@/lib/server/crypto";
  * Operator-global configuration for the desktop companion app's "Bitecodes
  * model".
  *
- * The operator sets up to three upstream providers (NVIDIA, OpenRouter, AWS
- * Bedrock) once in the admin panel, plus a default + fallback order. Every
+ * The operator sets up to four upstream providers (NVIDIA, OpenRouter, Groq,
+ * AWS Bedrock) once in the admin panel, plus a default + fallback order. Every
  * desktop user who signs in routes through these — they never see or configure
  * a provider, and never learn which model answered. Provider API keys are
  * stored encrypted (reversibly, via crypto.encryptSecret) because they must be
@@ -25,6 +25,7 @@ export const ROUTING_ID = "__routing__" as const;
 export const DESKTOP_PROVIDER_IDS: DesktopProviderId[] = [
   "nvidia",
   "openrouter",
+  "groq",
   "bedrock",
 ];
 
@@ -58,6 +59,15 @@ export const PROVIDER_DEFAULTS: Record<DesktopProviderId, ProviderDefaults> = {
     model: "openrouter/auto",
     visionModel: "openai/gpt-4o-mini",
   },
+  groq: {
+    label: "Groq",
+    baseUrl: "https://api.groq.com/openai/v1",
+    region: null,
+    // Verified 2026-10-08: both answer in well under a second; qwen3.8 reads
+    // screenshots (Groq has no other vision model in its catalog today).
+    model: "openai/gpt-oss-120b",
+    visionModel: "qwen/qwen3.8-27b",
+  },
   bedrock: {
     label: "Amazon Bedrock",
     baseUrl: null,
@@ -73,7 +83,7 @@ export const DEFAULT_ROUTING: Pick<
 > = {
   enabled: false,
   defaultProvider: "openrouter",
-  fallback: ["nvidia", "bedrock"],
+  fallback: ["groq", "nvidia", "bedrock"],
 };
 
 // ---------------------------------------------------------------------------
@@ -122,7 +132,7 @@ async function readEntry(
     : null;
 }
 
-/** All three providers (key-redacted) for the admin UI. */
+/** Every provider (key-redacted) for the admin UI. */
 export async function listProviderViews(): Promise<ProviderView[]> {
   const col = await desktopProviders();
   const docs = await col.find({ kind: "provider" }).toArray();

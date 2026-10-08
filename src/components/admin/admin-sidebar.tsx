@@ -15,6 +15,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Laptop,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -53,6 +54,7 @@ const ICONS: Record<string, LucideIcon> = {
   ListChecks,
   Settings,
   ShieldCheck,
+  Laptop,
 };
 
 export function AdminSidebar({

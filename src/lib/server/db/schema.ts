@@ -48,6 +48,7 @@ export const COLLECTIONS = {
   desktopProviders: "desktop_providers",
   desktopTokens: "desktop_tokens",
   desktopPromptLog: "desktop_prompt_log",
+  desktopEvents: "desktop_events",
   // Prepaid credits, shared by every metered product (chatbot, forms).
   walletLedger: "wallet_ledger",
   walletBalances: "wallet_balances",
@@ -272,19 +273,40 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   ],
   [COLLECTIONS.chatbotModels]: [{ key: { key: 1 }, unique: true }],
   // Provider config + routing share a collection, keyed by a string _id
-  // ("nvidia"/"openrouter"/"bedrock", or "__routing__"); _id is unique already.
+  // ("nvidia"/"openrouter"/"groq"/"bedrock", or "__routing__"); _id is unique already.
   [COLLECTIONS.desktopProviders]: [{ key: { updatedAt: -1 } }],
   // Device tokens: lookup by hash on every request; TTL auto-expires old ones.
   [COLLECTIONS.desktopTokens]: [
-    { key: { tokenHash: 1 }, unique: true },
+    // Partial (not sparse): null hashes from pending/finished pairings must not
+    // collide on the unique index.
+    {
+      key: { tokenHash: 1 },
+      unique: true,
+      partialFilterExpression: { tokenHash: { $type: "string" } },
+    },
+    {
+      key: { deviceCodeHash: 1 },
+      partialFilterExpression: { deviceCodeHash: { $type: "string" } },
+    },
+    {
+      key: { pairingCodeHash: 1 },
+      partialFilterExpression: { pairingCodeHash: { $type: "string" } },
+    },
     { key: { userId: 1, createdAt: -1 } },
-    { key: { pairingCodeHash: 1 }, sparse: true },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
   // Prompt/usage log: admin list newest-first, per-user history, 180-day TTL.
   [COLLECTIONS.desktopPromptLog]: [
     { key: { createdAt: -1 } },
     { key: { userId: 1, createdAt: -1 } },
+    { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
+  ],
+  // Device/account activity timeline (sign-ins, sign-outs, revocations,
+  // rejected tokens): admin timeline newest-first, per-user, 180-day TTL.
+  [COLLECTIONS.desktopEvents]: [
+    { key: { createdAt: -1 } },
+    { key: { userId: 1, createdAt: -1 } },
+    { key: { type: 1, createdAt: -1 } },
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
   [COLLECTIONS.walletLedger]: [

@@ -17,6 +17,7 @@ import type {
   DesktopProviderDoc,
   DesktopTokenDoc,
   DesktopPromptLogDoc,
+  DesktopEventDoc,
   BillingEventDoc,
   BillingOrderDoc,
   BookingConfigDoc,
@@ -161,6 +162,8 @@ export const desktopTokens = () =>
   collection<DesktopTokenDoc>(COLLECTIONS.desktopTokens);
 export const desktopPromptLog = () =>
   collection<DesktopPromptLogDoc>(COLLECTIONS.desktopPromptLog);
+export const desktopEvents = () =>
+  collection<DesktopEventDoc>(COLLECTIONS.desktopEvents);
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

@@ -182,6 +182,11 @@ export const RATE_LIMITS = {
    * rather than costing the abuser anything.
    */
   signup: { max: 5, windowMs: HOUR_MS },
+  // Desktop app pairing: starting one per IP, and approving one per user.
+  desktopPair: { max: 20, windowMs: HOUR_MS },
+  desktopApprove: { max: 20, windowMs: HOUR_MS },
+  // Desktop inference, per signed-in user.
+  desktopAssistant: { max: 600, windowMs: HOUR_MS },
   /** Re-sending a verification link, capped per address as well as per IP. */
   verifyResend: { max: 4, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
