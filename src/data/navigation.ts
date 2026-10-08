@@ -13,6 +13,7 @@ import {
   Server,
   Users,
   Workflow,
+  Laptop,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -84,6 +85,12 @@ export const mainNav: NavItem[] = [
             href: "/ai-chatbot",
             description: "Embeddable chatbot SaaS",
             icon: MessagesSquare,
+          },
+          {
+            title: "Notes",
+            href: "/notes",
+            description: "Free AI desktop app",
+            icon: Laptop,
           },
           {
             title: "Forms",
@@ -269,6 +276,7 @@ export const footerNav: FooterColumn[] = [
     heading: "Resources",
     links: [
       { title: "AI Chatbot", href: "/ai-chatbot" },
+      { title: "Notes desktop app", href: "/notes" },
       { title: "Forms", href: "/forms" },
       { title: "Booking", href: "/booking" },
       { title: "Pricing", href: "/pricing" },
