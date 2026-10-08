@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Bot, Calculator, Gauge, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Bot,
+  Calculator,
+  Gauge,
+  ShieldCheck,
+  Laptop,
+} from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { Section, SectionHeader } from "@/components/section";
@@ -117,6 +124,27 @@ export default function ToolsPage() {
               <Button asChild variant="outline" className="mt-6">
                 <Link href="/ai-project-consultant">
                   Consult AI assistant
+                  <ArrowRight className="size-4" />
+                </Link>
+              </Button>
+            </article>
+            <article className="border-primary/30 bg-card rounded-2xl border p-6">
+              <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <Laptop className="size-5" />
+              </span>
+              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+                Free download
+              </p>
+              <h2 className="mt-4 text-lg font-semibold">
+                Notes — AI desktop app
+              </h2>
+              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                A free AI assistant for Mac and Windows: explain anything on
+                your screen, chat, or ask by voice.
+              </p>
+              <Button asChild variant="outline" className="mt-6">
+                <Link href="/notes">
+                  Download Notes free
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>

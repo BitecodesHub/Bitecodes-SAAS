@@ -58,10 +58,33 @@ function httpsOrEmpty(url: string): string {
   }
 }
 
+/**
+ * The published release, used until an operator publishes one in the admin
+ * panel (which then takes over). Installers live on the public
+ * BitecodesHub/notes-releases GitHub releases (installers only, no source).
+ */
+const RELEASES =
+  "https://github.com/BitecodesHub/notes-releases/releases/download";
+export const BUILT_IN_RELEASE: DesktopRelease = {
+  latestVersion: "1.8.0",
+  minimumVersion: "",
+  notes:
+    "Sign in with Bitecodes, screenshot explanations, chat and voice. Update checks, a draggable sign-in and security improvements.",
+  downloads: {
+    macArm64: `${RELEASES}/v1.8.0/Notes-1.8.0-arm64.dmg`,
+    macX64: `${RELEASES}/v1.8.0/Notes-1.8.0.dmg`,
+    winX64: `${RELEASES}/v1.8.0/Notes-Setup-1.8.0-x64.exe`,
+    winArm64: `${RELEASES}/v1.8.0/Notes-Setup-1.8.0-arm64.exe`,
+  },
+};
+
 export async function getRelease(): Promise<DesktopRelease> {
   const doc = await (await desktopProviders()).findOne({ _id: RELEASE_ID });
   if (!doc || doc.kind !== "release")
-    return { ...EMPTY, downloads: { ...EMPTY.downloads } };
+    return {
+      ...BUILT_IN_RELEASE,
+      downloads: { ...BUILT_IN_RELEASE.downloads },
+    };
   const r = doc as DesktopReleaseDoc;
   return {
     latestVersion: r.latestVersion,

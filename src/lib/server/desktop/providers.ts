@@ -81,7 +81,9 @@ export const DEFAULT_ROUTING: Pick<
   DesktopRoutingDoc,
   "defaultProvider" | "fallback" | "enabled"
 > = {
-  enabled: false,
+  // On until an operator switches it off: with nothing configured the site's
+  // own AI key (platformFallback) still answers, so a fresh deploy works.
+  enabled: true,
   defaultProvider: "openrouter",
   fallback: ["groq", "nvidia", "bedrock"],
 };
@@ -290,7 +292,56 @@ export async function resolveDesktopChain(): Promise<ResolvedProvider[]> {
       visionModel: doc.visionModel || d.visionModel,
     });
   }
+  // Last resort: the site's own AI key (AI_API_KEY / AI_BASE_URL, already
+  // used by the chatbot and consultant), so the desktop app never dead-ends
+  // just because no desktop provider has been configured or all keys expired.
+  const platform = platformFallback();
+  if (
+    platform &&
+    !chain.some((c) => c.id === platform.id && c.apiKey === platform.apiKey)
+  ) {
+    chain.push(platform);
+  }
   return chain;
+}
+
+/**
+ * The platform AI key from the environment, as a desktop link. Only for an
+ * OpenAI-compatible host we know (NVIDIA, OpenRouter, Groq), using the desktop
+ * defaults for that host (stronger than the site's lightweight chat model).
+ */
+export function platformFallback(
+  env: NodeJS.ProcessEnv = process.env,
+): ResolvedProvider | null {
+  const apiKey = (env.AI_API_KEY ?? env.OPENROUTER_API_KEY)?.trim();
+  if (!apiKey) return null;
+  const baseUrl = (
+    env.AI_BASE_URL?.trim() || "https://openrouter.ai/api/v1"
+  ).replace(/\/+$/, "");
+  let host: string;
+  try {
+    host = new URL(baseUrl).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  const id: DesktopProviderId | null =
+    host === "integrate.api.nvidia.com"
+      ? "nvidia"
+      : host === "openrouter.ai" || host.endsWith(".openrouter.ai")
+        ? "openrouter"
+        : host === "api.groq.com"
+          ? "groq"
+          : null;
+  if (!id) return null;
+  const d = PROVIDER_DEFAULTS[id];
+  return {
+    id,
+    apiKey,
+    baseUrl,
+    region: null,
+    model: d.model,
+    visionModel: d.visionModel,
+  };
 }
 
 /**

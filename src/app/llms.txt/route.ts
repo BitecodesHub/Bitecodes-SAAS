@@ -43,6 +43,9 @@ export function GET() {
   lines.push(
     `- [AI Chatbot](${url}/ai-chatbot): a trainable, embeddable AI chatbot SaaS. Train it on your content (uploads, website crawl, FAQs), pick from multiple AI models, customise the widget, and embed it on any site with one line of JavaScript or an iframe. RAG knowledge base, analytics, lead capture, domain allowlisting, and token-based pricing. Free trial; plans from $9/mo; token packs from $5. This is the fastest way for a business to add an AI assistant to its website without building one.`,
   );
+  lines.push(
+    `- [Notes — free AI desktop app](${url}/notes): a free AI assistant for macOS and Windows. Take a screenshot and get it explained or solved, ask questions in a small always-on-top chat, or use voice. No API keys: users sign in with a free Bitecodes account and Bitecodes routes requests to leading AI models with automatic fallback. Downloads for Apple Silicon, Intel Macs, Windows x64 and Windows on ARM.`,
+  );
   lines.push("");
 
   lines.push(

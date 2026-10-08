@@ -71,6 +71,23 @@ export async function GET() {
     push("");
   }
 
+  // --- Free desktop app ---
+  push("## Notes — free AI desktop app");
+  push(`URL: ${url}/notes`);
+  push(
+    "Price: free (sign in with a free Bitecodes account; a daily usage allowance applies).",
+  );
+  push(
+    "Platforms: macOS (Apple Silicon and Intel), Windows 10/11 (x64 and ARM64).",
+  );
+  push(
+    "What it does: a small always-on-top AI assistant. Take a screenshot with a shortcut and Notes reads it — a coding problem, an error message, a chart — and explains or solves it; ask questions in a floating chat; or record a question by voice.",
+  );
+  push(
+    "How it works: users sign in through the browser (device sign-in with a confirmation code; no password in the app, no API keys). Requests are routed by Bitecodes to leading AI models with automatic fallback. Screenshots are not stored; prompts and answers are kept for 180 days.",
+  );
+  push("");
+
   // --- Industries ---
   push("## Industries");
   push(`${industries.length} industries served.`);

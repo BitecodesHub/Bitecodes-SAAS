@@ -270,3 +270,42 @@ describeWithDatabase("desktop production hardening", () => {
     }); // http link dropped
   });
 });
+
+describe("zero-config production defaults", () => {
+  it("uses the site's own AI key as a last-resort desktop provider", async () => {
+    const { platformFallback } = await import("@/lib/server/desktop/providers");
+    expect(
+      platformFallback({
+        AI_API_KEY: "nvapi-x",
+        AI_BASE_URL: "https://integrate.api.nvidia.com/v1",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toMatchObject({
+      id: "nvidia",
+      apiKey: "nvapi-x",
+      model: "openai/gpt-oss-20b",
+    });
+    expect(
+      platformFallback({
+        OPENROUTER_API_KEY: "sk-or-x",
+      } as unknown as NodeJS.ProcessEnv)?.id,
+    ).toBe("openrouter");
+    expect(
+      platformFallback({
+        AI_API_KEY: "k",
+        AI_BASE_URL: "https://unknown.example/v1",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toBeNull();
+    expect(platformFallback({} as unknown as NodeJS.ProcessEnv)).toBeNull();
+  });
+
+  it("publishes the built-in release until an operator overrides it", async () => {
+    const { BUILT_IN_RELEASE, compareVersions } =
+      await import("@/lib/server/desktop/release");
+    expect(compareVersions(BUILT_IN_RELEASE.latestVersion, "1.7.0")).toBe(1);
+    for (const url of Object.values(BUILT_IN_RELEASE.downloads)) {
+      expect(url).toMatch(
+        /^https:\/\/github\.com\/BitecodesHub\/notes-releases\/releases\/download\/v1\.8\.0\//,
+      );
+    }
+  });
+});

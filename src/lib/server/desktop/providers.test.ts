@@ -14,7 +14,7 @@ describeWithDatabase("desktop provider config", () => {
     await (await desktopProviders()).deleteMany({});
   });
 
-  it("defaults to a disabled integration with redacted provider views", async () => {
+  it("defaults to an enabled integration (site key fallback) with redacted provider views", async () => {
     const { listProviderViews, getRouting } =
       await import("@/lib/server/desktop/providers");
     const views = await listProviderViews();
@@ -27,8 +27,10 @@ describeWithDatabase("desktop provider config", () => {
     expect(views.every((v) => !v.enabled && !v.hasKey)).toBe(true);
     // Defaults still surface so the admin form is pre-filled.
     expect(views[0].baseUrl).toContain("nvidia.com");
+    // On by default: with no desktop provider configured, the site's own AI
+    // key answers (platformFallback), so a fresh deploy works out of the box.
     const routing = await getRouting();
-    expect(routing.enabled).toBe(false);
+    expect(routing.enabled).toBe(true);
   });
 
   it("stores the API key encrypted, never in plaintext, and shows only a hint", async () => {

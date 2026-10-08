@@ -23,10 +23,13 @@ import { createMetadata, breadcrumbSchema, faqSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
-  title: "Notes — Free AI Desktop Assistant for Mac and Windows",
+  title: "Notes — Free AI Desktop Assistant for Mac & Windows",
   description:
-    "Notes is a free AI assistant for your desktop. Ask questions, get a screenshot explained, and talk it through — sign in with a free Bitecodes account. macOS and Windows.",
+    "Download Notes, a free AI assistant for Mac and Windows. Take a screenshot and get it explained, ask questions in a floating chat, or use your voice. No API keys — sign in with a free Bitecodes account.",
   path: "/notes",
+  // This segment has its own opengraph-image.tsx; the generic default would
+  // replace it rather than merge with it.
+  image: false,
 });
 
 /** Download links come from the admin "App updates" feed; re-read every 5 minutes. */
@@ -130,7 +133,25 @@ export default async function NotesPage() {
             : {}),
           description:
             "Free AI desktop assistant: screenshot explanations, chat and voice. Sign in with a Bitecodes account.",
-          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          isAccessibleForFree: true,
+          applicationSubCategory: "AI assistant",
+          softwareRequirements:
+            "macOS 11 or later (Apple Silicon or Intel), or Windows 10/11 (x64 or ARM64)",
+          ...(release.notes ? { releaseNotes: release.notes } : {}),
+          ...(downloads.length
+            ? {
+                downloadUrl: downloads.map((d) => d.url),
+                installUrl: `${siteConfig.url}/notes#download`,
+              }
+            : {}),
+          featureList: FEATURES.map((f) => f.title),
+          offers: {
+            "@type": "Offer",
+            price: "0",
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: `${siteConfig.url}/notes`,
+          },
           provider: {
             "@type": "Organization",
             "@id": `${siteConfig.url}/#organization`,
