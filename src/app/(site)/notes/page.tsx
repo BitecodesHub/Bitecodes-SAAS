@@ -82,7 +82,7 @@ const FAQS = [
   {
     question: "Why does my computer warn me when I open it?",
     answer:
-      "Notes is not yet signed with an Apple or Microsoft developer certificate, so the first launch shows a warning. On a Mac, right-click Notes in Applications and choose Open. On Windows, click “More info” and then “Run anyway”. You only need to do this once.",
+      "Notes is not yet signed with an Apple or Microsoft developer certificate, so the first launch shows a warning. On a Mac, open Notes once; when macOS says it cannot verify the developer, go to System Settings → Privacy & Security and click “Open Anyway” (on older macOS you can instead right-click Notes and choose Open). On Windows, click “More info” and then “Run anyway”. You only need to do this once.",
   },
   {
     question: "How do I sign in?",
@@ -182,7 +182,8 @@ export default async function NotesPage() {
             version={release.latestVersion || null}
           />
           <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
-            First launch: on a Mac, right-click Notes and choose Open; on
+            First launch: on a Mac, if macOS cannot verify the developer, open
+            System Settings → Privacy &amp; Security and click “Open Anyway”; on
             Windows, choose “More info” → “Run anyway”. Then click “Sign in with
             Bitecodes”. No account yet?{" "}
             <Link href="/signup" className="underline underline-offset-2">

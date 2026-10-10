@@ -304,7 +304,7 @@ describe("zero-config production defaults", () => {
     expect(compareVersions(BUILT_IN_RELEASE.latestVersion, "1.7.0")).toBe(1);
     for (const url of Object.values(BUILT_IN_RELEASE.downloads)) {
       expect(url).toMatch(
-        /^https:\/\/github\.com\/BitecodesHub\/notes-releases\/releases\/download\/v1\.8\.1\//,
+        /^https:\/\/github\.com\/BitecodesHub\/notes-releases\/releases\/download\/v1\.8\.[12]\//,
       );
     }
   });

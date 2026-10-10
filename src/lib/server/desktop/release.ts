@@ -65,14 +65,17 @@ function httpsOrEmpty(url: string): string {
  */
 const RELEASES =
   "https://github.com/BitecodesHub/notes-releases/releases/download";
+// Mac builds are 1.8.2 (fixed code signature); Windows stays on the tested
+// 1.8.1 installers. latestVersion stays 1.8.1 so neither platform is told to
+// "update" to a build it cannot download.
 export const BUILT_IN_RELEASE: DesktopRelease = {
   latestVersion: "1.8.1",
   minimumVersion: "",
   notes:
     "Clearer messages when the Bitecodes model is briefly unavailable, plus everything in 1.8: sign in with Bitecodes, screenshot explanations, chat and voice.",
   downloads: {
-    macArm64: `${RELEASES}/v1.8.1/Notes-1.8.1-arm64.dmg`,
-    macX64: `${RELEASES}/v1.8.1/Notes-1.8.1.dmg`,
+    macArm64: `${RELEASES}/v1.8.2/Notes-1.8.2-arm64.dmg`,
+    macX64: `${RELEASES}/v1.8.2/Notes-1.8.2.dmg`,
     winX64: `${RELEASES}/v1.8.1/Notes-Setup-1.8.1-x64.exe`,
     winArm64: `${RELEASES}/v1.8.1/Notes-Setup-1.8.1-arm64.exe`,
   },
