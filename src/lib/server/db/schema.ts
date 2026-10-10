@@ -408,6 +408,27 @@ export async function createDeclaredIndexes(
     try {
       await database.collection(collection).createIndexes(specs);
     } catch (error) {
+      // An index whose definition changed (e.g. unique → unique+partial)
+      // keeps its old options under the same name, and MongoDB refuses the
+      // whole batch. Replace outdated indexes with the declared ones, once.
+      if (isIndexConflict(error)) {
+        try {
+          const dropped = await dropConflictingIndexes(
+            database,
+            collection,
+            specs,
+          );
+          if (dropped.length) {
+            console.warn(
+              `[db] Replaced outdated indexes on ${collection}: ${dropped.join(", ")}`,
+            );
+          }
+          await database.collection(collection).createIndexes(specs);
+          return;
+        } catch (retryError) {
+          error = retryError;
+        }
+      }
       console.error(
         `[db] Failed to create indexes for ${collection}:`,
         error instanceof Error ? error.message : error,
@@ -432,4 +453,62 @@ export async function createDeclaredIndexes(
   // Detached, but never unhandled.
   void Promise.all(background).catch(() => undefined);
   await Promise.all(blocking);
+}
+
+/** MongoDB IndexOptionsConflict (85) / IndexKeySpecsConflict (86). */
+function isIndexConflict(error: unknown): boolean {
+  const code = (error as { code?: unknown })?.code;
+  return code === 85 || code === 86;
+}
+
+/** The name MongoDB gives an index by default: key_1_other_-1. */
+function defaultIndexName(key: IndexDescription["key"]): string {
+  return Object.entries(key as Record<string, unknown>)
+    .map(([field, dir]) => `${field}_${String(dir)}`)
+    .join("_");
+}
+
+const COMPARED_OPTIONS = [
+  "unique",
+  "sparse",
+  "partialFilterExpression",
+  "expireAfterSeconds",
+] as const;
+
+function sameOptions(
+  existing: Record<string, unknown>,
+  spec: IndexDescription,
+): boolean {
+  const norm = (v: unknown) => JSON.stringify(v ?? null);
+  return COMPARED_OPTIONS.every((opt) => {
+    const want = (spec as unknown as Record<string, unknown>)[opt];
+    const have = existing[opt];
+    // unique/sparse false and absent are equivalent.
+    if (opt === "unique" || opt === "sparse")
+      return Boolean(want) === Boolean(have);
+    return norm(want) === norm(have);
+  });
+}
+
+/**
+ * Drops existing indexes that share a declared index's name but not its
+ * options, so the declared definition can be created. Returns dropped names.
+ */
+export async function dropConflictingIndexes(
+  database: Db,
+  collection: string,
+  specs: IndexDescription[],
+): Promise<string[]> {
+  const col = database.collection(collection);
+  const existing = (await col.indexes()) as Record<string, unknown>[];
+  const dropped: string[] = [];
+  for (const spec of specs) {
+    const name = spec.name ?? defaultIndexName(spec.key);
+    const current = existing.find((i) => i.name === name);
+    if (current && name !== "_id_" && !sameOptions(current, spec)) {
+      await col.dropIndex(name);
+      dropped.push(name);
+    }
+  }
+  return dropped;
 }
