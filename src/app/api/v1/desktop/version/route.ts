@@ -4,7 +4,7 @@ import {
   getRelease,
   isVersion,
 } from "@/lib/server/desktop/release";
-import { desktopJson } from "@/lib/server/desktop/http";
+import { desktopJson, withDesktopErrors } from "@/lib/server/desktop/http";
 
 /**
  * GET /api/v1/desktop/version?version=1.7.0&platform=darwin&arch=arm64
@@ -14,7 +14,7 @@ import { desktopJson } from "@/lib/server/desktop/http";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = withDesktopErrors("version", async (request: Request) => {
   const url = new URL(request.url);
   const current = url.searchParams.get("version") ?? "";
   const platform = url.searchParams.get("platform") ?? "";
@@ -44,4 +44,4 @@ export async function GET(request: Request) {
     200,
     { "Cache-Control": "public, max-age=300" },
   );
-}
+});

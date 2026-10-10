@@ -9,6 +9,7 @@ import {
   bearerToken,
   clientContext,
   desktopJson,
+  withDesktopErrors,
 } from "@/lib/server/desktop/http";
 
 /**
@@ -18,7 +19,7 @@ import {
  */
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
+export const GET = withDesktopErrors("me", async (request: Request) => {
   const token = bearerToken(request);
   const ctx = clientContext(request);
   const device = await verifyDesktopToken(token, new Date(), ctx);
@@ -41,4 +42,4 @@ export async function GET(request: Request) {
     device: { label: device.label },
     assistant: { available: routing.enabled },
   });
-}
+});

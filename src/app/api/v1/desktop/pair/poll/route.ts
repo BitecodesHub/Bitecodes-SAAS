@@ -4,6 +4,7 @@ import {
   clientIpKey,
   desktopJson,
   readJsonObject,
+  withDesktopErrors,
 } from "@/lib/server/desktop/http";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 
@@ -14,7 +15,7 @@ import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
  */
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withDesktopErrors("pair/poll", async (request: Request) => {
   const limit = await consumeNamedRateLimit(
     "desktopPoll",
     clientIpKey(request),
@@ -47,4 +48,4 @@ export async function POST(request: Request) {
     default:
       return desktopJson({ ok: false, status: "expired" }, 410);
   }
-}
+});

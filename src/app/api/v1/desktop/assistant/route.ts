@@ -23,6 +23,7 @@ import {
   clientContext,
   desktopJson,
   readJsonObject,
+  withDesktopErrors,
 } from "@/lib/server/desktop/http";
 import type { DesktopRequestKind } from "@/lib/server/db/types";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
@@ -54,7 +55,7 @@ const KINDS: DesktopRequestKind[] = [
   "other",
 ];
 
-export async function POST(request: Request) {
+export const POST = withDesktopErrors("assistant", async (request: Request) => {
   const started = Date.now();
   const token = bearerToken(request);
   const ctx = clientContext(request);
@@ -346,4 +347,4 @@ export async function POST(request: Request) {
       "X-Accel-Buffering": "no",
     },
   });
-}
+});

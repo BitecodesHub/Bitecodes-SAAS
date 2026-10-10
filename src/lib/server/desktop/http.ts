@@ -93,3 +93,25 @@ export function requestLocation(request: Request): string | null {
   ].filter(Boolean);
   return parts.length ? parts.join(", ") : null;
 }
+
+/**
+ * Wraps a desktop API handler so an unexpected exception becomes a JSON 500
+ * the app understands, with the full error in the server log. The response
+ * names only the error class (e.g. "MongoServerError:11000"), never a message
+ * or stack, so it is safe to return and still diagnosable from the client.
+ */
+export function withDesktopErrors<A extends unknown[]>(
+  route: string,
+  handler: (...args: A) => Promise<Response>,
+): (...args: A) => Promise<Response> {
+  return async (...args: A) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      const e = error as { name?: string; code?: unknown };
+      const reason = `${e?.name ?? "Error"}${typeof e?.code === "number" || typeof e?.code === "string" ? `:${String(e.code).slice(0, 20)}` : ""}`;
+      console.error(`[desktop] ${route} failed:`, error);
+      return desktopJson({ ok: false, code: "SERVER_ERROR", reason }, 500);
+    }
+  };
+}

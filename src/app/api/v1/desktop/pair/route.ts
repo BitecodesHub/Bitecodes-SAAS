@@ -5,6 +5,7 @@ import {
   desktopJson,
   readJsonObject,
   requestLocation,
+  withDesktopErrors,
 } from "@/lib/server/desktop/http";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { getSiteUrl } from "@/lib/server/env";
@@ -19,7 +20,7 @@ import { getSiteUrl } from "@/lib/server/env";
  */
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withDesktopErrors("pair", async (request: Request) => {
   const limit = await consumeNamedRateLimit(
     "desktopPair",
     clientIpKey(request),
@@ -46,4 +47,4 @@ export async function POST(request: Request) {
     expiresAt: pairing.expiresAt.toISOString(),
     interval: pairing.intervalSeconds,
   });
-}
+});
