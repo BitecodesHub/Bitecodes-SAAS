@@ -110,7 +110,28 @@ export default async function NotesPage() {
     Object.keys(LABELS) as NotesDownload["key"][]
   )
     .filter((k) => release.downloads[k])
-    .map((k) => ({ key: k, url: release.downloads[k], ...LABELS[k] }));
+    .map((k) => ({ key: k, url: release.downloads[k], ...LABELS[k] }))
+    // A universal Mac app / combined Windows installer serves both
+    // architectures from one file: show it once, labelled for everyone.
+    .filter((d, i, all) => all.findIndex((x) => x.url === d.url) === i)
+    .map((d) => {
+      const twin =
+        d.key === "macArm64"
+          ? "macX64"
+          : d.key === "winX64"
+            ? "winArm64"
+            : null;
+      if (twin && release.downloads[twin] === d.url) {
+        return d.key === "macArm64"
+          ? { ...d, label: "macOS", detail: "Apple Silicon & Intel · .dmg" }
+          : {
+              ...d,
+              label: "Windows",
+              detail: "Windows 10/11 · x64 & ARM · .exe",
+            };
+      }
+      return d;
+    });
 
   return (
     <>
