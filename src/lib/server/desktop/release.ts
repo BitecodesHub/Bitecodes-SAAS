@@ -66,18 +66,22 @@ function httpsOrEmpty(url: string): string {
  */
 const RELEASES =
   "https://github.com/BitecodesHub/notes-releases/releases/download";
-// All platforms: 1.8.2, tested on clean Windows x64/ARM and macOS
-// Apple Silicon/Intel machines before publishing.
+// 1.8.3: one universal DMG (Apple Silicon + Intel) and one Windows installer
+// (x64 + ARM, installs the native build). Both architecture keys point at the
+// same file so older apps on either architecture are offered it. Tested on
+// clean Windows x64/ARM and macOS Apple Silicon/Intel machines first.
+const MAC_DMG = `${RELEASES}/v1.8.3/Notes-1.8.3-universal.dmg`;
+const WIN_SETUP = `${RELEASES}/v1.8.3/Notes-Setup-1.8.3.exe`;
 export const BUILT_IN_RELEASE: DesktopRelease = {
-  latestVersion: "1.8.2",
+  latestVersion: "1.8.3",
   minimumVersion: "",
   notes:
-    "Clearer messages when the Bitecodes model is briefly unavailable, plus everything in 1.8: sign in with Bitecodes, screenshot explanations, chat and voice.",
+    "One download for every Mac (Apple Silicon and Intel) and every Windows PC (x64 and ARM); fixes an intermittent Windows installer crash and makes updates close and replace a running Notes cleanly.",
   downloads: {
-    macArm64: `${RELEASES}/v1.8.2/Notes-1.8.2-arm64.dmg`,
-    macX64: `${RELEASES}/v1.8.2/Notes-1.8.2.dmg`,
-    winX64: `${RELEASES}/v1.8.2/Notes-Setup-1.8.2-x64.exe`,
-    winArm64: `${RELEASES}/v1.8.2/Notes-Setup-1.8.2-arm64.exe`,
+    macArm64: MAC_DMG,
+    macX64: MAC_DMG,
+    winX64: WIN_SETUP,
+    winArm64: WIN_SETUP,
   },
 };
 
