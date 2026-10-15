@@ -25,6 +25,7 @@ const KINDS: DesktopRequestKind[] = [
   "screenshot",
   "solution",
   "debug",
+  "audio",
   "other",
 ];
 const STATUS_LABEL = {

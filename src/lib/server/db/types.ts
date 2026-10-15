@@ -1310,6 +1310,7 @@ export type DesktopRequestKind =
   | "screenshot"
   | "solution"
   | "debug"
+  | "audio"
   | "other";
 
 export type DesktopEventType =
