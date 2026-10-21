@@ -13,7 +13,7 @@ export function FeaturedWorkSection() {
         <SectionHeader
           eyebrow="Selected work"
           title="Case studies in shipping the hard part"
-          description="A few of the products we have designed, built, and scaled with our clients."
+          description="A selection of client projects we have designed, built, and shipped."
         />
         <StaggerGroup className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {featuredProjects.map((project, i) => (

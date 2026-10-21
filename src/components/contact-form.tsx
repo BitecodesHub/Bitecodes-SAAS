@@ -10,9 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { jobOpenings } from "@/data/careers";
+import { readAttribution } from "@/lib/attribution";
 import {
   contactBudgets,
+  contactCountries,
   contactFormSchema,
+  contactTimelines,
+  CONTACT_CONSENT_TEXT,
+  MARKETING_CONSENT_TEXT,
   type ContactFormInput,
   type ContactResponse,
 } from "@/lib/contact";
@@ -56,6 +61,9 @@ export function ContactForm() {
       email: "",
       company: "",
       budget: "",
+      timeline: "",
+      country: "",
+      followUp: false,
       message: defaultMessage,
     },
   });
@@ -70,6 +78,7 @@ export function ContactForm() {
         body: JSON.stringify({
           ...values,
           role: role?.slug ?? "",
+          attribution: readAttribution(),
         }),
       });
       const result = (await response.json()) as ContactResponse;
@@ -112,6 +121,7 @@ export function ContactForm() {
     <form
       onSubmit={handleSubmit(onSubmit)}
       noValidate
+      data-track-form="contact"
       className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:p-8"
     >
       <div className="grid gap-5 sm:grid-cols-2">
@@ -166,6 +176,40 @@ export function ContactForm() {
             ))}
           </select>
         </div>
+        <div className="sm:col-span-1">
+          <Label htmlFor="timeline">Timeline (optional)</Label>
+          <select
+            id="timeline"
+            className={cn(
+              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
+            )}
+            {...register("timeline")}
+          >
+            <option value="">No fixed date</option>
+            {contactTimelines.map((timeline) => (
+              <option key={timeline} value={timeline}>
+                {timeline}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="sm:col-span-1">
+          <Label htmlFor="country">Where are you based? (optional)</Label>
+          <select
+            id="country"
+            className={cn(
+              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
+            )}
+            {...register("country")}
+          >
+            <option value="">Prefer not to say</option>
+            {contactCountries.map((country) => (
+              <option key={country.value} value={country.value}>
+                {country.label}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="sm:col-span-2">
           <Label htmlFor="message">How can we help?</Label>
           <Textarea
@@ -179,6 +223,21 @@ export function ContactForm() {
           />
           <FieldError id="message-error" message={errors.message?.message} />
         </div>
+      </div>
+      <div className="mt-5 space-y-3">
+        <label className="flex items-start gap-3 text-sm leading-relaxed">
+          <input
+            type="checkbox"
+            className="accent-primary mt-1 size-4 shrink-0"
+            {...register("followUp")}
+          />
+          <span className="text-muted-foreground">
+            {MARKETING_CONSENT_TEXT}
+          </span>
+        </label>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          {CONTACT_CONSENT_TEXT} We never sell your details.
+        </p>
       </div>
       <div className="sr-only" aria-hidden="true">
         <Label htmlFor="website">Website</Label>
@@ -201,6 +260,7 @@ export function ContactForm() {
       <Button
         type="submit"
         size="lg"
+        data-track="contact-submit"
         disabled={isSubmitting}
         className="mt-6 w-full sm:w-auto"
       >

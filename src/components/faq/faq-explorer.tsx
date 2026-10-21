@@ -2,12 +2,7 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FaqDetails } from "@/components/faq/faq-details";
 import { Input } from "@/components/ui/input";
 import type { Faq } from "@/types/content";
 
@@ -43,14 +38,11 @@ export function FaqExplorer({ faqs }: { faqs: Faq[] }) {
         {filtered.length} {filtered.length === 1 ? "answer" : "answers"}
       </p>
       {filtered.length ? (
-        <Accordion type="single" collapsible className="mx-auto mt-8 max-w-3xl">
-          {filtered.map((faq) => (
-            <AccordionItem key={faq.question} value={faq.question}>
-              <AccordionTrigger>{faq.question}</AccordionTrigger>
-              <AccordionContent>{faq.answer}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        <FaqDetails
+          faqs={filtered}
+          className="mx-auto mt-8 max-w-3xl"
+          defaultOpenFirst={false}
+        />
       ) : (
         <div className="border-border bg-card mx-auto mt-8 max-w-2xl rounded-2xl border p-8 text-center">
           <h2 className="font-semibold">No matching answer</h2>

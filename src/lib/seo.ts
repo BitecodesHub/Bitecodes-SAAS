@@ -108,6 +108,72 @@ export function createMetadata({
   };
 }
 
+/** Verified social profiles only; unset handles must never reach `sameAs`. */
+export function socialProfiles(): string[] {
+  return [
+    siteConfig.social.github,
+    siteConfig.social.linkedin,
+    siteConfig.social.x,
+    siteConfig.social.instagram,
+  ].filter((url): url is string => Boolean(url));
+}
+
+/**
+ * Speakable specification for a page.
+ *
+ * Voice assistants and some answer engines read only the nominated elements,
+ * which keeps the spoken answer to the headline and the lead paragraph rather
+ * than navigation and boilerplate. CSS selectors, per the schema.org contract.
+ */
+export function speakableSchema(
+  cssSelectors: string[] = ["h1", "main p:first-of-type"],
+) {
+  return {
+    "@type": "SpeakableSpecification",
+    cssSelector: cssSelectors,
+  };
+}
+
+/**
+ * WebPage JSON-LD, tying a page to the site and organisation.
+ *
+ * `dateModified` is optional and only passed where the page has a real
+ * modification date (an edited article), never invented for freshness.
+ */
+export function webPageSchema({
+  path,
+  name,
+  description = siteConfig.description,
+  dateModified,
+  speakableSelectors,
+}: {
+  path: string;
+  name: string;
+  description?: string;
+  dateModified?: string;
+  speakableSelectors?: string[];
+}) {
+  const url = `${siteConfig.url}${path}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name,
+    description,
+    inLanguage: "en",
+    isPartOf: {
+      "@type": "WebSite",
+      "@id": `${siteConfig.url}/#website`,
+    },
+    about: { "@id": `${siteConfig.url}/#organization` },
+    ...(dateModified ? { dateModified } : {}),
+    ...(speakableSelectors?.length
+      ? { speakable: speakableSchema(speakableSelectors) }
+      : {}),
+  };
+}
+
 /** Organization JSON-LD for the site root (rich, AI-citation friendly). */
 export function organizationSchema() {
   return {
@@ -135,10 +201,24 @@ export function organizationSchema() {
     telephone: siteConfig.contact.phone,
     address: {
       "@type": "PostalAddress",
+      // No street address: the studio is remote-first, and inventing one
+      // would put a false location into every local-search surface.
       addressLocality: siteConfig.contact.address.city,
       addressRegion: siteConfig.contact.address.region,
       addressCountry: siteConfig.contact.address.country,
     },
+    // A qualitative band, not a quote. Specific starting prices live on each
+    // service page and in the Offer nodes; a numeric range here would go stale.
+    priceRange: "$$",
+    currenciesAccepted: "USD, INR, AUD, GBP",
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "10:00",
+        closes: "18:00",
+      },
+    ],
     // Explicit primary markets in addition to worldwide reach, so answer
     // engines can match a country-scoped question ("software company in the
     // UK") to Bitecodes rather than treating "Worldwide" as no signal.
@@ -166,12 +246,7 @@ export function organizationSchema() {
         availableLanguage: ["English"],
       },
     ],
-    sameAs: [
-      siteConfig.social.github,
-      siteConfig.social.linkedin,
-      siteConfig.social.x,
-      siteConfig.social.instagram,
-    ],
+    sameAs: socialProfiles(),
   };
 }
 
@@ -256,6 +331,7 @@ export function websiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteConfig.url}/#website`,
     name: siteConfig.name,
     url: siteConfig.url,
     description: siteConfig.description,

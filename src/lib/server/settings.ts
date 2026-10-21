@@ -3,6 +3,13 @@ import "server-only";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { siteSettings } from "@/lib/server/db/collections";
 import type { SiteSettingsDoc } from "@/lib/server/db/types";
+import {
+  GROWTH_DEFAULTS,
+  GROWTH_TOGGLE_KEYS,
+  type GrowthSettings,
+} from "@/lib/growth/toggles";
+
+export { GROWTH_DEFAULTS, GROWTH_TOGGLE_KEYS, type GrowthSettings };
 import { siteConfig } from "@/lib/site";
 
 /**
@@ -51,6 +58,13 @@ export const SETTINGS_DEFAULTS = {
     tileUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution: "© OpenStreetMap contributors",
   },
+  /**
+   * Growth automation switches. Declared once in `src/lib/growth/toggles.ts`
+   * (labels, descriptions, defaults) so the admin page and this resolver
+   * cannot disagree. Anything that emails a prospect or customer is off,
+   * except booking reminders, which the recipient asked for by booking.
+   */
+  growth: GROWTH_DEFAULTS,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -249,6 +263,32 @@ export interface ResolvedSettings {
     replyTo: string | null;
   };
   notifications: NotificationSettings;
+  growth: GrowthSettings;
+}
+
+/**
+ * Resolves the growth block: every known switch, always a boolean. Unknown
+ * keys and non-boolean values in the stored document are ignored, so a
+ * hand-edited or stale document cannot switch an email automation on by
+ * accident (a stored string "false" is truthy).
+ */
+export function resolveGrowthSettings(
+  stored: Partial<Record<string, unknown>> | undefined | null,
+): GrowthSettings {
+  const growth: GrowthSettings = { ...SETTINGS_DEFAULTS.growth };
+  if (!stored) return growth;
+  for (const key of GROWTH_TOGGLE_KEYS) {
+    const value = stored[key];
+    if (typeof value === "boolean") growth[key] = value;
+  }
+  return growth;
+}
+
+/** Exported for tests; production code reads through `getSettingsFresh`. */
+export function resolveSettings(
+  stored: StoredSiteSettings | null,
+): ResolvedSettings {
+  return resolve(stored);
 }
 
 function resolve(stored: StoredSiteSettings | null): ResolvedSettings {
@@ -291,6 +331,7 @@ function resolve(stored: StoredSiteSettings | null): ResolvedSettings {
         null,
     },
     notifications: resolveNotifications(stored?.notifications),
+    growth: resolveGrowthSettings(stored?.growth),
   };
 }
 

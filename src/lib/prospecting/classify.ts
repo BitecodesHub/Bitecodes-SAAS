@@ -3,6 +3,7 @@ import type {
   ProspectSignals,
   ProspectTag,
 } from "@/lib/server/db/types";
+import { matchIcpSegment } from "@/data/icp";
 
 /**
  * Decides why a business is a prospect, and how good a prospect it is.
@@ -44,6 +45,13 @@ export interface ClassifyInput {
   categoryId?: string | null;
   hasEmail?: boolean;
   hasPhone?: boolean;
+  /**
+   * Free text that identifies the business — name plus category label. When an
+   * ICP segment's vocabulary matches it, the score gains a fit bonus and the
+   * classification records the segment, so research and outreach agree on who
+   * this business is.
+   */
+  businessText?: string | null;
   /** Injected so tests are not tied to the calendar. */
   currentYear?: number;
 }
@@ -203,6 +211,7 @@ export function classifyProspect(input: ClassifyInput): ProspectClassification {
     categoryId = null,
     hasEmail = false,
     hasPhone = false,
+    businessText = null,
     currentYear = new Date().getUTCFullYear(),
   } = input;
 
@@ -217,6 +226,8 @@ export function classifyProspect(input: ClassifyInput): ProspectClassification {
   const primary = pickPrimary(deficiencies);
   const tags = orderTags(deficiencies, primary);
 
+  const icpMatch = businessText ? matchIcpSegment(businessText) : null;
+
   const score = computeScore({
     primary,
     deficiencyCount: deficiencies.length,
@@ -225,6 +236,7 @@ export function classifyProspect(input: ClassifyInput): ProspectClassification {
     categoryId,
     signals,
     socialOnly,
+    icpWeight: icpMatch?.segment.weight ?? null,
     currentYear,
   });
 
@@ -240,6 +252,7 @@ export function classifyProspect(input: ClassifyInput): ProspectClassification {
     score,
     pitchAngles: dedupeStrings(ordered.map((entry) => entry.pitch)).slice(0, 5),
     topIssues: dedupeStrings(ordered.map((entry) => entry.issue)).slice(0, 5),
+    icpSegmentId: icpMatch?.segment.id ?? null,
   };
 }
 
@@ -452,6 +465,7 @@ function computeScore({
   categoryId,
   signals,
   socialOnly,
+  icpWeight,
   currentYear,
 }: {
   primary: ProspectTag;
@@ -461,9 +475,14 @@ function computeScore({
   categoryId: string | null;
   signals: ProspectSignals | null;
   socialOnly: boolean;
+  icpWeight?: number | null;
   currentYear: number;
 }): number {
   let score = TAG_BASE_SCORE[primary];
+
+  if (typeof icpWeight === "number" && icpWeight > 0) {
+    score += Math.round(icpWeight * 5);
+  }
 
   // Reachability is worth more than any single defect: a perfect prospect with
   // no way to contact them is not a prospect.

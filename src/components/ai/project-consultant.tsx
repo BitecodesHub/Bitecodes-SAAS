@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +32,8 @@ const initialInput: ConsultantInput = {
   mustHaveFeatures: "",
   budget: "not-sure",
   timeline: "flexible",
+  email: "",
+  consent: false,
 };
 
 export function ProjectConsultant() {
@@ -88,6 +91,7 @@ export function ProjectConsultant() {
     <form
       onSubmit={submit}
       className="border-border bg-card mx-auto max-w-4xl rounded-3xl border p-5 shadow-[var(--shadow-lift)] sm:p-8"
+      data-track-form="ai-project-consultant"
     >
       <div className="grid gap-6 sm:grid-cols-2">
         <SelectField
@@ -212,15 +216,56 @@ export function ProjectConsultant() {
             ["flexible", "Flexible"],
           ]}
         />
+        <div className="sm:col-span-2">
+          <Label htmlFor="consultant-email">Email (optional)</Label>
+          <Input
+            id="consultant-email"
+            type="email"
+            autoComplete="email"
+            value={input.email ?? ""}
+            onChange={(event) =>
+              setInput((current) => ({
+                ...current,
+                email: event.target.value,
+              }))
+            }
+            maxLength={254}
+            className="mt-2"
+            placeholder="you@company.com"
+          />
+          <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+            Add an address if you would like us to keep the brief on file and
+            follow up. The recommendation is shown either way.
+          </p>
+        </div>
+      </div>
+      <div className="mt-5">
+        <Checkbox
+          id="consultant-consent"
+          checked={input.consent ?? false}
+          onChange={(event) =>
+            setInput((current) => ({
+              ...current,
+              consent: event.target.checked,
+            }))
+          }
+          label="I agree that Bitecodes may contact me about this project."
+        />
       </div>
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
           Do not include passwords, API keys, personal identifiers, health
           records, payment details, or confidential data. Your brief is sent to
-          an AI provider to generate this response and is not intentionally
-          stored by Bitecodes in this flow.
+          an AI provider to generate this response and is stored so our team can
+          review it. Add an email only if you are happy for us to keep it.
         </p>
-        <Button type="submit" size="lg" disabled={pending} className="shrink-0">
+        <Button
+          type="submit"
+          size="lg"
+          disabled={pending}
+          className="shrink-0"
+          data-track="ai-consultant-submit"
+        >
           {pending ? (
             <>
               <Loader2 className="size-4 animate-spin" />

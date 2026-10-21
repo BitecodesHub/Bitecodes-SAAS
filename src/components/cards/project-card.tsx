@@ -5,6 +5,17 @@ import { Badge } from "@/components/ui/badge";
 import { ProjectCover } from "@/components/project-cover";
 import { cn } from "@/lib/utils";
 
+function relationshipLabel(relationship: Project["relationship"]) {
+  switch (relationship) {
+    case "internal":
+      return "Internal product";
+    case "related-party":
+      return "Related-party work";
+    default:
+      return null;
+  }
+}
+
 export function ProjectCard({
   project,
   className,
@@ -14,6 +25,8 @@ export function ProjectCard({
   className?: string;
   priority?: boolean;
 }) {
+  const label = relationshipLabel(project.relationship);
+
   return (
     <Link
       href={`/portfolio/${project.slug}`}
@@ -22,7 +35,7 @@ export function ProjectCard({
         className,
       )}
     >
-      {/* Cover — screenshot when we have one, branded panel otherwise. */}
+      {/* Cover, a screenshot when we have one, branded panel otherwise. */}
       <div className="relative">
         <ProjectCover
           project={project}
@@ -37,8 +50,9 @@ export function ProjectCard({
         </span>
       </div>
       <div className="flex flex-1 flex-col p-6">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge variant="muted">{project.year}</Badge>
+          {label && <Badge variant="muted">{label}</Badge>}
           <span className="text-muted-foreground text-xs">
             {project.client}
           </span>

@@ -69,6 +69,12 @@ export interface QueueEmailInput {
   skipApproval?: boolean;
   /** Adds open and click tracking. Off for transactional mail. */
   track?: boolean;
+  /**
+   * True only when the recipient gave express marketing consent. This is what
+   * lets an opted-in follow-up reach a consent-required jurisdiction without
+   * the manual release gate. Never set it for cold outreach.
+   */
+  consented?: boolean;
 }
 
 export interface QueueEmailResult {
@@ -135,8 +141,10 @@ export async function queueEmail(
       globalSentToday,
       perDomainDailyCap: settings.automation.perDomainDailyCap,
       globalDailyCap: settings.automation.globalDailyCap,
+      // Express consent is the lawful basis in consent-required regions, so a
+      // lead who ticked the box does not need a second manual release.
       blockConsentRequiredRegions:
-        settings.automation.blockConsentRequiredRegions,
+        settings.automation.blockConsentRequiredRegions && !input.consented,
       hasPostalAddress: Boolean(postalAddress),
       hasUnsubscribeUrl: Boolean(input.unsubscribeUrl),
       missingVariables: rendered.missing,

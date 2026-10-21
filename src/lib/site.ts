@@ -36,11 +36,15 @@ export const siteConfig = {
     },
   },
 
+  // Only profiles that have been verified to exist are published. LinkedIn, X
+  // and Instagram were unverified placeholder handles that returned 404, so
+  // they are null until a real profile is created: set the URL here and every
+  // consumer (footer icons, contact page, Organization `sameAs`) picks it up.
   social: {
-    github: "https://github.com/bitecodes",
-    linkedin: "https://www.linkedin.com/company/bitecodes",
-    x: "https://x.com/bitecodes",
-    instagram: "https://instagram.com/bitecodes",
+    github: "https://github.com/BitecodesHub",
+    linkedin: null as string | null,
+    x: null as string | null,
+    instagram: null as string | null,
   },
 
   // Default Open Graph image (generated at /opengraph-image).

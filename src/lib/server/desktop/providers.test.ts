@@ -117,6 +117,136 @@ describeWithDatabase("desktop provider config", () => {
     });
   });
 
+  it("automation chain uses the same providers and order, ignoring the desktop switch", async () => {
+    const {
+      upsertProvider,
+      setRouting,
+      resolveDesktopChain,
+      resolveAutomationChain,
+    } = await import("@/lib/server/desktop/providers");
+    await upsertProvider("nvidia", { enabled: true, apiKey: "nv" });
+    await upsertProvider("groq", { enabled: true, apiKey: "gq" });
+    await upsertProvider("bedrock", { enabled: false, apiKey: "bd" });
+    await setRouting({
+      enabled: true,
+      defaultProvider: "groq",
+      fallback: ["bedrock", "nvidia"],
+    });
+
+    const desktop = await resolveDesktopChain();
+    const automation = await resolveAutomationChain();
+    expect(automation.map((c) => c.id)).toEqual(["groq", "nvidia"]);
+    expect(automation).toEqual(desktop);
+
+    // Desktop switched off: the desktop app gets nothing, automations still run.
+    await setRouting({
+      enabled: false,
+      defaultProvider: "groq",
+      fallback: ["bedrock", "nvidia"],
+    });
+    expect(await resolveDesktopChain()).toEqual([]);
+    expect((await resolveAutomationChain()).map((c) => c.id)).toEqual([
+      "groq",
+      "nvidia",
+    ]);
+  });
+
+  it("automation chain appends the platform key last, even with the desktop switch off", async () => {
+    const { setRouting, resolveAutomationChain, resolveDesktopChain } =
+      await import("@/lib/server/desktop/providers");
+    const saved = {
+      key: process.env.AI_API_KEY,
+      base: process.env.AI_BASE_URL,
+    };
+    process.env.AI_API_KEY = "platform-key";
+    process.env.AI_BASE_URL = "https://api.groq.com/openai/v1";
+    try {
+      await setRouting({
+        enabled: false,
+        defaultProvider: "nvidia",
+        fallback: [],
+      });
+      expect(await resolveDesktopChain()).toEqual([]);
+      const chain = await resolveAutomationChain();
+      expect(chain).toHaveLength(1);
+      expect(chain[0]).toMatchObject({ id: "groq", apiKey: "platform-key" });
+    } finally {
+      if (saved.key === undefined) delete process.env.AI_API_KEY;
+      else process.env.AI_API_KEY = saved.key;
+      if (saved.base === undefined) delete process.env.AI_BASE_URL;
+      else process.env.AI_BASE_URL = saved.base;
+    }
+  });
+
+  it("automation chain keeps AI_MODEL for the platform key; the desktop chain does not", async () => {
+    const { setRouting, resolveAutomationChain, resolveDesktopChain } =
+      await import("@/lib/server/desktop/providers");
+    const saved = {
+      key: process.env.AI_API_KEY,
+      base: process.env.AI_BASE_URL,
+      model: process.env.AI_MODEL,
+    };
+    process.env.AI_API_KEY = "platform-key";
+    process.env.AI_BASE_URL = "https://integrate.api.nvidia.com/v1";
+    process.env.AI_MODEL = "openai/gpt-oss-120b";
+    try {
+      await setRouting({
+        enabled: true,
+        defaultProvider: "nvidia",
+        fallback: [],
+      });
+      const [automation] = await resolveAutomationChain();
+      expect(automation).toMatchObject({
+        id: "nvidia",
+        model: "openai/gpt-oss-120b",
+      });
+      const [desktop] = await resolveDesktopChain();
+      expect(desktop).toMatchObject({
+        id: "nvidia",
+        model: "openai/gpt-oss-20b",
+      });
+    } finally {
+      for (const [name, value] of [
+        ["AI_API_KEY", saved.key],
+        ["AI_BASE_URL", saved.base],
+        ["AI_MODEL", saved.model],
+      ] as const) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  });
+
+  it("falls back to OPENROUTER_MODEL, then the desktop default, for the automation link", async () => {
+    const { automationPlatformLink, platformKeyState } =
+      await import("@/lib/server/desktop/providers");
+    expect(
+      automationPlatformLink({
+        OPENROUTER_API_KEY: "k",
+        OPENROUTER_MODEL: "google/gemini-2.5-flash",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toMatchObject({ id: "openrouter", model: "google/gemini-2.5-flash" });
+    expect(
+      automationPlatformLink({
+        AI_API_KEY: "k",
+        AI_BASE_URL: "https://api.groq.com/openai/v1",
+        AI_MODEL: " ",
+      } as unknown as NodeJS.ProcessEnv),
+    ).toMatchObject({ id: "groq", model: "openai/gpt-oss-120b" });
+
+    // A host the chain cannot call is reported, never silently dropped.
+    const custom = {
+      AI_API_KEY: "k",
+      AI_BASE_URL: "https://api.example-llm.com/v1",
+    } as unknown as NodeJS.ProcessEnv;
+    expect(automationPlatformLink(custom)).toBeNull();
+    expect(platformKeyState(custom)).toBe("unsupported-host");
+    expect(platformKeyState({} as unknown as NodeJS.ProcessEnv)).toBe("absent");
+    expect(
+      platformKeyState({ AI_API_KEY: "k" } as unknown as NodeJS.ProcessEnv),
+    ).toBe("supported");
+  });
+
   it("sanitises routing: unknown ids rejected, default never duplicated in fallback", async () => {
     const { setRouting, getRouting } =
       await import("@/lib/server/desktop/providers");

@@ -2,24 +2,35 @@ import type { Project } from "@/types/content";
 
 /*
  * Portfolio case studies.
- * TODO(client): Results metrics are representative and should be confirmed
- * against real, publishable figures before launch.
+ *
+ * OWNER MUST CONFIRM each client relationship recorded below and that every
+ * client has consented to publication of its name and the description of the
+ * work. Relationship values:
+ * - "client": a paying client with no relationship to the founder.
+ * - "related-party": work for an organisation connected to the founder. The
+ *   project page discloses this in plain language.
+ * - "internal": built for Bitecodes itself, never counted as client work.
+ *
+ * No result metrics are published here unless they are plain facts evidenced
+ * by the project. Outcomes are qualitative and describe what was built.
  */
-export const projects: Project[] = [
+type PublishedProject = Omit<Project, "results">;
+
+const publishedProjects: PublishedProject[] = [
   {
     slug: "prism",
-    name: "PRism",
+    name: "PRISM",
     client: "Sublime Care (Australia)",
     category: "AI · SEO Platform",
     year: "2025",
     teaser:
       "An AI-driven SEO and generative-engine-optimization platform that audits, fixes, and future-proofs websites.",
     overview:
-      "PRism is an AI-powered SEO and GEO (generative engine optimization) platform that helps site owners rank in both traditional search and AI answer engines. It audits technical SEO, generates structured data, manages redirects and sitemaps, and rewrites content to be citation-ready for LLMs.",
+      "PRISM is an AI-powered SEO and GEO (generative engine optimization) platform that helps site owners rank in both traditional search and AI answer engines. It audits technical SEO, generates structured data, manages redirects and sitemaps, and rewrites content to be citation-ready for LLMs.",
     challenge:
-      "SEO tooling was built for a search world that is rapidly changing. Site owners needed a single system that could handle classic technical SEO and the new reality of AI crawlers and answer engines — without a team of specialists.",
+      "SEO tooling was built for a search world that is rapidly changing. Site owners needed a single system that could handle classic technical SEO and the new reality of AI crawlers and answer engines without a team of specialists.",
     solution:
-      "We built PRism as an automation engine with a clean dashboard and an MCP server interface. It runs full technical audits, auto-generates schema, manages an llms.txt and AI-bot policy, fixes canonicals and broken links, and rewrites pages for generative engines — all with a reversible change history.",
+      "We built PRISM as an automation engine with a clean dashboard and an MCP server interface. It runs full technical audits, auto-generates schema, manages an llms.txt and AI-bot policy, fixes canonicals and broken links, and rewrites pages for generative engines, all with a reversible change history.",
     technologies: [
       "nextjs",
       "typescript",
@@ -36,12 +47,20 @@ export const projects: Project[] = [
       "MCP server for AI-assistant control",
       "Full, reversible change history",
     ],
-    results: [
-      { metric: "60%", label: "Faster SEO audits" },
-      { metric: "2x", label: "Structured-data coverage" },
-      { metric: "100%", label: "Reversible changes" },
+    services: [
+      "web-applications",
+      "ai-integration",
+      "mcp-servers",
+      "backend-development",
     ],
-    featured: true,
+    engagement: "Product build",
+    outcomes: [
+      "Technical audits, structured data, redirects, sitemaps, and AI-crawler policy are managed from one dashboard.",
+      "Every change is recorded and can be reversed from the same interface.",
+      "The platform exposes its tools to AI assistants through an MCP server.",
+    ],
+    relationship: "related-party",
+    featured: false,
     image: "/images/projects/prism.png",
     liveUrl: "https://prism.sublimecare.com.au",
   },
@@ -52,13 +71,13 @@ export const projects: Project[] = [
     category: "Enterprise · Operations",
     year: "2024",
     teaser:
-      "A complete parking operations platform — bookings, access control, billing, and live occupancy.",
+      "A complete parking operations platform for bookings, access control, billing, and live occupancy.",
     overview:
       "A robust parking management system that digitizes the full operations lifecycle: space inventory, bookings, access control, billing, and reporting, with live occupancy dashboards for operators.",
     challenge:
       "Manual logs and disconnected tools made it impossible to know real-time occupancy, reconcile revenue, or scale to multiple sites without errors.",
     solution:
-      "We delivered a centralized platform with real-time occupancy tracking, automated billing, role-based operator access, and multi-site reporting — built on a reliable Spring Boot backend with a responsive operator dashboard.",
+      "We delivered a centralized platform with real-time occupancy tracking, automated billing, role-based operator access, and multi-site reporting, built on a Spring Boot backend with a responsive operator dashboard.",
     technologies: ["java", "spring-boot", "react", "postgresql", "docker"],
     features: [
       "Real-time occupancy and space management",
@@ -67,11 +86,18 @@ export const projects: Project[] = [
       "Multi-site reporting dashboards",
       "Booking and access-control workflows",
     ],
-    results: [
-      { metric: "40%", label: "Less manual admin" },
-      { metric: "Real-time", label: "Occupancy visibility" },
-      { metric: "Multi-site", label: "Scalable operations" },
+    services: [
+      "enterprise-software",
+      "web-applications",
+      "backend-development",
     ],
+    engagement: "Platform build",
+    outcomes: [
+      "Operators see occupancy, bookings, billing, and site-level reporting in one dashboard.",
+      "Roles separate operator access by responsibility.",
+      "Bookings and access control follow a single workflow.",
+    ],
+    relationship: "client",
     featured: false,
   },
   {
@@ -81,11 +107,11 @@ export const projects: Project[] = [
     category: "AI · Smart Infrastructure",
     year: "2025",
     teaser:
-      "AI-powered parking intelligence — plate recognition, occupancy prediction, and automated entry.",
+      "AI-powered parking intelligence with plate recognition, occupancy prediction, and automated entry.",
     overview:
       "Smart AI Park layers computer vision and prediction onto parking infrastructure: automatic license-plate recognition, occupancy forecasting, and frictionless automated entry and exit.",
     challenge:
-      "Operators wanted to remove the friction of tickets and barriers while predicting demand to optimize pricing and staffing — a job traditional systems could not do.",
+      "Operators wanted to remove the friction of tickets and barriers while predicting demand to optimize pricing and staffing, a job traditional systems could not do.",
     solution:
       "We integrated license-plate recognition for ticketless entry, built an occupancy-prediction model from historical patterns, and exposed it all through a live operations dashboard with automated alerts.",
     technologies: [
@@ -103,11 +129,14 @@ export const projects: Project[] = [
       "Dynamic, data-informed pricing",
       "Live operations dashboard and alerts",
     ],
-    results: [
-      { metric: "Ticketless", label: "Entry experience" },
-      { metric: "Predictive", label: "Occupancy planning" },
-      { metric: "Lower", label: "Operating overhead" },
+    services: ["ai-integration", "web-applications", "cloud-solutions"],
+    engagement: "Product build",
+    outcomes: [
+      "Vehicle entry and exit can run without a ticket.",
+      "Occupancy forecasts sit beside live operations data.",
+      "Operators receive alerts from the same dashboard.",
     ],
+    relationship: "client",
     featured: false,
   },
   {
@@ -132,11 +161,15 @@ export const projects: Project[] = [
       "Responsive across all devices",
       "Search and content discovery",
     ],
-    results: [
-      { metric: "Instant", label: "Lesson loads" },
-      { metric: "Mobile-first", label: "Learning experience" },
-      { metric: "Scalable", label: "To many learners" },
+    industry: "education",
+    services: ["web-applications", "frontend-development", "ui-ux-development"],
+    engagement: "Internal product build",
+    outcomes: [
+      "Courses, lessons, progress, and assessments live in one learning interface.",
+      "The lesson reader is built to load quickly on mobile connections.",
+      "Learners can search the course catalogue.",
     ],
+    relationship: "internal",
     featured: false,
   },
   {
@@ -152,7 +185,7 @@ export const projects: Project[] = [
     challenge:
       "ConceptServe needed a senior engineering partner who could deliver a polished web platform and pick up custom software work reliably, without the overhead of growing an in-house team.",
     solution:
-      "We delivered a fast corporate platform and embedded as an ongoing engineering partner — shipping features, maintaining quality, and advising on architecture across their product line.",
+      "We delivered a fast corporate platform and embedded as an ongoing engineering partner, shipping features, maintaining quality, and advising on architecture across their product line.",
     technologies: ["nextjs", "react", "typescript", "nodejs", "postgresql"],
     features: [
       "Fast, SEO-friendly corporate platform",
@@ -160,11 +193,18 @@ export const projects: Project[] = [
       "Ongoing engineering partnership",
       "Architecture and code-review support",
     ],
-    results: [
-      { metric: "Reliable", label: "Delivery cadence" },
-      { metric: "Senior", label: "Engineering, on demand" },
-      { metric: "Multiple", label: "Products supported" },
+    services: [
+      "website-development",
+      "web-applications",
+      "technical-consulting",
     ],
+    engagement: "Website build and ongoing engineering partnership",
+    outcomes: [
+      "A corporate site and design system support the public-facing brand.",
+      "Ongoing architecture and code review support the product line.",
+      "The site is built on the same stack used for custom software work.",
+    ],
+    relationship: "client",
     featured: true,
     image: "/images/projects/conceptserve.png",
     liveUrl: "https://conceptserve.com",
@@ -178,11 +218,11 @@ export const projects: Project[] = [
     teaser:
       "Care-operations and billing automation for an Australian aged-care provider.",
     overview:
-      "For Sublime Care, an Australian aged-care provider, we built operations tooling and automation that streamlines care administration and the fortnightly billing cycle, reducing manual effort and errors.",
+      "For Sublime Care, an Australian aged-care provider, we built operations tooling and automation that streamlines care administration and the fortnightly billing cycle, with human review at each step.",
     challenge:
       "Care administration and government-funded billing involved hours of manual, error-prone spreadsheet work each cycle, pulling staff away from care.",
     solution:
-      "We automated the invoicing pipeline end to end — validating inputs, normalizing data, resolving routing rules per client, and generating accounting-ready imports — with a human-in-the-loop review at every step.",
+      "We automated the invoicing pipeline end to end: validating inputs, normalizing data, resolving routing rules per client, and generating accounting-ready imports, with a human-in-the-loop review at every step.",
     technologies: ["python", "nodejs", "ai-integration", "postgresql"],
     features: [
       "Automated fortnightly invoicing pipeline",
@@ -191,12 +231,16 @@ export const projects: Project[] = [
       "Accounting-system-ready exports",
       "Human-in-the-loop review checkpoints",
     ],
-    results: [
-      { metric: "Hours", label: "Saved each cycle" },
-      { metric: "Fewer", label: "Manual errors" },
-      { metric: "Audit-ready", label: "Billing records" },
+    industry: "healthcare",
+    services: ["business-automation", "custom-software", "backend-development"],
+    engagement: "Automation build",
+    outcomes: [
+      "Fortnightly invoicing runs through one validated pipeline.",
+      "Routing rules are applied per client.",
+      "A person reviews each run before accounting-ready exports are produced.",
     ],
-    featured: true,
+    relationship: "related-party",
+    featured: false,
     image: "/images/projects/sublimecare.png",
     liveUrl: "https://sublimecare.com.au",
   },
@@ -213,7 +257,7 @@ export const projects: Project[] = [
     challenge:
       "Media-heavy portfolios are notoriously slow. The site had to feel cinematic while still loading quickly and ranking well.",
     solution:
-      "We built a media-optimized portfolio with responsive imagery, smooth transitions, and a static-first architecture — cinematic feel, fast loads, strong SEO.",
+      "We built a media-optimized portfolio with responsive imagery, smooth transitions, and a static-first architecture: cinematic feel, fast loads, strong SEO.",
     technologies: ["nextjs", "react", "typescript"],
     features: [
       "Cinematic, media-rich layouts",
@@ -221,12 +265,20 @@ export const projects: Project[] = [
       "Smooth, tasteful transitions",
       "Strong SEO and fast loads",
     ],
-    results: [
-      { metric: "Cinematic", label: "Brand presence" },
-      { metric: "Fast", label: "Media-heavy pages" },
-      { metric: "Improved", label: "Discoverability" },
+    industry: "media",
+    services: [
+      "website-development",
+      "frontend-development",
+      "ui-ux-development",
     ],
-    featured: false,
+    engagement: "Website build",
+    outcomes: [
+      "Film and media work is presented in responsive, media-rich layouts.",
+      "The site is built static-first to keep media-heavy pages fast.",
+      "Pages carry the metadata search engines need.",
+    ],
+    relationship: "client",
+    featured: true,
   },
   {
     slug: "vertex-media-house",
@@ -249,12 +301,20 @@ export const projects: Project[] = [
       "Fast, accessible, responsive build",
       "SEO-optimized content architecture",
     ],
-    results: [
-      { metric: "Premium", label: "Brand perception" },
-      { metric: "Faster", label: "Page loads" },
-      { metric: "More", label: "Qualified leads" },
+    industry: "media",
+    services: [
+      "website-development",
+      "frontend-development",
+      "performance-optimization",
     ],
-    featured: false,
+    engagement: "Website build",
+    outcomes: [
+      "Services and calls to action are presented in a clear page structure.",
+      "Static-first pages keep the marketing site fast.",
+      "Content is structured for search.",
+    ],
+    relationship: "client",
+    featured: true,
   },
   {
     slug: "rivala-care",
@@ -277,11 +337,15 @@ export const projects: Project[] = [
       "WCAG AA accessibility",
       "Fast, responsive across devices",
     ],
-    results: [
-      { metric: "Trustworthy", label: "Patient experience" },
-      { metric: "Accessible", label: "To all users" },
-      { metric: "Clear", label: "Service discovery" },
+    industry: "healthcare",
+    services: ["website-development", "web-applications", "ui-ux-development"],
+    engagement: "Platform build",
+    outcomes: [
+      "Services and care information are presented in a calm, accessible layout.",
+      "The interface is responsive across devices.",
+      "The build targets WCAG AA accessibility.",
     ],
+    relationship: "client",
     featured: false,
   },
   {
@@ -297,7 +361,7 @@ export const projects: Project[] = [
     challenge:
       "Hiring was fragmented across email and spreadsheets, making it slow to track candidates and easy to lose strong applicants.",
     solution:
-      "We built an applicant-tracking platform with structured candidate pipelines, employer dashboards, and clear communication flows — making hiring faster and more organized.",
+      "We built an applicant-tracking platform with structured candidate pipelines, employer dashboards, and clear communication flows, making hiring faster and more organized.",
     technologies: ["nextjs", "react", "nodejs", "postgresql"],
     features: [
       "Applicant tracking and pipelines",
@@ -305,16 +369,44 @@ export const projects: Project[] = [
       "Structured communication flows",
       "Search and candidate matching",
     ],
-    results: [
-      { metric: "Organized", label: "Hiring pipeline" },
-      { metric: "Faster", label: "Time to shortlist" },
-      { metric: "Fewer", label: "Lost candidates" },
+    industry: "recruitment",
+    services: ["web-applications", "backend-development", "ui-ux-development"],
+    engagement: "Platform build",
+    outcomes: [
+      "Candidates move through structured hiring pipelines.",
+      "Employers and candidates each have a dashboard.",
+      "Communication is kept in one place.",
     ],
+    relationship: "client",
     featured: false,
   },
 ];
 
-export const featuredProjects = projects.filter((p) => p.featured);
+/*
+ * `Project.results` is still a required field on the shared content type, but no
+ * verified result metrics exist. The published data intentionally omits the
+ * field, and nothing reads it. The cast keeps the exported type stable for
+ * consumers until the shared type's owner removes the requirement.
+ */
+export const projects = publishedProjects as Project[];
+
+const relationshipOrder: Record<
+  NonNullable<Project["relationship"]>,
+  number
+> = {
+  client: 0,
+  "related-party": 1,
+  internal: 2,
+};
+
+/** Client work is featured first; internal products never lead the homepage. */
+export const featuredProjects = projects
+  .filter((project) => project.featured)
+  .sort(
+    (a, b) =>
+      relationshipOrder[a.relationship ?? "client"] -
+      relationshipOrder[b.relationship ?? "client"],
+  );
 
 const projectBySlug = new Map(projects.map((p) => [p.slug, p]));
 

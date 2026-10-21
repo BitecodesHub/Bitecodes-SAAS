@@ -1,5 +1,6 @@
 import {
   AppWindow,
+  BookOpen,
   BrainCircuit,
   CalendarClock,
   ClipboardList,
@@ -11,6 +12,7 @@ import {
   Newspaper,
   Rocket,
   Server,
+  ShieldCheck,
   Users,
   Workflow,
   Laptop,
@@ -217,6 +219,18 @@ export const mainNav: NavItem[] = [
             icon: Layers,
           },
           {
+            title: "Resources",
+            href: "/resources",
+            description: "Guides and checklists",
+            icon: BookOpen,
+          },
+          {
+            title: "Guarantees",
+            href: "/guarantees",
+            description: "Our commitments to you",
+            icon: ShieldCheck,
+          },
+          {
             title: "Careers",
             href: "/careers",
             description: "Hiring sales interns · WFH",
@@ -270,11 +284,13 @@ export const footerNav: FooterColumn[] = [
       { title: "Process", href: "/process" },
       { title: "Technologies", href: "/technologies" },
       { title: "Industries", href: "/industries" },
+      { title: "Guarantees", href: "/guarantees" },
     ],
   },
   {
     heading: "Resources",
     links: [
+      { title: "Guides & Resources", href: "/resources" },
       { title: "AI Chatbot", href: "/ai-chatbot" },
       { title: "Notes desktop app", href: "/notes" },
       { title: "Forms", href: "/forms" },

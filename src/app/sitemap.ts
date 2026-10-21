@@ -3,6 +3,8 @@ import { siteConfig } from "@/lib/site";
 import { services } from "@/data/services";
 import { projects } from "@/data/projects";
 import { jobOpenings } from "@/data/careers";
+import { resources } from "@/data/resources";
+import { industries } from "@/data/industries";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 
 // Dynamic so newly published (including AI-published) posts appear without a
@@ -54,6 +56,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // excluded from the sitemap and search indexing.
     // Machine-readable GEO document — discoverable via sitemap for AI crawlers.
     { path: "/llms-full.txt", priority: 0.3 },
+    // Conversion and engagement pages
+    { path: "/book-a-call", priority: 0.9 },
+    { path: "/demo", priority: 0.9 },
+    { path: "/guarantees", priority: 0.8 },
+    { path: "/referral", priority: 0.7 },
+    { path: "/thank-you", priority: 0.3 },
+    // Resources hub
+    { path: "/resources", priority: 0.8 },
   ];
 
   const routes: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
@@ -96,11 +106,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
+  const resourceRoutes: MetadataRoute.Sitemap = resources.map((r) => ({
+    url: `${base}/resources/${r.slug}`,
+    lastModified: new Date(r.updated),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  const industryRoutes: MetadataRoute.Sitemap = industries.map((i) => ({
+    url: `${base}/industries/${i.slug}`,
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
   return [
     ...routes,
     ...jobRoutes,
     ...serviceRoutes,
     ...projectRoutes,
     ...blogRoutes,
+    ...resourceRoutes,
+    ...industryRoutes,
   ];
 }

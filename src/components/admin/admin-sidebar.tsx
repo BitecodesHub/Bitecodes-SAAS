@@ -5,17 +5,23 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   ClipboardList,
+  FileText,
+  HeartPulse,
   Inbox,
   LayoutDashboard,
   ListChecks,
   Mail,
   MapPin,
+  Megaphone,
+  MessageSquareHeart,
   MessagesSquare,
   PenLine,
+  PhoneCall,
   Search,
   Settings,
   ShieldCheck,
   Laptop,
+  TrendingUp,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -40,7 +46,7 @@ import { cn } from "@/lib/utils";
  * module is imported by server code and a Lucide component is not serialisable
  * across that boundary.
  */
-const ICONS: Record<string, LucideIcon> = {
+export const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
   Inbox,
   Users,
@@ -55,6 +61,12 @@ const ICONS: Record<string, LucideIcon> = {
   Settings,
   ShieldCheck,
   Laptop,
+  FileText,
+  PhoneCall,
+  TrendingUp,
+  Megaphone,
+  MessageSquareHeart,
+  HeartPulse,
 };
 
 export function AdminSidebar({

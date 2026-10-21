@@ -4,8 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BarChart3,
   CalendarClock,
   ClipboardList,
+  Gift,
   LayoutDashboard,
   LogOut,
   Mail,
@@ -23,8 +25,8 @@ import { cn } from "@/lib/utils";
 /**
  * The customer dashboard shell.
  *
- * Deliberately much smaller than `AdminShell`: a customer has seven
- * destinations, not twenty-two, so there is no command palette, no collapsing
+ * Deliberately much smaller than `AdminShell`: a customer has nine
+ * destinations, not thirty, so there is no command palette, no collapsing
  * rail, and no capability filtering to do — every link here is reachable by
  * every account that can see this shell. Reusing the admin shell would have
  * meant carrying all of that for a menu that fits on one screen.
@@ -40,6 +42,8 @@ const NAV = [
   { href: "/app/bookings", label: "Bookings", icon: CalendarClock },
   { href: "/app/email", label: "Email API", icon: Mail },
   { href: "/app/billing", label: "Credits", icon: Wallet },
+  { href: "/app/reports", label: "Reports", icon: BarChart3 },
+  { href: "/app/referrals", label: "Referrals", icon: Gift },
   { href: "/app/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -76,7 +80,7 @@ export function AppShell({
 
             <nav
               aria-label="Dashboard"
-              className="ml-4 hidden items-center gap-0.5 lg:flex"
+              className="ml-4 hidden items-center gap-0.5 xl:flex"
             >
               {NAV.map((item) => (
                 <Link
@@ -118,7 +122,7 @@ export function AppShell({
                 onClick={() => setMenuOpen((open) => !open)}
                 aria-expanded={menuOpen}
                 aria-controls="app-mobile-nav"
-                className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-9 items-center justify-center rounded-lg transition-colors lg:hidden"
+                className="text-muted-foreground hover:text-foreground hover:bg-muted inline-flex size-9 items-center justify-center rounded-lg transition-colors xl:hidden"
                 aria-label={menuOpen ? "Close menu" : "Open menu"}
               >
                 {menuOpen ? (
@@ -134,7 +138,7 @@ export function AppShell({
             <nav
               id="app-mobile-nav"
               aria-label="Dashboard"
-              className="border-border grid gap-0.5 border-t p-3 lg:hidden"
+              className="border-border grid gap-0.5 border-t p-3 xl:hidden"
             >
               {NAV.map((item) => (
                 <Link

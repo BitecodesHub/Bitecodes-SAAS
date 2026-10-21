@@ -268,8 +268,35 @@ export interface ResolvedProvider {
  * turns into a clean "not configured" response.
  */
 export async function resolveDesktopChain(): Promise<ResolvedProvider[]> {
+  return resolveProviderChain({ respectDesktopSwitch: true });
+}
+
+/**
+ * The same operator chain for server-side automations (blog drafts, lead
+ * research, reports).
+ *
+ * Identical provider documents and order as the desktop app, but it ignores
+ * the desktop on/off switch: switching the desktop model off for users must
+ * not silently stop every background automation. Automations have their own
+ * switch (`settings.growth.aiEnabled`), checked by the automation client.
+ */
+export async function resolveAutomationChain(): Promise<ResolvedProvider[]> {
+  return resolveProviderChain({ respectDesktopSwitch: false });
+}
+
+/**
+ * Shared resolver. With `respectDesktopSwitch`, a disabled desktop
+ * integration yields [] before anything else (the desktop app's contract);
+ * without it, the configured providers are resolved regardless and the
+ * platform key is still appended as the last resort.
+ */
+export async function resolveProviderChain({
+  respectDesktopSwitch,
+}: {
+  respectDesktopSwitch: boolean;
+}): Promise<ResolvedProvider[]> {
   const routing = await getRouting();
-  if (!routing.enabled) return [];
+  if (respectDesktopSwitch && !routing.enabled) return [];
 
   const order: DesktopProviderId[] = [
     routing.defaultProvider,
@@ -295,7 +322,10 @@ export async function resolveDesktopChain(): Promise<ResolvedProvider[]> {
   // Last resort: the site's own AI key (AI_API_KEY / AI_BASE_URL, already
   // used by the chatbot and consultant), so the desktop app never dead-ends
   // just because no desktop provider has been configured or all keys expired.
-  const platform = platformFallback();
+  // Automations keep the operator's AI_MODEL, as they did before the chain.
+  const platform = respectDesktopSwitch
+    ? platformFallback()
+    : automationPlatformLink();
   if (
     platform &&
     !chain.some((c) => c.id === platform.id && c.apiKey === platform.apiKey)
@@ -342,6 +372,36 @@ export function platformFallback(
     model: d.model,
     visionModel: d.visionModel,
   };
+}
+
+/**
+ * The platform key as an automation link. Same hosts as `platformFallback`,
+ * but `AI_MODEL` (or the legacy `OPENROUTER_MODEL`) wins over the desktop
+ * default, so a deployment that chose its model for server-side AI keeps it.
+ * The desktop path deliberately ignores `AI_MODEL`: it names the site's
+ * lightweight chat model there.
+ */
+export function automationPlatformLink(
+  env: NodeJS.ProcessEnv = process.env,
+): ResolvedProvider | null {
+  const link = platformFallback(env);
+  if (!link) return null;
+  const model = (env.AI_MODEL ?? env.OPENROUTER_MODEL)?.trim();
+  return model ? { ...link, model } : link;
+}
+
+/**
+ * Whether the platform key can join a chain: "unsupported-host" means a key
+ * is set but `AI_BASE_URL` is not NVIDIA, OpenRouter, or Groq, so only the
+ * site chatbot and consultant use it. Shown in the automation AI status so
+ * the gap is never silent.
+ */
+export function platformKeyState(
+  env: NodeJS.ProcessEnv = process.env,
+): "absent" | "supported" | "unsupported-host" {
+  const apiKey = (env.AI_API_KEY ?? env.OPENROUTER_API_KEY)?.trim();
+  if (!apiKey) return "absent";
+  return platformFallback(env) ? "supported" : "unsupported-host";
 }
 
 /**

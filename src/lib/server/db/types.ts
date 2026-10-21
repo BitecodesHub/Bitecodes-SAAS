@@ -4,6 +4,8 @@ import type { ObjectId } from "mongodb";
 import type { WebsiteAuditResult } from "@/lib/website-audit";
 import type { BlogBlock } from "@/types/content";
 import type { EmailBlock } from "@/lib/email/template";
+import type { GrowthSettings } from "@/lib/growth/toggles";
+import type { Attribution } from "@/lib/attribution";
 
 export type { EmailBlock };
 
@@ -54,7 +56,7 @@ export interface ActivityNote {
  * below match what `src/app/api/contact/route.ts` already writes, plus the
  * CRM fields the admin panel adds.
  */
-export interface ContactEnquiryDoc extends Timestamped {
+export interface ContactEnquiryDoc extends Timestamped, LeadCrmFields {
   _id?: ObjectId;
   requestId: string;
   reference: string;
@@ -73,10 +75,44 @@ export interface ContactEnquiryDoc extends Timestamped {
   notes?: ActivityNote[];
   tags?: string[];
   lastContactedAt?: Date | null;
+  /**
+   * Growth additions, written by `captureLead` (src/lib/server/leads/capture.ts)
+   * for leads that did not come through the contact form. Optional so
+   * contact-form documents written before them stay valid.
+   */
+  kind?: LeadCaptureKind;
+  phone?: string | null;
+  consent?: LeadConsent | null;
+  /** First-touch marketing attribution. Never contains personal data. */
+  attribution?: Attribution | null;
+  /** Small, source-specific extras (resource slug, preferred call time). */
+  detail?: Record<string, unknown> | null;
+}
+
+/** Where a captured (non-contact-form) lead came from. */
+export type LeadCaptureKind =
+  | "magnet"
+  | "chat"
+  | "call"
+  | "demo"
+  | "newsletter"
+  | "form"
+  | "booking"
+  | "prospect";
+
+/** What the person agreed to, recorded with the exact wording shown. */
+export interface LeadConsent {
+  /** Agreed to be contacted about this request. */
+  contact: boolean;
+  /** Agreed to receive marketing email (newsletter, nurture). */
+  marketing: boolean;
+  /** The consent text shown next to the checkbox, verbatim. */
+  text: string | null;
+  at: Date;
 }
 
 /** A persisted AI project consultant submission (previously discarded). */
-export interface ConsultantRequestDoc extends Timestamped {
+export interface ConsultantRequestDoc extends Timestamped, LeadCrmFields {
   _id?: ObjectId;
   requestId: string;
   reference: string;
@@ -94,10 +130,12 @@ export interface ConsultantRequestDoc extends Timestamped {
   assignedToId?: string | null;
   tags?: string[];
   lastContactedAt?: Date | null;
+  /** Explicit marketing consent, when the person gave it. */
+  consent?: LeadConsent | null;
 }
 
 /** A persisted public website audit run (previously discarded). */
-export interface AuditReportDoc extends Timestamped {
+export interface AuditReportDoc extends Timestamped, LeadCrmFields {
   _id?: ObjectId;
   requestId: string;
   /** Normalised URL that was audited. */
@@ -119,6 +157,8 @@ export interface AuditReportDoc extends Timestamped {
   assignedToId?: string | null;
   tags?: string[];
   lastContactedAt?: Date | null;
+  /** Explicit marketing consent, when the person gave it. */
+  consent?: LeadConsent | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -321,6 +361,11 @@ export interface SiteSettingsDoc extends Timestamped {
     fromAddress?: string;
     replyTo?: string;
   };
+  /**
+   * Growth automation switches (see `src/lib/growth/toggles.ts` for every key,
+   * its label, and its default). Missing keys fall back to the defaults.
+   */
+  growth?: Partial<GrowthSettings>;
 }
 
 export interface AnalyticsEventDoc {
@@ -438,12 +483,51 @@ export interface ProspectClassification {
   pitchAngles: string[];
   /** Short human-readable issue list used in email templates. */
   topIssues: string[];
+  /**
+   * ICP segment matched from the business name and category, when one fits.
+   * Set by the classifier so scoring, research, and the admin UI agree on
+   * which segment a prospect belongs to.
+   */
+  icpSegmentId?: string | null;
+}
+
+/**
+ * The AI-written research brief for one prospect (the `prospect.research` job).
+ *
+ * Every free-text field is grounded in the stored audit and site facts: the
+ * model is only shown those facts, and each personalization hook is re-checked
+ * against them before it is stored, so a hook that cites a number the audit
+ * never produced is dropped rather than emailed to a real business.
+ */
+export interface ProspectResearch {
+  /** Two or three sentences on what the business does and what it needs. */
+  summary: string;
+  /** What the business is likely to buy, most likely first. */
+  likelyNeeds: string[];
+  /** An id from `ICP_SEGMENTS`, or null when none fits. */
+  icpSegmentId: string | null;
+  /** 0-100. How well this business fits the ideal customer profile. */
+  fitScore: number;
+  /** Short, verifiable talking points for the outreach opening. */
+  personalizationHooks: string[];
+  /** Reasons the deal may not land, for the operator's judgement. */
+  risks: string[];
+  /** A real service slug from `src/data/services.ts`, or null. */
+  recommendedService: string | null;
+  /** Set when research found a reason not to contact the business at all. */
+  doNotContactReason: string | null;
+  model: string;
+  provider: string;
+  createdAt: Date;
 }
 
 export interface ProspectDoc extends Timestamped {
   _id?: ObjectId;
-  /** Data provider. `osm` is the default; `manual` for CSV imports. */
-  source: "osm" | "google" | "manual";
+  /**
+   * Data provider. `osm` is the default; `manual` for hand-entered rows and
+   * `import` for CSV uploads (which carry a business website by construction).
+   */
+  source: "osm" | "google" | "manual" | "import";
   /** Provider-native id, e.g. `node/123456`. Unique with `source`. */
   sourceId: string;
   /** Normalised `name|lat|lng` key used to dedupe across providers. */
@@ -478,6 +562,13 @@ export interface ProspectDoc extends Timestamped {
   status: ProspectStatus;
   classification: ProspectClassification | null;
   signals: ProspectSignals | null;
+  /** AI research brief, written once by the `prospect.research` job. */
+  research?: ProspectResearch | null;
+  /**
+   * Set when the `outreach.draft` job has queued a first-contact draft for
+   * this prospect, so a re-run never produces a duplicate.
+   */
+  outreachDraftedAt?: Date | null;
   auditReportId: string | null;
   auditScore: number | null;
   /** Token id for the shareable personalised report. */
@@ -603,6 +694,8 @@ export interface EmailSequenceDoc extends Timestamped {
   description: string;
   /** Which prospect tag auto-enrols into this sequence, if any. */
   prospectTag: ProspectTag | null;
+  /** Prospect sequences target cold lists; lead sequences follow an enquiry. */
+  audience?: "prospect" | "lead";
   enabled: boolean;
   steps: {
     templateKey: string;
@@ -619,6 +712,10 @@ export interface SequenceEnrollmentDoc extends Timestamped {
   sequenceKey: string;
   prospectId: string | null;
   leadId: string | null;
+  /** Which lead source `leadId` belongs to. Null for prospect enrolments. */
+  leadKind?: string | null;
+  /** When explicit consent was given, for consent-region sends. */
+  consentAt?: Date | null;
   email: string;
   status: "active" | "completed" | "stopped";
   stoppedReason: string | null;
@@ -1106,6 +1203,15 @@ export interface BookingConfigDoc extends Timestamped {
   notifyEmails: string[];
   confirmationMessage: string;
   bookingCount: number;
+  /**
+   * Whether the booking reminder job may email attendees of this calendar.
+   *
+   * Staff calendars default to on when the field is absent. A self-serve
+   * customer calendar defaults to off and must opt in explicitly. The shared
+   * booking product screen does not expose this switch yet; it is set through
+   * the booking repository or an admin action.
+   */
+  remindersEnabled?: boolean;
 }
 
 export type BookingStatus = "confirmed" | "cancelled";
@@ -1137,6 +1243,14 @@ export interface BookingDoc {
     origin: string | null;
     timezone: string | null;
   };
+  /**
+   * When each reminder was claimed for sending. Absent on older documents.
+   *
+   * The timestamp is written before the email is queued, and cleared if
+   * queueing fails, so two concurrent runs cannot both send the same reminder.
+   */
+  reminder24hSentAt?: Date | null;
+  reminder1hSentAt?: Date | null;
   createdAt: Date;
   cancelledAt: Date | null;
 }
@@ -1348,3 +1462,479 @@ export interface DesktopAlertDoc {
   lastSentAt: Date;
   lastDetail: string;
 }
+
+/*
+  ===========================================================================
+  Growth engine documents. One section per owning package, so parallel work
+  merges cleanly. Edit only your own section; each shape below is an initial
+  sketch its owner is expected to refine.
+  ===========================================================================
+*/
+
+// ===== growth:foundation =====
+export type AutomationAiErrorCode =
+  | "DISABLED"
+  | "NOT_CONFIGURED"
+  | "ALL_FAILED"
+  | "INVALID_OUTPUT"
+  | "TIMEOUT";
+
+/** One AI automation call (success or failure). TTL: 90 days. */
+export interface AiAutomationRunDoc {
+  _id?: ObjectId;
+  /** What the call was for, e.g. "blog", "lead-score". */
+  purpose: string;
+  /** JSON (schema-validated) or free text. */
+  mode: "json" | "text";
+  ok: boolean;
+  /** The provider and model that answered; null on failure. */
+  provider: DesktopProviderId | null;
+  model: string | null;
+  attempted: { provider: DesktopProviderId; model: string; outcome: string }[];
+  promptTokens: number | null;
+  completionTokens: number | null;
+  durationMs: number;
+  errorCode: AutomationAiErrorCode | null;
+  /** Short error message; never contains prompt text. */
+  error: string | null;
+  createdAt: Date;
+}
+// ===== end growth:foundation =====
+
+// ===== growth:analytics =====
+/**
+ * The campaign parameters kept with a page view.
+ *
+ * Only the five standard `utm_*` values are stored. The rest of the query
+ * string is discarded at the edge, both because it can carry personal data and
+ * because it is never useful for reporting.
+ */
+export interface AnalyticsUtmFields {
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  term: string | null;
+  content: string | null;
+}
+
+/**
+ * An `analytics_events` row as this package writes it.
+ *
+ * The base document already existed before the collector was built; the `utm`
+ * block is added by this package. It stays optional on read because rows from
+ * an earlier deployment, if any, have no campaign fields.
+ */
+export interface AnalyticsEventRecord extends AnalyticsEventDoc {
+  utm?: AnalyticsUtmFields | null;
+}
+
+/** Daily roll-up of first-party analytics, one row per UTC date and path. */
+export interface AnalyticsDailyDoc extends Timestamped {
+  _id?: ObjectId;
+  /** UTC date, YYYY-MM-DD. */
+  date: string;
+  /** Page path, or "*" for the site-wide total row. */
+  path: string;
+  pageviews: number;
+  /** Distinct daily visitor hashes. */
+  visitors: number;
+  /** Event name to count. */
+  events: Record<string, number>;
+  /** Referrer host to count. */
+  referrers: Record<string, number>;
+  /** utm_source to count. */
+  utmSources: Record<string, number>;
+  /** utm_campaign to count. */
+  utmCampaigns: Record<string, number>;
+  /** Web Vitals metric name to its 75th percentile and sample count. */
+  vitals: Record<string, { p75: number; samples: number }>;
+}
+// ===== end growth:analytics =====
+
+// ===== growth:leads-crm =====
+/**
+ * Pipeline vocabulary.
+ *
+ * `LeadStatus` remains the stored legacy field, but the panel reads and writes
+ * `stage` because the old union had no honest place for "contacted". Mapping is
+ * deliberately lazy: no migration rewrites historic documents, and an old
+ * document still reads correctly through `legacyStatusToStage`.
+ */
+export type LeadStage =
+  | "new"
+  | "contacted"
+  | "qualified"
+  | "proposal"
+  | "won"
+  | "lost";
+
+export type LeadGrade = "A" | "B" | "C" | "D";
+export type LeadFit = "strong" | "possible" | "poor";
+
+/** Shared optional CRM columns across every lead source. */
+export interface LeadCrmFields {
+  stage?: LeadStage;
+  /** Deterministic quality score, 0–100. */
+  score?: number | null;
+  grade?: LeadGrade | null;
+  /** Short human-readable contributions to the score. */
+  scoreReasons?: string[];
+  /** The ICP segment that contributed most to the score. */
+  scoreSegmentId?: string | null;
+  /** When the deterministic score was last written. */
+  scoredAt?: Date | null;
+  /** AI-written qualification note. Never used to set `score`. */
+  qualification?: LeadQualification | null;
+  nextAction?: string | null;
+  nextActionAt?: Date | null;
+  ownerNotes?: string | null;
+  /** What the person said about timing, in their words. */
+  timeline?: string | null;
+  country?: string | null;
+}
+
+/** One AI qualification note. All fields are model output, validated by Zod. */
+export interface LeadQualification {
+  summary: string;
+  need: string;
+  budgetSignal: string;
+  timeline: string;
+  fit: LeadFit;
+  /** A real service slug from `src/data/services.ts`. */
+  suggestedService: string;
+  suggestedNextAction: string;
+  /** Provider/model that wrote it, for auditability. */
+  model: string;
+  provider: string;
+  createdAt: Date;
+}
+
+/** One entry on a lead's timeline. */
+export interface LeadActivityDoc {
+  _id?: ObjectId;
+  /** The lead's source kind (enquiry, consultant, audit) and document id. */
+  leadKind: string;
+  leadId: string;
+  /** Lowercased address, so every touch for one person can be listed. */
+  email: string | null;
+  /** created, status, note, email-sent, email-opened, call, booking, score… */
+  type: string;
+  summary: string;
+  detail: Record<string, unknown> | null;
+  /** Null for system-written activity. */
+  actorId: string | null;
+  createdAt: Date;
+}
+// ===== end growth:leads-crm =====
+
+// ===== growth:sales =====
+export type ProposalStatus =
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "accepted"
+  | "declined"
+  | "expired";
+
+/** The three inbound lead collections a proposal can be written from. */
+export type ProposalLeadKind = "enquiry" | "consultant" | "audit";
+
+/**
+ * A lead reference stored as `kind:id`.
+ *
+ * One string rather than two nullable columns: a proposal is written from, at
+ * most, one lead, and a single value makes "which lead is this proposal for?"
+ * a single equality lookup instead of a two-field conditional.
+ */
+export type ProposalLeadRef = `${ProposalLeadKind}:${string}`;
+
+/** One priced line. Amounts are in whole units of the proposal currency. */
+export interface ProposalLineItem {
+  /** Service slug, or `maintenance-retainer` for the add-on. */
+  key: string;
+  label: string;
+  description: string | null;
+  /** Projects are normally 1; hours and retainer months use the real count. */
+  quantity: number;
+  /** Unit price after deterministic conversion from the USD source price. */
+  unitAmount: number;
+  amount: number;
+}
+
+export interface ProposalMilestone {
+  name: string;
+  description: string;
+  /** Days after the agreed start date. */
+  dueOffsetDays: number;
+}
+
+export interface ProposalPaymentTerm {
+  label: string;
+  /** Whole percentage; the final term absorbs rounding so the sum is 100. */
+  percent: number;
+  amount: number;
+}
+
+/** The maintenance retainer the builder suggests but the client need not buy. */
+export interface ProposalRetainerUpsell {
+  serviceSlug: string;
+  label: string;
+  description: string;
+  months: number;
+  /** Monthly price in the proposal currency. */
+  monthlyAmount: number;
+  totalAmount: number;
+}
+
+export interface ProposalAcceptance {
+  name: string;
+  title: string;
+  /** Typed signature, stored exactly as entered by the client. */
+  signature: string;
+  acceptedAt: Date;
+  /** Keyed hash of the accepting IP. The address itself is never stored. */
+  ipHash: string | null;
+}
+
+export interface ProposalDecline {
+  reason: string;
+  declinedAt: Date;
+  ipHash: string | null;
+  /** Distinguishes a client's decline from an operator marking the deal lost. */
+  source: "client" | "owner";
+}
+
+export interface ProposalTermsLink {
+  label: string;
+  url: string;
+}
+
+export interface ProposalDoc extends Timestamped {
+  _id?: ObjectId;
+  /** Human reference, e.g. `PROP-2026-4F9C1A7B`. Unique. */
+  proposalId: string;
+  /** SHA-256 of the public link token. The token itself is never stored. */
+  tokenHash: string;
+  /** The lead it was written for, when there is one. */
+  leadRef: ProposalLeadRef | null;
+  clientName: string;
+  clientEmail: string;
+  company: string | null;
+  title: string;
+  summary: string;
+  scope: string[];
+  deliverables: string[];
+  milestones: ProposalMilestone[];
+  lineItems: ProposalLineItem[];
+  currency: "USD" | "INR" | "AUD" | "GBP";
+  total: number;
+  /** Suggested retainer shown in the builder; not part of `total`. */
+  retainerUpsell: ProposalRetainerUpsell | null;
+  paymentSchedule: ProposalPaymentTerm[];
+  assumptions: string[];
+  exclusions: string[];
+  termsLinks: ProposalTermsLink[];
+  validUntil: Date | null;
+  status: ProposalStatus;
+  sentAt: Date | null;
+  viewedAt: Date | null;
+  lastViewedAt: Date | null;
+  viewCount: number;
+  /** Last time the owner was nudged about an unanswered view. */
+  lastReminderAt: Date | null;
+  acceptedAt: Date | null;
+  declinedAt: Date | null;
+  acceptance: ProposalAcceptance | null;
+  decline: ProposalDecline | null;
+  createdById: string | null;
+  aiAssisted: boolean;
+}
+// ===== end growth:sales =====
+
+// ===== growth:assistant-calls =====
+export type CallStatus =
+  | "requested"
+  | "scheduled"
+  | "in_progress"
+  | "completed"
+  | "no_answer"
+  | "failed"
+  | "cancelled";
+
+/** A consented callback request and, once placed, the call itself. */
+export interface CallDoc extends Timestamped {
+  _id?: ObjectId;
+  callId: string;
+  /** The contact_enquiries lead created for the request. */
+  leadId: string | null;
+  name: string | null;
+  /** E.164 number the person asked to be called on. */
+  phone: string;
+  /** Consent wording shown, and when it was given. Required to place a call. */
+  consentText: string;
+  consentAt: Date;
+  status: CallStatus;
+  preferredTime: string | null;
+  scheduledFor: Date | null;
+  provider: string | null;
+  providerCallId: string | null;
+  durationSeconds: number | null;
+  transcript: { role: "agent" | "caller"; text: string }[];
+  summary: string | null;
+  error: string | null;
+}
+// ===== end growth:assistant-calls =====
+
+// ===== growth:content-engine =====
+/** An AI-drafted social post. Never posted automatically. */
+export interface SocialDraftDoc extends Timestamped {
+  _id?: ObjectId;
+  channel: "linkedin";
+  /** ISO week the draft belongs to, e.g. "2026-W42". */
+  weekKey: string;
+  body: string;
+  sourcePostSlug: string | null;
+  status: "draft" | "approved" | "posted" | "discarded";
+  aiModel: string | null;
+  postedAt: Date | null;
+}
+
+/** One newsletter issue, drafted by AI and sent only after approval. */
+export interface NewsletterIssueDoc extends Timestamped {
+  _id?: ObjectId;
+  /** ISO week key, unique, e.g. "2026-W42". */
+  issueKey: string;
+  subject: string;
+  preheader: string | null;
+  blocks: EmailBlock[];
+  status: "draft" | "approved" | "sending" | "sent" | "discarded";
+  aiModel: string | null;
+  approvedById: string | null;
+  approvedAt: Date | null;
+  sentAt: Date | null;
+  recipientCount: number;
+}
+// ===== end growth:content-engine =====
+
+// ===== growth:lifecycle =====
+/** A customer's monthly performance report. Unique per owner and period. */
+export interface CustomerReportDoc extends Timestamped {
+  _id?: ObjectId;
+  /** The customer account (admin_users id). */
+  ownerId: string;
+  /** Reporting month, YYYY-MM. */
+  period: string;
+  metrics: Record<string, number>;
+  insights: string[];
+  aiModel: string | null;
+  emailedAt: Date | null;
+  emailMessageId: string | null;
+}
+
+/** A lifecycle touch already made. Unique per owner and key (idempotency). */
+export interface LifecycleEventDoc {
+  _id?: ObjectId;
+  ownerId: string;
+  /** Stable key, e.g. "onboarding.day-3" or "renewal.chatbot.2026-10". */
+  key: string;
+  kind: "onboarding" | "renewal" | "upsell" | "cross-sell" | "other";
+  channel: "email" | "in-app";
+  emailMessageId: string | null;
+  detail: Record<string, unknown> | null;
+  createdAt: Date;
+}
+// ===== end growth:lifecycle =====
+
+// ===== growth:loyalty =====
+/** An NPS survey response or in-app feedback. */
+export interface FeedbackDoc extends Timestamped {
+  _id?: ObjectId;
+  /** The customer account, when known. */
+  ownerId: string | null;
+  email: string | null;
+  /** SHA-256 of the survey link token. The token itself is never stored. */
+  tokenHash: string | null;
+  source: "nps-survey" | "in-app" | "admin";
+  /** Survey round, e.g. "2026-10", so a customer is asked once per round. */
+  surveyKey: string | null;
+  /** 0 to 10, null until answered. */
+  score: number | null;
+  comment: string | null;
+  /** Explicit consent to publish the comment as a testimonial. */
+  testimonialConsent: boolean;
+  status: "requested" | "received" | "reviewed";
+  requestedAt: Date | null;
+  respondedAt: Date | null;
+}
+
+/** A consented, moderated testimonial. Only `approved` ones are shown. */
+export interface TestimonialDoc extends Timestamped {
+  _id?: ObjectId;
+  feedbackId: string | null;
+  ownerId: string | null;
+  quote: string;
+  authorName: string;
+  authorRole: string | null;
+  company: string | null;
+  consentText: string;
+  consentAt: Date;
+  status: "pending" | "approved" | "rejected" | "withdrawn";
+  approvedById: string | null;
+  approvedAt: Date | null;
+}
+
+/** A customer's referral code and the accounts that used it. */
+export interface ReferralDoc extends Timestamped {
+  _id?: ObjectId;
+  /** Unique, shareable code. */
+  code: string;
+  referrerId: string;
+  status: "active" | "disabled";
+  redemptions: {
+    referredId: string;
+    signedUpAt: Date;
+    qualifiedAt: Date | null;
+    rewardedAt: Date | null;
+  }[];
+}
+
+/** The current churn-risk score for one customer, replaced daily. */
+export interface ChurnRiskDoc extends Timestamped {
+  _id?: ObjectId;
+  ownerId: string;
+  /** 0 (safe) to 100 (likely to churn). */
+  score: number;
+  level: "low" | "medium" | "high";
+  signals: string[];
+  scoredAt: Date;
+  winbackSentAt: Date | null;
+}
+// ===== end growth:loyalty =====
+
+// ===== growth:seo-tech =====
+/** One weekly self-audit of this website's key pages. */
+export interface SeoAuditDoc {
+  _id?: ObjectId;
+  /** UTC date the audit ran, YYYY-MM-DD. Unique. */
+  date: string;
+  pages: { path: string; score: number | null; issues: string[] }[];
+  overallScore: number | null;
+  regressions: string[];
+  createdAt: Date;
+}
+// ===== end growth:seo-tech =====
+
+// ===== growth:magnets =====
+/** A request for an email-gated resource. */
+export interface LeadMagnetRequestDoc extends Timestamped {
+  _id?: ObjectId;
+  resourceSlug: string;
+  email: string;
+  name: string | null;
+  consent: LeadConsent;
+  attribution: Attribution | null;
+  /** The contact_enquiries lead created by `captureLead`. */
+  leadId: string | null;
+  deliveredAt: Date | null;
+}
+// ===== end growth:magnets =====

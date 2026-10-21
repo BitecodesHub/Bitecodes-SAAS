@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { createStructuredCompletion } from "@/lib/server/ai-provider";
+import { completeJson } from "@/lib/server/ai/automation";
 import { services } from "@/data/services";
 import { siteConfig } from "@/lib/site";
 import { slugExists } from "@/lib/server/blog/repository";
@@ -108,57 +108,6 @@ const draftSchema = z.object({
   internalLinkPaths: z.array(z.string()).max(8),
 });
 
-/** JSON Schema mirror for the provider's structured-output constraint. */
-const draftJsonSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "title",
-    "slug",
-    "excerpt",
-    "category",
-    "tags",
-    "metaDescription",
-    "body",
-    "faq",
-    "internalLinkPaths",
-  ],
-  properties: {
-    title: { type: "string" },
-    slug: { type: "string" },
-    excerpt: { type: "string" },
-    category: { type: "string" },
-    tags: { type: "array", items: { type: "string" } },
-    metaDescription: { type: "string" },
-    body: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["type"],
-        properties: {
-          type: { type: "string", enum: ["h2", "h3", "p", "ul", "ol"] },
-          text: { type: "string" },
-          items: { type: "array", items: { type: "string" } },
-        },
-      },
-    },
-    faq: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["question", "answer"],
-        properties: {
-          question: { type: "string" },
-          answer: { type: "string" },
-        },
-      },
-    },
-    internalLinkPaths: { type: "array", items: { type: "string" } },
-  },
-} as const;
-
 export interface GeneratedDraft {
   title: string;
   slug: string;
@@ -186,7 +135,7 @@ STRUCTURE: open with a short problem framing, use h2/h3 sections, keep paragraph
 INTERNAL LINKS: choose 2–5 relevant paths ONLY from this list; do not invent paths:
 ${routes}
 
-OUTPUT: strictly the required JSON schema. The slug must be lowercase, hyphenated, and derived from the title.`;
+OUTPUT: one JSON object matching the required schema. The slug must be lowercase, hyphenated, and derived from the title.`;
 }
 
 function estimateReadingMinutes(body: BlogBlock[]): number {
@@ -203,28 +152,34 @@ function estimateReadingMinutes(body: BlogBlock[]): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+/** Overall budget for one draft across every provider in the chain. */
+const DRAFT_DEADLINE_MS = 120_000;
+
 /**
  * Generates one validated draft for a topic. Guarantees a unique slug and
- * only real internal links. Throws on a missing provider or an
- * unparsable/invalid response — the caller decides whether to retry.
+ * only real internal links.
+ *
+ * Runs on the operator provider chain through the automation client, so a
+ * provider that times out or returns JSON that fails `draftSchema` is skipped
+ * and the next one is tried. Throws `AutomationAiError` when AI is switched
+ * off or unconfigured, or when no provider produced a valid draft; the caller
+ * decides whether to retry.
  */
 export async function generateBlogDraft(
   topic: string,
+  options: { deadlineMs?: number; signal?: AbortSignal } = {},
 ): Promise<GeneratedDraft> {
-  const { json, model } = await createStructuredCompletion({
+  const { data: draft, model } = await completeJson({
+    purpose: "blog",
     system: systemPrompt(),
     user: `Write a complete article on this topic: "${topic}".`,
-    schema: draftJsonSchema,
-    schemaName: "bitecodes_blog_post",
-    maxTokens: 4000,
+    schema: draftSchema,
+    // Reasoning models spend part of this budget thinking before they write.
+    maxTokens: 6000,
     temperature: 0.7,
+    deadlineMs: options.deadlineMs ?? DRAFT_DEADLINE_MS,
+    signal: options.signal,
   });
-
-  const parsed = draftSchema.safeParse(json);
-  if (!parsed.success) {
-    throw new Error("INVALID_DRAFT");
-  }
-  const draft = parsed.data;
 
   // Keep only links to real routes, mapped to their canonical labels.
   const routes = allowedRoutes();

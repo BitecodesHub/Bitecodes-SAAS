@@ -6,7 +6,10 @@ import type { JobDoc } from "@/lib/server/db/types";
 import {
   claimNextJob,
   completeJob,
+  deferJob,
   failJob,
+  JobDeferredError,
+  jobTypesTooHeavyFor,
   newWorkerId,
   type JobType,
 } from "@/lib/server/jobs/queue";
@@ -27,6 +30,13 @@ export interface JobContext {
   attempts: number;
   /** Collected into the job's `result` so a run is inspectable afterwards. */
   log: (message: string) => void;
+  /**
+   * Epoch milliseconds at which this run's time budget ends. A handler that
+   * loops over work (AI calls above all) must stop starting new items once
+   * `Date.now() > deadline - 5000`, and finish what it has, so it returns
+   * before the platform kills the function with the job's lock still held.
+   */
+  deadline: number;
 }
 
 export type JobHandler = (
@@ -50,6 +60,8 @@ export interface RunSummary {
   claimed: number;
   completed: number;
   failed: number;
+  /** Jobs a handler put back with `JobDeferredError`; no attempt spent. */
+  deferred: number;
   /** Jobs whose type has no registered handler — a deployment mismatch. */
   unhandled: number;
   durationMs: number;
@@ -71,10 +83,12 @@ export async function runDueJobs({
   now = Date.now,
 }: RunOptions = {}): Promise<RunSummary> {
   const startedAt = now();
+  const deadline = startedAt + budgetMs;
   const summary: RunSummary = {
     claimed: 0,
     completed: 0,
     failed: 0,
+    deferred: 0,
     unhandled: 0,
     durationMs: 0,
     budgetExhausted: false,
@@ -86,7 +100,10 @@ export async function runDueJobs({
       break;
     }
 
-    const job = await claimNextJob(workerId, new Date(now()));
+    // Leave AI-heavy types for a run with enough budget to finish them.
+    const job = await claimNextJob(workerId, new Date(now()), {
+      excludeTypes: jobTypesTooHeavyFor(deadline - now()),
+    });
     if (!job) break;
     summary.claimed += 1;
 
@@ -109,6 +126,7 @@ export async function runDueJobs({
         jobId,
         attempts: job.attempts,
         log: (message) => lines.push(message),
+        deadline,
       });
       await completeJob(
         jobId,
@@ -117,6 +135,11 @@ export async function runDueJobs({
       );
       summary.completed += 1;
     } catch (error) {
+      if (error instanceof JobDeferredError) {
+        await deferJob(job, error.message, error.retryAfterMs, new Date(now()));
+        summary.deferred += 1;
+        continue;
+      }
       await failJob(job, error, new Date(now()));
       summary.failed += 1;
     }

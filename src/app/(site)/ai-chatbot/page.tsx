@@ -93,13 +93,11 @@ const FEATURES = [
 ];
 
 /**
- * The packs a customer can actually buy, read from the billing source of truth.
+ * Prepaid credit packs for the AI chatbot, denominated in tokens.
  *
- * This page previously advertised four monthly subscription tiers in USD, plus a
- * separate pay-as-you-go strip — none of which existed. There is no subscription
- * machinery, no per-plan chatbot limits, and no webhooks or human hand-off. It
- * promised a billing model and features the product does not have, which is a
- * commercial problem, not a copy problem.
+ * Amounts are approximate (based on measured live traffic: a grounded answer
+ * costs ~500 tokens). The assistant stops rather than overspending when a
+ * balance runs out. All prices are in INR.
  */
 const CHATBOT_PACKS = packsFor("chatbot");
 
@@ -122,7 +120,7 @@ const FAQS = [
   {
     question: "How does token pricing work?",
     answer:
-      "Every answer deducts tokens based on the input and output it uses. Buy token packs as you go or take a monthly plan that includes a token allowance. You always see your remaining balance, and the bot pauses rather than overspending.",
+      "Every answer deducts tokens based on the input and output it uses. Buy token packs as you go. The assistant stops rather than overspending when a balance runs out. You always see your remaining balance, and token costs vary by answer length.",
   },
   {
     question: "Is it secure and can I restrict where it runs?",

@@ -3,10 +3,10 @@ import "server-only";
 import {
   auditReports,
   consultantRequests,
-  contactEnquiries,
   emailMessages,
   prospects,
 } from "@/lib/server/db/collections";
+import { countLeadsInRange, getLeadTrend } from "@/lib/server/leads/repository";
 import { getQueueStats } from "@/lib/server/jobs/queue";
 import { listAuditEntries } from "@/lib/server/audit-log";
 
@@ -85,13 +85,13 @@ export async function getDashboardData(
     queue,
     recentActivity,
   ] = await Promise.all([
+    // One lead total across every inbound door. Counting only contact
+    // enquiries understated the pipeline and made the trend disagree with the
+    // leads page.
     safely("leads", degraded, { current: 0, previous: 0 }, async () => {
-      const collection = await contactEnquiries();
       const [current, previous] = await Promise.all([
-        collection.countDocuments({ createdAt: { $gte: windowStart } }),
-        collection.countDocuments({
-          createdAt: { $gte: previousStart, $lt: windowStart },
-        }),
+        countLeadsInRange(windowStart, now),
+        countLeadsInRange(previousStart, windowStart),
       ]);
       return { current, previous };
     }),
@@ -116,12 +116,19 @@ export async function getDashboardData(
       return { current, previous };
     }),
 
+    // Tool runs without an email cannot be leads, so these two tiles count the
+    // anonymous remainder. Otherwise the same audit appeared once as a tool run
+    // and again inside the lead total, which read as double the demand.
     safely("audits", degraded, { current: 0, previous: 0 }, async () => {
       const collection = await auditReports();
       const [current, previous] = await Promise.all([
-        collection.countDocuments({ createdAt: { $gte: windowStart } }),
+        collection.countDocuments({
+          createdAt: { $gte: windowStart },
+          email: null,
+        }),
         collection.countDocuments({
           createdAt: { $gte: previousStart, $lt: windowStart },
+          email: null,
         }),
       ]);
       return { current, previous };
@@ -130,36 +137,20 @@ export async function getDashboardData(
     safely("consultant", degraded, { current: 0, previous: 0 }, async () => {
       const collection = await consultantRequests();
       const [current, previous] = await Promise.all([
-        collection.countDocuments({ createdAt: { $gte: windowStart } }),
+        collection.countDocuments({
+          createdAt: { $gte: windowStart },
+          email: null,
+        }),
         collection.countDocuments({
           createdAt: { $gte: previousStart, $lt: windowStart },
+          email: null,
         }),
       ]);
       return { current, previous };
     }),
 
     safely("lead trend", degraded, { labels: [], values: [] }, async () => {
-      const collection = await contactEnquiries();
-      const rows = await collection
-        .aggregate<{ _id: string; count: number }>([
-          { $match: { createdAt: { $gte: windowStart } } },
-          {
-            $group: {
-              // Grouped in UTC so the buckets do not shift with the server's
-              // timezone or across a daylight-saving boundary.
-              _id: {
-                $dateToString: {
-                  format: "%Y-%m-%d",
-                  date: "$createdAt",
-                  timezone: "UTC",
-                },
-              },
-              count: { $sum: 1 },
-            },
-          },
-        ])
-        .toArray();
-
+      const rows = await getLeadTrend(windowStart, now);
       return buildDailySeries(rows, windowStart, now);
     }),
 

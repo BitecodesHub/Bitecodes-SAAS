@@ -19,7 +19,7 @@ const socialLinks = [
     href: siteConfig.social.instagram,
     icon: InstagramIcon,
   },
-];
+].filter((link): link is typeof link & { href: string } => link.href !== null);
 
 export function SiteFooter() {
   const year = new Date().getFullYear();

@@ -14,14 +14,25 @@ export default function PrivacyPage() {
     <LegalPage
       title="Privacy Policy"
       slug="privacy"
-      updated="October 8, 2026"
+      updated="October 20, 2026"
       intro={`${siteConfig.name} ("we", "us") respects your privacy. This policy explains what information we collect when you use our website and how we handle it.`}
       sections={[
         {
           heading: "Information we collect",
           body: [
             "When you contact us through our website, we collect the information you choose to provide — such as your name, email address, company, and message.",
-            "We also collect limited, anonymous technical information (such as aggregated page views) to understand how the site is used and to improve it.",
+            "We also collect limited technical information about how the site is used, such as page views, clicks, form interactions, and page performance. This information is designed to be anonymous; the next section explains exactly what is and is not stored.",
+          ],
+        },
+        {
+          heading: "Website analytics",
+          body: [
+            "Our website uses its own first-party analytics. It does not use cookies, pixels, fingerprinting, or any third-party analytics service, and no analytics data is shared with or sold to anyone.",
+            "For each visit we record the page path, the host of the referring site, campaign parameters from links you followed (utm_source, utm_medium, utm_campaign, utm_term, and utm_content), the type of interaction (a page view, a click on a tracked button, a form start or submit, or a page performance measurement), and a visitor identifier.",
+            "First-touch campaign details (the five values above, the referring host, the landing path, and when they were first seen) are kept in your browser's local storage so a later visit can be attributed to the same source. That record contains no unique identifier and is read only by our own site.",
+            "The visitor identifier is a one-way hash derived from your IP address and browser user agent together with a daily salt derived from a server secret. It cannot be reversed to identify you, and identifiers from different days cannot be linked together.",
+            "We do not store your raw IP address, browser user agent, full referring URL, URL query strings, or the contents of any form. Only the five campaign values described above are kept from a link. We honour the Do Not Track and Global Privacy Control browser signals: when either is enabled, the analytics beacon sends nothing and the server discards the request.",
+            "Raw analytics events are deleted automatically after 180 days. Daily totals that contain no visitor identifier may be kept for longer-term reporting.",
           ],
         },
         {

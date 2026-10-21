@@ -18,6 +18,16 @@ export interface Service {
     | "Product & Design"
     | "AI & Automation"
     | "Cloud & Operations";
+  /** Questions answered on the service page (rendered in HTML and FAQPage). */
+  faqs?: Faq[];
+  /** What the client receives at the end of the engagement. */
+  deliverables?: string[];
+  /** Typical duration in plain words, e.g. "4 to 8 weeks". */
+  timeline?: string;
+  /** Who the service suits, one short phrase each. */
+  idealFor?: string[];
+  /** What changes for the client, stated without invented metrics. */
+  outcomes?: string[];
 }
 
 /** A technology / tool the studio works with. */
@@ -35,6 +45,15 @@ export interface Industry {
   icon: LucideIcon;
   description: string;
   highlights: string[];
+  /** Problems businesses in this industry commonly have. */
+  problems?: string[];
+  /** How the studio approaches them, step by step. */
+  approach?: string[];
+  faqs?: Faq[];
+  /** Service slugs from src/data/services.ts. */
+  relatedServices?: string[];
+  /** Project slugs from src/data/projects.ts; empty when none exist yet. */
+  caseStudies?: string[];
 }
 
 /** A step in the delivery process. */
@@ -95,6 +114,34 @@ export interface Project {
   /** Screenshot under /public, e.g. "/images/projects/prism.png". */
   image?: string;
   liveUrl?: string;
+  /** Industry slug from src/data/industries.ts. */
+  industry?: string;
+  /** Service slugs from src/data/services.ts. */
+  services?: string[];
+  /** The kind of engagement, e.g. "Fixed-scope build" or "Ongoing retainer". */
+  engagement?: string;
+  /** Qualitative outcomes. Never invented metrics. */
+  outcomes?: string[];
+  /**
+   * Who the work was for: a paying client, the studio's own product, or a
+   * business related to the founder. Disclosed so proof is never overstated.
+   */
+  relationship?: "client" | "internal" | "related-party";
+}
+
+/**
+ * A published, process-based commitment (shown on /guarantees). Each one is
+ * confirmed by the owner before it ships; never an unfunded SLA.
+ */
+export interface Guarantee {
+  slug: string;
+  title: string;
+  /** The commitment in one sentence. */
+  commitment: string;
+  /** How it works and its limits, one point each. */
+  details: string[];
+  /** Service slugs it covers, or ["all"]. */
+  appliesTo: string[];
 }
 
 /**

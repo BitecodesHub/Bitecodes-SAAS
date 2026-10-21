@@ -48,6 +48,15 @@ export const consultantInputSchema = z
       "not-sure",
     ]),
     timeline: z.enum(["under-8-weeks", "2-4-months", "4-8-months", "flexible"]),
+    /**
+     * Optional contact details. They are deliberately part of the strict
+     * schema so the form and the route agree on the shape, and deliberately
+     * stripped before the brief is sent to the AI provider.
+     */
+    email: z
+      .union([z.literal(""), z.string().trim().toLowerCase().email().max(254)])
+      .optional(),
+    consent: z.boolean().optional(),
   })
   .strict();
 

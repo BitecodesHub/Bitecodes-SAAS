@@ -12,6 +12,7 @@ import {
   getSettingsFresh,
   hasPlaceholderContactDetails,
 } from "@/lib/server/settings";
+import { GROWTH_TOGGLE_KEYS, getGrowthToggle } from "@/lib/growth/toggles";
 
 /**
  * Live system health.
@@ -35,17 +36,97 @@ export interface HealthCheck {
 
 const PROBE_TIMEOUT_MS = 6_000;
 
+/** The worst status present, for a single summary indicator. */
+export function overallHealth(checks: HealthCheck[]): HealthStatus {
+  if (checks.some((check) => check.status === "fail")) return "fail";
+  if (checks.some((check) => check.status === "warn")) return "warn";
+  if (checks.some((check) => check.status === "not-configured")) {
+    return "not-configured";
+  }
+  return "ok";
+}
+
+/** Growth engine checks: switches, job health, and toggle states. */
+async function checkGrowthEngine(): Promise<HealthCheck[]> {
+  const checks: HealthCheck[] = [];
+  const settings = await getSettingsFresh();
+
+  // Check each growth toggle
+  for (const key of GROWTH_TOGGLE_KEYS) {
+    const toggle = getGrowthToggle(key as (typeof GROWTH_TOGGLE_KEYS)[number]);
+    const isOn = settings.growth[key];
+    if (toggle.sendsExternalEmail && !isOn) {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "warn",
+        detail: "Switched off — no external emails will be sent.",
+        remedy:
+          "Enable the toggle if you want this automation to send emails, or leave off if manual control is preferred.",
+      });
+    } else if (!toggle.sendsExternalEmail && !isOn) {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "ok",
+        detail: "Switched off — no external emails will be sent.",
+      });
+    } else {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "ok",
+        detail: "Switched on.",
+      });
+    }
+  }
+
+  // Check weekly report specifically
+  if (settings.growth.weeklyReport) {
+    checks.push({
+      name: "Growth: weekly report",
+      status: "ok",
+      detail: "Weekly report is enabled.",
+    });
+  } else {
+    checks.push({
+      name: "Growth: weekly report",
+      status: "warn",
+      detail: "Weekly report is disabled.",
+      remedy:
+        "Enable under Settings > Growth to receive a written summary every Monday.",
+    });
+  }
+
+  // Check job runner
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret.length < 16) {
+    checks.push({
+      name: "Growth: job runner",
+      status: "fail",
+      detail: "CRON_SECRET is missing or too short.",
+      remedy:
+        "Generate one with: openssl rand -hex 16. The job runner refuses to run without it.",
+    });
+  } else {
+    checks.push({
+      name: "Growth: job runner",
+      status: "ok",
+      detail: "CRON_SECRET is set.",
+    });
+  }
+
+  return checks;
+}
+
 export async function runHealthChecks(): Promise<HealthCheck[]> {
-  const [database, smtp, aiProvider, overpass, configuration] =
+  const [database, smtp, aiProvider, overpass, growthEngine] =
     await Promise.all([
       checkDatabase(),
       checkSmtp(),
       checkAiProvider(),
       checkOverpass(),
-      checkConfiguration(),
+      checkGrowthEngine(),
     ]);
 
-  return [database, smtp, aiProvider, overpass, ...configuration];
+  return [database, smtp, aiProvider, overpass, ...growthEngine];
 }
 
 async function checkDatabase(): Promise<HealthCheck> {
@@ -250,94 +331,4 @@ async function checkOverpass(): Promise<HealthCheck> {
       remedy: "Map discovery will not run until this is reachable.",
     };
   }
-}
-
-/**
- * Configuration checks: things that are wrong on paper rather than at runtime,
- * and would otherwise only surface when a feature silently refuses to work.
- */
-async function checkConfiguration(): Promise<HealthCheck[]> {
-  const checks: HealthCheck[] = [];
-
-  checks.push(
-    hasSigningSecret()
-      ? { name: "Signing secret", status: "ok", detail: "AUTH_SECRET is set." }
-      : {
-          name: "Signing secret",
-          status: "fail",
-          detail: "AUTH_SECRET is missing or shorter than 32 characters.",
-          remedy:
-            "Unsubscribe links, report links, and portal links cannot be issued. Generate one with: openssl rand -base64 32",
-        },
-  );
-
-  checks.push(
-    getCronSecret()
-      ? { name: "Job runner", status: "ok", detail: "CRON_SECRET is set." }
-      : {
-          name: "Job runner",
-          status: "fail",
-          detail: "CRON_SECRET is missing.",
-          remedy:
-            "The job runner refuses to run without it, so no automation will execute. Generate one with: openssl rand -hex 16",
-        },
-  );
-
-  try {
-    const settings = await getSettingsFresh();
-
-    checks.push(
-      settings.contact.address.postal
-        ? {
-            name: "Postal address",
-            status: "ok",
-            detail: "Set, so outreach can include the required footer.",
-          }
-        : {
-            name: "Postal address",
-            status: "warn",
-            detail: "No postal address configured.",
-            remedy:
-              "Commercial email legally requires one, and the send pipeline blocks outreach without it. Add it under Settings.",
-          },
-    );
-
-    if (hasPlaceholderContactDetails(settings)) {
-      checks.push({
-        name: "Contact details",
-        status: "warn",
-        detail: "Placeholder contact details are still in use.",
-        remedy:
-          "These are published in Organization structured data, llms.txt, and every outbound email. Replace them under Settings.",
-      });
-    }
-
-    if (!settings.automation.requireApproval) {
-      checks.push({
-        name: "Outreach approval",
-        status: "warn",
-        detail: "Outreach sends without human approval.",
-        remedy:
-          "Fully automated cold email is deliberately off by default. Confirm this is intended.",
-      });
-    }
-  } catch {
-    checks.push({
-      name: "Settings",
-      status: "fail",
-      detail: "Could not read settings from the database.",
-    });
-  }
-
-  return checks;
-}
-
-/** The worst status present, for a single summary indicator. */
-export function overallHealth(checks: HealthCheck[]): HealthStatus {
-  if (checks.some((check) => check.status === "fail")) return "fail";
-  if (checks.some((check) => check.status === "warn")) return "warn";
-  if (checks.some((check) => check.status === "not-configured")) {
-    return "not-configured";
-  }
-  return "ok";
 }

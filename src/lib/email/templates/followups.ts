@@ -32,6 +32,8 @@ export interface FollowupTemplateSeed {
   blocks: EmailBlock[];
   /** Position in the sequence, for documentation and ordering. */
   step: number;
+  /** Commercial class. Inbound sequences are nurture, not cold outreach. */
+  category?: "outreach" | "nurture";
 }
 
 export const FOLLOWUP_TEMPLATE_SEEDS: FollowupTemplateSeed[] = [
@@ -81,7 +83,93 @@ export const FOLLOWUP_TEMPLATE_SEEDS: FollowupTemplateSeed[] = [
   },
 ];
 
-/** The single default sequence: first contact, a nudge, then one final note. */
+/**
+ * The inbound sequence.
+ *
+ * This is the "profit from the contact form" path: someone has already raised
+ * their hand, so the cadence is slower, the copy is about the next useful step
+ * rather than persuasion, and every message has a real exit. It is opt-in only.
+ *
+ * Delays are measured from enrolment and then from the previous step: day 2,
+ * day 6, day 14. After that it stops for good.
+ */
+export const INBOUND_TEMPLATE_SEEDS: FollowupTemplateSeed[] = [
+  {
+    key: "inbound.welcome",
+    name: "Inbound follow-up one — what happens next",
+    description:
+      "Sent two days after an opted-in enquiry. Explains the next step and offers a call without pretending the project is already scoped.",
+    step: 1,
+    category: "nurture",
+    subject: "{{firstName}}, a useful next step",
+    blocks: [
+      {
+        type: "p",
+        text: "Thanks for getting in touch about {{serviceName}}. I have your message and the details you shared.",
+      },
+      {
+        type: "p",
+        text: "The next useful step is a short call to understand the goal, the constraints, and the timing. There is no pitch deck and no obligation.",
+      },
+      { type: "cta", label: "Choose a time", url: "{{bookingUrl}}" },
+      {
+        type: "p",
+        text: "If a call is not useful yet, simply reply with the one question that would help most. {{unsubscribeUrl}} if you would rather not receive these notes.",
+      },
+      { type: "signature", text: "{{senderName}}, {{companyName}}" },
+    ],
+  },
+  {
+    key: "inbound.value",
+    name: "Inbound follow-up two — one practical note",
+    description:
+      "Sent around day six. Gives one genuinely useful piece of advice, then repeats the invitation to book.",
+    step: 2,
+    category: "nurture",
+    subject: "One thing worth deciding early",
+    blocks: [
+      {
+        type: "p",
+        text: "Hello {{firstName}} — one practical note while your enquiry is with us.",
+      },
+      {
+        type: "p",
+        text: "Most projects of this kind get easier when the primary action is agreed before the design: the one thing a visitor should be able to do. Booking a call, sending an enquiry, or buying — one clear action is usually better than three competing ones.",
+      },
+      {
+        type: "p",
+        text: "If that is useful, we can talk it through: {{bookingUrl}}. {{unsubscribeUrl}} to stop these notes.",
+      },
+      { type: "signature", text: "{{senderName}}, {{companyName}}" },
+    ],
+  },
+  {
+    key: "inbound.final",
+    name: "Inbound follow-up three — the last note",
+    description:
+      "Sent around day fourteen. States plainly that this is the last message.",
+    step: 3,
+    category: "nurture",
+    subject: "The last note from me",
+    blocks: [
+      {
+        type: "p",
+        text: "This is the last email I will send about your enquiry. No follow-up after this one.",
+      },
+      {
+        type: "p",
+        text: "If the timing changes, the door is open — reply whenever it suits, even months from now. {{bookingUrl}} if you would like to pick a time.",
+      },
+      {
+        type: "p",
+        text: "Either way, thank you for considering us. {{unsubscribeUrl}} if you would rather be removed entirely.",
+      },
+      { type: "signature", text: "{{senderName}}, {{companyName}}" },
+    ],
+  },
+];
+
+/** The default cold-outreach sequence: first contact, a nudge, then one final note. */
 export interface SequenceSeed {
   key: string;
   name: string;
@@ -89,6 +177,8 @@ export interface SequenceSeed {
   /** Step one is the tag-matched first-contact template, resolved at send time. */
   steps: Array<{ templateKey: string | null; delayHours: number }>;
   stopOnClick: boolean;
+  /** Who this sequence is for. Defaults to a prospect. */
+  audience?: "prospect" | "lead";
 }
 
 /**
@@ -111,9 +201,32 @@ export const SEQUENCE_SEEDS: SequenceSeed[] = [
       { templateKey: "followup.final", delayHours: 168 },
     ],
     stopOnClick: true,
+    audience: "prospect",
+  },
+  {
+    key: "inbound.followup",
+    name: "Inbound enquiry follow-up",
+    description:
+      "Three opt-in notes after a contact-form enquiry: the next step, one useful thought, then a final note. Stops on a click, a reply, a booking, or a stage change.",
+    steps: [
+      { templateKey: "inbound.welcome", delayHours: 48 },
+      { templateKey: "inbound.value", delayHours: 96 },
+      { templateKey: "inbound.final", delayHours: 192 },
+    ],
+    stopOnClick: true,
+    audience: "lead",
   },
 ];
 
 export const FOLLOWUP_TEMPLATE_KEYS = FOLLOWUP_TEMPLATE_SEEDS.map(
   (seed) => seed.key,
 );
+
+export const INBOUND_TEMPLATE_KEYS = INBOUND_TEMPLATE_SEEDS.map(
+  (seed) => seed.key,
+);
+
+export const ALL_FOLLOWUP_TEMPLATE_SEEDS: FollowupTemplateSeed[] = [
+  ...FOLLOWUP_TEMPLATE_SEEDS,
+  ...INBOUND_TEMPLATE_SEEDS,
+];

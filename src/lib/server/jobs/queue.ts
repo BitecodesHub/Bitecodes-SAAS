@@ -40,9 +40,92 @@ export const JOB_TYPES = {
   dailyDigest: "digest.daily",
   /** Poll IMAP for replies, when IMAP is configured. */
   replyPoll: "reply.poll",
+
+  // Growth engine. Cadences live in `schedule.ts`; handlers in `handlers.ts`.
+  /** Aggregate yesterday's first-party analytics into daily rows. */
+  analyticsRollup: "analytics.rollup",
+  /** Summarise yesterday's website chats; extract leads and open questions. */
+  chatSummaries: "chat.summaries",
+  /** Score every customer for churn risk; optional win-back email. */
+  churnScan: "churn.scan",
+  /** Score and qualify new or changed leads against the ICP. */
+  leadScore: "lead.score",
+  /** Write an AI research brief for newly enriched prospects. */
+  prospectResearch: "prospect.research",
+  /** Draft personalised outreach for qualified prospects (approval queue). */
+  outreachDraft: "outreach.draft",
+  /** Customer onboarding, renewal, and cross-sell touches. */
+  lifecycleTick: "lifecycle.tick",
+  /** Remind the owner about stalled proposals; expire stale ones. */
+  proposalFollowups: "proposal.followups",
+  /** Email reminders before booked calls. */
+  bookingReminders: "booking.reminders",
+  /** The owner's weekly growth report. */
+  reportWeekly: "report.weekly",
+  /** Draft social posts from recent articles. */
+  socialDrafts: "social.drafts",
+  /** Send satisfaction surveys to eligible customers. */
+  feedbackRequests: "feedback.requests",
+  /** Draft the weekly newsletter for approval. */
+  newsletterDraft: "newsletter.draft",
+  /** Audit this website's key pages and report regressions. */
+  seoSelfAudit: "seo.selfaudit",
+  /** Monthly usage reports for customers. */
+  reportMonthly: "report.monthly",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
+
+/**
+ * The least run budget a job type needs before a worker may claim it.
+ *
+ * Short opportunistic runs (`kickJobs` after a form submission, the cron
+ * route's follow-up pass) have 10 to 30 seconds. An AI-heavy job claimed by
+ * such a run would either fail with "not enough time" (spending one of its
+ * attempts) or finish with almost nothing done and spend its daily
+ * idempotency key. Types listed here are simply left in the queue for a run
+ * with enough budget, which the five-minute cron always provides. Types not
+ * listed can be claimed by any run.
+ */
+export const JOB_MIN_BUDGET_MS: Partial<Record<JobType, number>> = {
+  // A long article: up to three minutes of drafting plus saving and pinging.
+  [JOB_TYPES.blogGenerate]: 90_000,
+  // AI calls take 20 to 60 seconds each.
+  [JOB_TYPES.chatSummaries]: 60_000,
+  [JOB_TYPES.leadScore]: 60_000,
+  [JOB_TYPES.prospectResearch]: 60_000,
+  [JOB_TYPES.outreachDraft]: 60_000,
+  [JOB_TYPES.reportWeekly]: 60_000,
+  [JOB_TYPES.socialDrafts]: 60_000,
+  [JOB_TYPES.newsletterDraft]: 60_000,
+  [JOB_TYPES.reportMonthly]: 60_000,
+  // Audits several live pages at up to eight seconds per request.
+  [JOB_TYPES.seoSelfAudit]: 60_000,
+};
+
+/** Job types a run with `remainingMs` left must not claim. Pure. */
+export function jobTypesTooHeavyFor(remainingMs: number): JobType[] {
+  return (Object.entries(JOB_MIN_BUDGET_MS) as [JobType, number][])
+    .filter(([, minimum]) => remainingMs < minimum)
+    .map(([type]) => type);
+}
+
+/**
+ * Thrown by a handler that cannot do its work in this run (too little time
+ * left, a dependency not ready yet) but has not failed. The worker puts the
+ * job back in the queue without counting the attempt, so deferring never
+ * dead-letters a job.
+ */
+export class JobDeferredError extends Error {
+  constructor(
+    message: string,
+    /** How long to wait before the job may be claimed again. */
+    readonly retryAfterMs = 5 * 60 * 1000,
+  ) {
+    super(message);
+    this.name = "JobDeferredError";
+  }
+}
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 /** Statuses a job never leaves on its own. */
@@ -192,11 +275,13 @@ function isDuplicateKeyError(error: unknown): boolean {
  * Atomically claims the next due job, or returns null when none is due.
  *
  * The filter also matches `running` jobs whose lock has expired, which is how
- * a job orphaned by a crashed worker gets retried.
+ * a job orphaned by a crashed worker gets retried. `excludeTypes` leaves the
+ * named types in the queue (see `jobTypesTooHeavyFor`).
  */
 export async function claimNextJob(
   workerId: string,
   now = new Date(),
+  { excludeTypes = [] }: { excludeTypes?: readonly string[] } = {},
 ): Promise<JobDoc | null> {
   const collection = await jobs();
 
@@ -206,6 +291,7 @@ export async function claimNextJob(
         { status: "queued", runAt: { $lte: now } },
         { status: "running", lockedUntil: { $lte: now } },
       ],
+      ...(excludeTypes.length > 0 ? { type: { $nin: [...excludeTypes] } } : {}),
     },
     {
       $set: {
@@ -298,6 +384,36 @@ export async function failJob(
     },
   );
   return { requeued: true, runAt };
+}
+
+/**
+ * Puts a claimed job back in the queue without spending an attempt: the
+ * claim's increment is undone. Used for `JobDeferredError`, which means "not
+ * now", not "failed".
+ */
+export async function deferJob(
+  job: JobDoc,
+  reason: string,
+  retryAfterMs: number,
+  now = new Date(),
+): Promise<Date> {
+  const collection = await jobs();
+  const runAt = new Date(now.getTime() + Math.max(0, retryAfterMs));
+  await collection.updateOne(
+    { _id: job._id },
+    {
+      $set: {
+        status: "queued",
+        runAt,
+        lockedUntil: null,
+        lockedBy: null,
+        result: { deferred: reason.slice(0, 300) },
+        updatedAt: now,
+      },
+      $inc: { attempts: -1 },
+    },
+  );
+  return runAt;
 }
 
 // ---------------------------------------------------------------------------

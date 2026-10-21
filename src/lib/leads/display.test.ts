@@ -31,12 +31,18 @@ function lead(overrides: Partial<LeadSummary> = {}): LeadSummary {
     company: "Analytical Engines",
     summary: "We need a booking system.",
     status: "new",
+    stage: "new",
     budget: "$5k-10k",
     source: "contact-form",
     noteCount: 0,
     assignedToId: null,
     createdAt: new Date("2026-07-26T10:30:00.000Z"),
     score: null,
+    grade: null,
+    auditScore: null,
+    nextAction: null,
+    nextActionAt: null,
+    readOnly: false,
     ...overrides,
   };
 }
@@ -114,7 +120,7 @@ describe("toCsv", () => {
     const lines = csv.replace(/^﻿/, "").trimEnd().split("\r\n");
     expect(lines).toHaveLength(3);
     expect(lines[0]).toBe(
-      "reference,kind,status,name,email,company,budget,source,score,createdAt,summary",
+      "reference,kind,stage,status,name,email,company,budget,source,score,grade,nextAction,createdAt,summary",
     );
     expect(lines[1]).toContain("BC-ABC123");
     expect(lines[2]).toContain("BC-DEF456");

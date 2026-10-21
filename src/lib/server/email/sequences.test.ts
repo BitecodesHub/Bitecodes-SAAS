@@ -74,6 +74,7 @@ describeWithDatabase("sequence engine", () => {
 
   beforeEach(async () => {
     const {
+      contactEnquiries,
       prospects,
       emailMessages,
       emailTemplates,
@@ -83,6 +84,7 @@ describeWithDatabase("sequence engine", () => {
       siteSettings,
     } = await import("@/lib/server/db/collections");
     for (const collection of [
+      await contactEnquiries(),
       await prospects(),
       await emailMessages(),
       await emailTemplates(),
@@ -101,8 +103,8 @@ describeWithDatabase("sequence engine", () => {
       await import("@/lib/server/email/sequences");
 
     const result = await ensureSeededSequences();
-    expect(result.templates).toBe(2);
-    expect(result.sequences).toBe(1);
+    expect(result.templates).toBe(5);
+    expect(result.sequences).toBe(2);
 
     const sequence = await getSequence("outreach.default");
     expect(sequence?.steps).toHaveLength(3);
@@ -111,6 +113,188 @@ describeWithDatabase("sequence engine", () => {
     expect(sequence?.steps[1]!.templateKey).toBe("followup.nudge");
     expect(sequence?.steps[2]!.templateKey).toBe("followup.final");
     expect(sequence?.stopOnClick).toBe(true);
+
+    const inbound = await getSequence("inbound.followup");
+    expect(inbound?.steps).toHaveLength(3);
+    expect(inbound?.audience).toBe("lead");
+  });
+
+  it("enrols a consented lead and stops when a human advances the stage", async () => {
+    const { contactEnquiries, sequenceEnrollments, emailMessages } =
+      await import("@/lib/server/db/collections");
+    const { enrollLead, advanceEnrollment } =
+      await import("@/lib/server/email/sequences");
+    const { setLeadStage } = await import("@/lib/server/leads/repository");
+
+    const inserted = await (
+      await contactEnquiries()
+    ).insertOne({
+      requestId: "req_lead_1",
+      reference: "BC-LEAD001",
+      name: "Dr Asha Mehta",
+      email: "asha@clinic.example.in",
+      company: "Mehta Clinic",
+      budget: "₹5 lakh – ₹15 lakh",
+      message: "We need online booking for our clinic.",
+      role: null,
+      source: "website-contact",
+      status: "new",
+      stage: "new",
+      emailStatus: "sent",
+      consent: {
+        contact: true,
+        marketing: true,
+        text: "Send me occasional emails.",
+        at: new Date(),
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+    const leadId = inserted.insertedId.toHexString();
+
+    const result = await enrollLead({
+      leadKind: "enquiry",
+      leadId,
+      email: "asha@clinic.example.in",
+      name: "Dr Asha Mehta",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const enrollment = await (
+      await sequenceEnrollments()
+    ).findOne({
+      enrollmentId: result.enrollmentId,
+    });
+    expect(enrollment?.leadId).toBe(leadId);
+    expect(enrollment?.leadKind).toBe("enquiry");
+    expect(enrollment?.consentAt).toBeInstanceOf(Date);
+
+    const messages = await (await emailMessages()).find({}).toArray();
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({
+      category: "nurture",
+      leadId,
+      enrollmentId: result.enrollmentId,
+      sequenceStep: 1,
+    });
+
+    // A human moving the lead to proposal must stop the automation.
+    await setLeadStage("enquiry", [leadId], "proposal");
+    await (
+      await sequenceEnrollments()
+    ).updateOne(
+      { enrollmentId: result.enrollmentId },
+      { $set: { nextRunAt: new Date(Date.now() - 1000) } },
+    );
+
+    const next = await advanceEnrollment(result.enrollmentId);
+    expect(next.sent).toBe(false);
+    expect(next.stoppedReason).toBe("lead-advanced");
+
+    const after = await (
+      await sequenceEnrollments()
+    ).findOne({
+      enrollmentId: result.enrollmentId,
+    });
+    expect(after?.status).toBe("stopped");
+  });
+
+  it("refuses a lead who did not give marketing consent", async () => {
+    const { contactEnquiries } = await import("@/lib/server/db/collections");
+    const { enrollLead } = await import("@/lib/server/email/sequences");
+
+    const inserted = await (
+      await contactEnquiries()
+    ).insertOne({
+      requestId: "req_lead_2",
+      reference: "BC-LEAD002",
+      name: "No Consent",
+      email: "no-consent@example.in",
+      company: null,
+      budget: null,
+      message: "Please call me about a website.",
+      role: null,
+      source: "website-contact",
+      status: "new",
+      stage: "new",
+      emailStatus: "sent",
+      consent: {
+        contact: true,
+        marketing: false,
+        text: "Contact me about this enquiry.",
+        at: new Date(),
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+
+    const result = await enrollLead({
+      leadKind: "enquiry",
+      leadId: inserted.insertedId.toHexString(),
+      email: "no-consent@example.in",
+    });
+
+    expect(result).toMatchObject({ ok: false, reason: "no-consent" });
+  });
+
+  it("stops when a lead's consent is cleared after enrolment", async () => {
+    const { contactEnquiries, emailMessages, sequenceEnrollments } =
+      await import("@/lib/server/db/collections");
+    const { enrollLead, advanceEnrollment } =
+      await import("@/lib/server/email/sequences");
+
+    const inserted = await (
+      await contactEnquiries()
+    ).insertOne({
+      requestId: "req_lead_3",
+      reference: "BC-LEAD003",
+      name: "Consent Cleared",
+      email: "cleared@example.in",
+      company: null,
+      budget: null,
+      message: "Please send me some practical notes.",
+      role: null,
+      source: "website-contact",
+      status: "new",
+      stage: "new",
+      emailStatus: "sent",
+      consent: {
+        contact: true,
+        marketing: true,
+        text: "Send me occasional emails.",
+        at: new Date(),
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+    const leadId = inserted.insertedId.toHexString();
+
+    const result = await enrollLead({
+      leadKind: "enquiry",
+      leadId,
+      email: "cleared@example.in",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // Clearing consent is a withdrawal, even though the old value is gone
+    // rather than changed to `false`.
+    await (
+      await contactEnquiries()
+    ).updateOne({ _id: inserted.insertedId }, { $unset: { consent: "" } });
+    await (
+      await sequenceEnrollments()
+    ).updateOne(
+      { enrollmentId: result.enrollmentId },
+      { $set: { nextRunAt: new Date(Date.now() - 1_000) } },
+    );
+
+    const next = await advanceEnrollment(result.enrollmentId);
+    expect(next.sent).toBe(false);
+    expect(next.stoppedReason).toBe("consent-withdrawn");
+    expect(await (await emailMessages()).countDocuments({})).toBe(1);
   });
 
   it("is idempotent when seeded twice", async () => {

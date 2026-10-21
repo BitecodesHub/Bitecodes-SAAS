@@ -53,6 +53,58 @@ import type {
   SuppressionDoc,
 } from "@/lib/server/db/types";
 
+/*
+  Growth engine type imports, one block per owning package so parallel edits
+  merge cleanly. Edit only your own block.
+*/
+// ===== growth:foundation =====
+import type { AiAutomationRunDoc } from "@/lib/server/db/types";
+// ===== end growth:foundation =====
+
+// ===== growth:analytics =====
+import type { AnalyticsDailyDoc } from "@/lib/server/db/types";
+// ===== end growth:analytics =====
+
+// ===== growth:leads-crm =====
+import type { LeadActivityDoc } from "@/lib/server/db/types";
+// ===== end growth:leads-crm =====
+
+// ===== growth:sales =====
+import type { ProposalDoc } from "@/lib/server/db/types";
+// ===== end growth:sales =====
+
+// ===== growth:assistant-calls =====
+import type { CallDoc } from "@/lib/server/db/types";
+// ===== end growth:assistant-calls =====
+
+// ===== growth:content-engine =====
+import type { NewsletterIssueDoc, SocialDraftDoc } from "@/lib/server/db/types";
+// ===== end growth:content-engine =====
+
+// ===== growth:lifecycle =====
+import type {
+  CustomerReportDoc,
+  LifecycleEventDoc,
+} from "@/lib/server/db/types";
+// ===== end growth:lifecycle =====
+
+// ===== growth:loyalty =====
+import type {
+  ChurnRiskDoc,
+  FeedbackDoc,
+  ReferralDoc,
+  TestimonialDoc,
+} from "@/lib/server/db/types";
+// ===== end growth:loyalty =====
+
+// ===== growth:seo-tech =====
+import type { SeoAuditDoc } from "@/lib/server/db/types";
+// ===== end growth:seo-tech =====
+
+// ===== growth:magnets =====
+import type { LeadMagnetRequestDoc } from "@/lib/server/db/types";
+// ===== end growth:magnets =====
+
 /**
  * Typed collection accessors.
  *
@@ -170,6 +222,64 @@ export const desktopUsageDaily = () =>
   collection<DesktopUsageDailyDoc>(COLLECTIONS.desktopUsageDaily);
 export const desktopAlerts = () =>
   collection<DesktopAlertDoc>(COLLECTIONS.desktopAlerts);
+
+/*
+  Growth engine accessors. One section per owning package; edit only your own.
+*/
+
+// ===== growth:foundation =====
+export const aiAutomationRuns = () =>
+  collection<AiAutomationRunDoc>(COLLECTIONS.aiAutomationRuns);
+// ===== end growth:foundation =====
+
+// ===== growth:analytics =====
+export const analyticsDaily = () =>
+  collection<AnalyticsDailyDoc>(COLLECTIONS.analyticsDaily);
+// ===== end growth:analytics =====
+
+// ===== growth:leads-crm =====
+export const leadActivities = () =>
+  collection<LeadActivityDoc>(COLLECTIONS.leadActivities);
+// ===== end growth:leads-crm =====
+
+// ===== growth:sales =====
+export const proposals = () => collection<ProposalDoc>(COLLECTIONS.proposals);
+// ===== end growth:sales =====
+
+// ===== growth:assistant-calls =====
+export const calls = () => collection<CallDoc>(COLLECTIONS.calls);
+// ===== end growth:assistant-calls =====
+
+// ===== growth:content-engine =====
+export const socialDrafts = () =>
+  collection<SocialDraftDoc>(COLLECTIONS.socialDrafts);
+export const newsletterIssues = () =>
+  collection<NewsletterIssueDoc>(COLLECTIONS.newsletterIssues);
+// ===== end growth:content-engine =====
+
+// ===== growth:lifecycle =====
+export const customerReports = () =>
+  collection<CustomerReportDoc>(COLLECTIONS.customerReports);
+export const lifecycleEvents = () =>
+  collection<LifecycleEventDoc>(COLLECTIONS.lifecycleEvents);
+// ===== end growth:lifecycle =====
+
+// ===== growth:loyalty =====
+export const feedback = () => collection<FeedbackDoc>(COLLECTIONS.feedback);
+export const testimonials = () =>
+  collection<TestimonialDoc>(COLLECTIONS.testimonials);
+export const referrals = () => collection<ReferralDoc>(COLLECTIONS.referrals);
+export const churnRisk = () => collection<ChurnRiskDoc>(COLLECTIONS.churnRisk);
+// ===== end growth:loyalty =====
+
+// ===== growth:seo-tech =====
+export const seoAudits = () => collection<SeoAuditDoc>(COLLECTIONS.seoAudits);
+// ===== end growth:seo-tech =====
+
+// ===== growth:magnets =====
+export const leadMagnetRequests = () =>
+  collection<LeadMagnetRequestDoc>(COLLECTIONS.leadMagnetRequests);
+// ===== end growth:magnets =====
 
 /**
  * Round-trips a `ping` to the database. Used by the admin health panel, which

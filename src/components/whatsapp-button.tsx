@@ -2,11 +2,11 @@ import { MessageCircle } from "lucide-react";
 import { siteConfig } from "@/lib/site";
 
 /**
- * Floating WhatsApp contact button, pinned bottom-right (the conventional
- * spot now that the back-to-top control is retired).
+ * Floating WhatsApp contact button, pinned bottom-right.
  *
- * A plain link rather than a chat widget: it opens the visitor's own WhatsApp
- * with our number, which works on every device and loads no third-party code.
+ * On mobile the sticky CTA bar sits at the bottom of the screen. This button
+ * reads --sticky-cta-height (written by StickyCTABar) and adds it to its own
+ * bottom offset so it is never obscured.
  */
 export function WhatsAppButton() {
   return (
@@ -15,7 +15,8 @@ export function WhatsAppButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Chat with ${siteConfig.name} on WhatsApp`}
-      className="focus-visible:ring-ring fixed right-6 bottom-6 z-40 flex size-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[var(--shadow-soft)] transition-transform duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:outline-none"
+      className="focus-visible:ring-ring fixed right-6 z-40 flex size-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[var(--shadow-soft)] transition-[bottom,transform] duration-300 hover:scale-105 focus-visible:ring-2 focus-visible:outline-none"
+      style={{ bottom: "calc(1.5rem + var(--sticky-cta-height, 0px))" }}
     >
       <MessageCircle className="size-5" />
     </a>

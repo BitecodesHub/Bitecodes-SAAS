@@ -34,13 +34,14 @@ export function SiteHeader() {
           */}
           <Link
             href="/login"
+            data-track="header_signin"
             className="text-muted-foreground hover:text-foreground hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:inline-flex"
           >
             Sign in
           </Link>
           <Button asChild size="sm" className="hidden sm:inline-flex">
-            <Link href="/signup">
-              Get started free
+            <Link href="/book-a-call" data-track="header_call_cta">
+              Book a free call
               <ArrowRight className="size-3.5" />
             </Link>
           </Button>

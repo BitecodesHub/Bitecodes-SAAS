@@ -625,6 +625,67 @@ export async function addProspectNote(
   return result.matchedCount === 1;
 }
 
+/** Saves the AI-written research brief for one prospect. */
+export async function saveProspectResearch(
+  prospectId: string,
+  research: {
+    summary: string;
+    likelyNeeds: string[];
+    icpSegmentId: string | null;
+    fitScore: number;
+    personalizationHooks: string[];
+    risks: string[];
+    recommendedService: string | null;
+    doNotContactReason: string | null;
+    model: string;
+    provider: string;
+    createdAt: Date;
+  },
+  now = new Date(),
+): Promise<boolean> {
+  const collection = await prospects();
+  const result = await collection.updateOne(
+    { _id: toObjectId(prospectId) },
+    {
+      $set: {
+        research,
+      },
+      $setOnInsert: {
+        updatedAt: now,
+      },
+    },
+  );
+  return result.matchedCount === 1;
+}
+
+/** Saves the AI-drafted outreach opening for one prospect. */
+export async function saveProspectOutreachDraft(
+  prospectId: string,
+  draft: {
+    subject: string;
+    opening: string;
+    draftedAt: Date;
+    model: string;
+    provider: string;
+  },
+  now = new Date(),
+): Promise<boolean> {
+  const collection = await prospects();
+  const result = await collection.updateOne(
+    { _id: toObjectId(prospectId) },
+    {
+      $set: {
+        subject: draft.subject,
+        opening: draft.opening,
+        outreachDraftedAt: draft.draftedAt,
+        model: draft.model,
+        provider: draft.provider,
+      },
+    },
+  );
+  return result.matchedCount === 1;
+}
+
 export async function deleteProspects(ids: readonly string[]): Promise<number> {
   const objectIds = toObjectIds(ids);
   if (objectIds.length === 0) return 0;

@@ -134,7 +134,8 @@ describeWithDatabase("leads inbox", () => {
 
     const audit = page.items.find((item) => item.kind === "audit")!;
     expect(audit.summary).toBe("https://rossi.example.com/");
-    expect(audit.score).toBe(65);
+    expect(audit.auditScore).toBe(65);
+    expect(audit.score).toBeNull();
   });
 
   it("defaults a missing status to new rather than dropping the lead", async () => {
@@ -277,6 +278,79 @@ describeWithDatabase("leads inbox", () => {
       expect(detail.doc.assignedToId).toBe("user-1");
       expect(detail.doc.notes).toHaveLength(1);
       expect(detail.doc.notes![0]!.body).toBe("Called the owner.");
+    }
+  });
+
+  it("keeps an operator's next action when AI qualification is saved", async () => {
+    const {
+      listLeads,
+      getLead,
+      saveLeadQualification,
+      saveLeadScore,
+      setLeadNextAction,
+    } = await import("@/lib/server/leads/repository");
+    await seed();
+
+    const summary = (await listLeads({ kind: "enquiry" })).items[0]!;
+    const now = new Date();
+    await setLeadNextAction(
+      "enquiry",
+      summary.id,
+      "Call back Monday",
+      null,
+      now,
+    );
+    await saveLeadScore(
+      "enquiry",
+      summary.id,
+      {
+        score: 72,
+        grade: "B",
+        reasons: ["Business email"],
+        segmentId: "clinics",
+      },
+      now,
+    );
+    await saveLeadQualification(
+      "enquiry",
+      summary.id,
+      {
+        summary: "A clinic that needs booking.",
+        need: "Online booking",
+        budgetSignal: "Not stated",
+        timeline: "Soon",
+        fit: "possible",
+        suggestedService: "web-applications",
+        suggestedNextAction: "Send the booking demo",
+        model: "test-model",
+        provider: "test-provider",
+        createdAt: now,
+      },
+      now,
+    );
+
+    const detail = await getLead("enquiry", summary.id);
+    if (detail?.kind === "enquiry") {
+      expect(detail.doc.nextAction).toBe("Call back Monday");
+      expect(detail.doc.qualification?.summary).toContain("clinic");
+      expect(detail.doc.scoreSegmentId).toBe("clinics");
+
+      // A rescore that finds no segment must clear the old id.
+      await saveLeadScore(
+        "enquiry",
+        summary.id,
+        {
+          score: 40,
+          grade: "C",
+          reasons: ["No clear ICP segment"],
+          segmentId: null,
+        },
+        now,
+      );
+      const rescored = await getLead("enquiry", summary.id);
+      if (rescored?.kind === "enquiry") {
+        expect(rescored.doc.scoreSegmentId).toBeNull();
+      }
     }
   });
 
