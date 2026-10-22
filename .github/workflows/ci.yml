@@ -18,8 +18,11 @@ jobs:
     services:
       # A real MongoDB so the database integration suites run here even when a
       # developer's machine has none. Without this they would only ever skip.
+      # Pinned: MongoDB 8.x images crash on the runner kernel 6.19+ because of
+      # a vendored TCMalloc incompatibility (SERVER-121912). 7.0.41 is exempt
+      # from that check, and the application tests against the 7.x driver.
       mongodb:
-        image: mongo:8
+        image: mongo:7.0.41
         ports:
           - 27017:27017
         options: >-
