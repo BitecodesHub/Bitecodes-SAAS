@@ -3,7 +3,7 @@
 **Prepared:** 2026-10-22  
 **Repository:** `Bitecodes-SAAS`  
 **Current branch:** `growth/customer-magnet`  
-**Plan status:** Repository implementation in progress; completed slices and release blockers are recorded below
+**Plan status:** Repository implementation complete and deployed to production; owner-gated release items and deferred findings remain
 **Scope:** Consolidate the unfinished Claude/OpenCode work, the Customer-Magnet growth engine, and the AI Chatbot product into one production-grade upgrade sequence.
 
 > This is an implementation plan, not a claim that all work below is already complete. Existing code is reused where it is verified; unfinished work is explicitly listed with acceptance criteria and rollout gates.
@@ -50,6 +50,13 @@
 - Empty-database bootstrap test evidence: dry run writes nothing; first real run creates settings, four presets, and seeds; a second forced run is idempotent and preserves an edited postal address and paused preset; a heartbeat inside the 24-hour window restores the defaults only after the preset list is emptied.
 - Safety evidence: capability and bootstrap tests assert the outbound gate is `closed` without SMTP/sender/postal, `manual` with approval on, `open` only when fully configured and approval off; autopilot tests assert discovery still runs with auto-contact off and enrols nobody.
 - `pnpm lint`: passed. `pnpm typecheck`: passed. `pnpm format:check`: passed. `pnpm build`: passed (Next.js 16.2.9, 151 static pages generated, including the site assistant route and referral job).
+- GitHub Actions `CI` on `main` (`65099a2`): passed. The first run failed only because the runner kernel 6.19 cannot start `mongo:8` (SERVER-121912); the workflow now pins `mongo:7.0.41`, which is exempt and matches the 7.x driver.
+- Production deployment verified on `https://www.bitecodes.com` (Vercel deployment of the merged main branch):
+  - `GET /api/health` returned 200 with `database.ok: true`, bootstrap version 1, four enabled discovery presets, `scheduleOk: true`, and 12 enabled / 1 manual / 2 disabled capabilities. `GET /api/health?deep=1` without a bearer token returned 401.
+  - `GET /`, `/sitemap.xml`, `/robots.txt`, `/llms.txt`, `/llms-full.txt`, `/website-audit`, `/resources`, `/ai-project-consultant`, and `/signup?ref=…` returned 200. `/book-a-call` returned 307 to `/contact?intent=call`. `robots.txt` names GPTBot, ClaudeBot, and PerplexityBot; `sitemap.xml` includes `llms.txt`.
+  - `POST /api/site-assistant` returned 200 with a grounded answer quoting the published Launch package price and the booking CTA.
+  - `/widget.js` served version `2.0.0` with the widget version header and the runtime-derived API origin.
+  - A dispatched production heartbeat returned `ok: true`, ran 25 jobs with 0 failures, and recorded `heartbeat.lastTickOk: true`; the remaining queued work drains across subsequent ticks. GitHub's cron schedule change may take until the next scheduled window to replace the previous cadence.
 - No `.env.local` reads, secret prints, force-pushes, or history rewrites were performed while producing this evidence.
 
 ### Deferred findings
