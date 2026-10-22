@@ -1037,4 +1037,10 @@ Verification evidence at release time:
 - Full Vitest suite (with MongoDB): 134 files, 1,605 passed, 6 skipped; the single price-provenance failure found earlier was fixed by sourcing answer-library price bands from `answers.ts`.
 - `pnpm build` completes; all five hubs and every detail page are prerendered or dynamically served as intended.
 - Local checks: SSRF rejection for `localhost` and `127.0.0.1` (400), oversize body rejection (413), invalid email rejection (400), sitemap/llms coverage confirmed, JSON-LD present on every new page.
-- Production checks: recorded after deployment in section 15 (live verification log).
+- Production checks after deploying commit `9c067eb` to `main` (Vercel status success):
+  - `GET` 200 for `/ai-visibility-check`, `/revenue-leak-calculator`, `/answers`, `/compare`, `/templates`, plus sampled detail pages `/answers/how-much-does-a-website-cost`, `/compare/bitecodes-vs-freelancer`, `/templates/harbour-clinic`, `/templates/ember-table`, `/templates/northwind`.
+  - Live API `POST /api/ai-visibility` with `example.com` returned `{ ok: true, score: 40, grade: "weak" }`; `localhost` returned 400 with the blocked-URL message.
+  - Browser run of the live AI visibility check: filled `example.com`, clicked “Check visibility”, result panel rendered score 40/100, 9/9 crawlers allowed, 2/7 checks passed, three prioritised fixes, and a prefilled contact link; no console messages.
+  - Browser run of the live revenue leak calculator: default inputs produce $28,125/month and $337,500/year, with the 3% reference point adding $28,125/month; figures match the documented arithmetic.
+  - Browser run of live `/templates/harbour-clinic`: content rendered without a loading state, one H1, five JSON-LD blocks, correct canonical.
+  - `sitemap.xml` contains all new hubs and detail routes; `llms.txt` lists both growth tools; `llms-full.txt` carries the answer, comparison, and template sections; every new page exposes title, canonical, description, and 4–6 JSON-LD blocks.
