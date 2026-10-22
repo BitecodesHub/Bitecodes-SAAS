@@ -3,7 +3,7 @@ import { after } from "next/server";
 import { getCronSecret } from "@/lib/server/env";
 import { safeCompare } from "@/lib/server/crypto";
 import { runDueJobs } from "@/lib/server/jobs/worker";
-import { getQueueStats } from "@/lib/server/jobs/queue";
+import { getQueueStats, JOB_TYPES } from "@/lib/server/jobs/queue";
 import { enqueueDueAutomations } from "@/lib/server/jobs/schedule";
 import { recordHeartbeat } from "@/lib/server/jobs/heartbeat";
 import { runBootstrap } from "@/lib/server/bootstrap";
@@ -37,6 +37,19 @@ const RUN_BUDGET_MS = 270_000;
 const KICK_BUDGET_MS = 20_000;
 /** Time kept back for the response itself and for `after()` to start. */
 const KICK_MARGIN_MS = 10_000;
+/**
+ * Scheduled acquisition work that must not queue behind bulk enrichment.
+ *
+ * A discovery fan-out can leave hundreds of `prospect.enrich` jobs waiting.
+ * Strict oldest-first claiming delayed the next autopilot tick by days at the
+ * observed heartbeat cadence. The budget is still the hard stop; this is only
+ * a per-tick cap.
+ */
+const PRIORITY_JOB_TYPES = [
+  JOB_TYPES.autopilotTick,
+  JOB_TYPES.prospectDiscover,
+] as const;
+const CRON_MAX_JOBS = 100;
 
 function unauthorized() {
   return Response.json(
@@ -137,7 +150,11 @@ async function handle(request: NextRequest) {
 
   let summary: Awaited<ReturnType<typeof runDueJobs>>;
   try {
-    summary = await runDueJobs({ budgetMs: RUN_BUDGET_MS });
+    summary = await runDueJobs({
+      budgetMs: RUN_BUDGET_MS,
+      maxJobs: CRON_MAX_JOBS,
+      priorityTypes: PRIORITY_JOB_TYPES,
+    });
   } catch (error) {
     // A thrown drain is the one cron failure worth persisting explicitly: the
     // next successful tick must not erase the fact that automation stalled.

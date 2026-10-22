@@ -287,7 +287,13 @@ function isDuplicateKeyError(error: unknown): boolean {
 export async function claimNextJob(
   workerId: string,
   now = new Date(),
-  { excludeTypes = [] }: { excludeTypes?: readonly string[] } = {},
+  {
+    excludeTypes = [],
+    includeTypes = [],
+  }: {
+    excludeTypes?: readonly string[];
+    includeTypes?: readonly string[];
+  } = {},
 ): Promise<JobDoc | null> {
   const collection = await jobs();
 
@@ -297,7 +303,15 @@ export async function claimNextJob(
         { status: "queued", runAt: { $lte: now } },
         { status: "running", lockedUntil: { $lte: now } },
       ],
-      ...(excludeTypes.length > 0 ? { type: { $nin: [...excludeTypes] } } : {}),
+      // One `type` key: two would silently replace each other in the query.
+      ...(includeTypes.length > 0 || excludeTypes.length > 0
+        ? {
+            type: {
+              ...(includeTypes.length > 0 ? { $in: [...includeTypes] } : {}),
+              ...(excludeTypes.length > 0 ? { $nin: [...excludeTypes] } : {}),
+            },
+          }
+        : {}),
     },
     {
       $set: {

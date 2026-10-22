@@ -55,6 +55,16 @@ export interface RunOptions {
   handlers?: JobHandlerMap;
   workerId?: string;
   now?: () => number;
+  /**
+   * Types claimed ahead of older work.
+   *
+   * A discovery fan-out can enqueue hundreds of enrichment jobs in one tick.
+   * Claiming strictly oldest-first means the next scheduled autopilot tick
+   * waits behind all of them — days of delay at a sparse heartbeat cadence.
+   * Priority types get first refusal on each slot; the budget still bounds
+   * the run, and ordinary work fills whatever is left.
+   */
+  priorityTypes?: readonly string[];
   /** Overridden in tests so a failure does not queue real email. */
   notifyDeadJob?: (input: {
     jobType: string;
@@ -90,6 +100,7 @@ export async function runDueJobs({
   workerId = newWorkerId(),
   now = Date.now,
   notifyDeadJob = notifyFailedJob,
+  priorityTypes = [],
 }: RunOptions = {}): Promise<RunSummary> {
   const startedAt = now();
   const deadline = startedAt + budgetMs;
@@ -110,9 +121,18 @@ export async function runDueJobs({
     }
 
     // Leave AI-heavy types for a run with enough budget to finish them.
-    const job = await claimNextJob(workerId, new Date(now()), {
-      excludeTypes: jobTypesTooHeavyFor(deadline - now()),
-    });
+    const claimedAt = new Date(now());
+    const excludeTypes = jobTypesTooHeavyFor(deadline - now());
+    const job =
+      (priorityTypes.length > 0
+        ? await claimNextJob(workerId, claimedAt, {
+            excludeTypes,
+            includeTypes: priorityTypes,
+          })
+        : null) ??
+      // No priority work waiting (or none fits the remaining budget): fall
+      // back to the ordinary oldest-first claim.
+      (await claimNextJob(workerId, claimedAt, { excludeTypes }));
     if (!job) break;
     summary.claimed += 1;
 

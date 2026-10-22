@@ -78,6 +78,47 @@ describeWithDatabase("job worker deadline", () => {
     });
   });
 
+  it("claims priority types ahead of an older backlog", async () => {
+    const { enqueueJob, JOB_TYPES } = await import("@/lib/server/jobs/queue");
+    const { runDueJobs } = await import("@/lib/server/jobs/worker");
+    const { jobs } = await import("@/lib/server/db/collections");
+    const { ObjectId } = await import("mongodb");
+
+    const backlogId = await enqueueJob({
+      type: JOB_TYPES.prospectEnrich,
+      idempotencyKey: "backlog",
+      runAt: new Date(Date.now() - 60_000),
+    });
+    await enqueueJob({
+      type: JOB_TYPES.autopilotTick,
+      idempotencyKey: "tick",
+    });
+
+    const ran: string[] = [];
+    const summary = await runDueJobs({
+      budgetMs: 30_000,
+      maxJobs: 1,
+      priorityTypes: [JOB_TYPES.autopilotTick],
+      handlers: {
+        [JOB_TYPES.prospectEnrich]: async () => {
+          ran.push("enrich");
+        },
+        [JOB_TYPES.autopilotTick]: async () => {
+          ran.push("autopilot");
+        },
+      },
+    });
+
+    expect(ran).toEqual(["autopilot"]);
+    expect(summary.completed).toBe(1);
+    const backlog = await (
+      await jobs()
+    ).findOne({
+      _id: new ObjectId(backlogId),
+    });
+    expect(backlog?.status).toBe("queued");
+  });
+
   it("leaves AI-heavy jobs queued for a run with enough budget", async () => {
     const { enqueueJob, JOB_TYPES } = await import("@/lib/server/jobs/queue");
     const { runDueJobs } = await import("@/lib/server/jobs/worker");
