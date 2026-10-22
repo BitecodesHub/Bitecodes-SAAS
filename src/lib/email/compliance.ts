@@ -3,9 +3,11 @@
  *
  * Cold B2B email is lawful in India and the United States under an **opt-out**
  * model (CAN-SPAM): a clear sender identity, a physical postal address, and a
- * working unsubscribe. It is lawful in Australia and most of Asia on similar
- * terms. It is **not** lawful without prior consent in the EU/EEA and UK
- * (GDPR/ePrivacy) or Canada (CASL), where penalties are per-message.
+ * working unsubscribe. It is lawful in most of Asia on similar terms. It is
+ * **not** lawful without prior consent in the EU/EEA and UK (GDPR/ePrivacy),
+ * Canada (CASL, penalties per message), or Australia (Spam Act 2003), where
+ * unsolicited commercial electronic messages require consent or a prior
+ * business relationship.
  *
  * This module encodes that difference so the send path can enforce it rather
  * than relying on whoever writes the campaign to remember. Every function is
@@ -57,6 +59,8 @@ export const CONSENT_REQUIRED_COUNTRIES = new Set([
   "CH",
   // Canada (CASL)
   "CA",
+  // Australia (Spam Act 2003)
+  "AU",
 ]);
 
 export function isConsentRequiredCountry(
@@ -108,6 +112,7 @@ const CONSENT_REQUIRED_TLDS = new Set([
   "uk",
   "ch",
   "ca",
+  "au",
 ]);
 
 export function domainImpliesConsentRequired(

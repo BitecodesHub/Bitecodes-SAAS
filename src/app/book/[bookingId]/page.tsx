@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getBookingConfigForPublic } from "@/lib/server/bookings/repository";
+import { getDiscoveryBookingId } from "@/lib/server/discovery-booking";
 import { BookingRenderer } from "@/components/bookings/booking-renderer";
 
 /**
@@ -71,6 +72,9 @@ export default async function HostedBookingPage({
           publicToken={t!}
           appearance={config.appearance}
           confirmationMessage={config.confirmationMessage}
+          analyticsPath={
+            getDiscoveryBookingId() === config.bookingId ? "/book" : null
+          }
         />
       </div>
     </main>

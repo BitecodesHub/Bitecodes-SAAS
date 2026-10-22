@@ -42,6 +42,12 @@ export interface CreditInput {
   /** The chatbot or form the credit relates to, when relevant. */
   subjectId?: string | null;
   expiresAt?: Date | null;
+  /**
+   * Completion marker for exactly-once crediting: when set, a caller can check
+   * `hasCreditRef` to learn whether this credit already landed (a webhook
+   * retry settling an order, for instance).
+   */
+  refId?: string | null;
   note?: string | null;
   now?: Date;
 }
@@ -60,6 +66,14 @@ export interface DebitInput {
 export type DebitResult =
   | { ok: true; balanceAfter: number }
   | { ok: false; reason: "insufficient" | "invalid-amount"; balance: number };
+
+export interface DebitUpToResult {
+  /** Tokens actually taken. Zero when the balance was already empty. */
+  charged: number;
+  /** The part of `amount` the balance could not cover. */
+  shortfall: number;
+  balanceAfter: number;
+}
 
 function isPositiveInt(amount: number): boolean {
   return Number.isInteger(amount) && amount > 0;
@@ -112,13 +126,27 @@ export async function credit(input: CreditInput): Promise<number> {
     kind: input.kind,
     balanceAfter,
     subjectId: input.subjectId ?? null,
-    refId: null,
+    refId: input.refId ?? null,
     expiresAt: input.expiresAt ?? null,
     note: input.note ?? null,
     createdAt: now,
   });
 
   return balanceAfter;
+}
+
+/** True when a credit carrying this refId has already been recorded. */
+export async function hasCreditRef(
+  ownerId: string,
+  product: WalletProduct,
+  refId: string,
+): Promise<boolean> {
+  const ledger = await walletLedger();
+  const row = await ledger.findOne(
+    { ownerId, product, refId, delta: { $gt: 0 } },
+    { projection: { _id: 1 } },
+  );
+  return row !== null;
 }
 
 /**
@@ -169,6 +197,81 @@ export async function debit(input: DebitInput): Promise<DebitResult> {
   });
 
   return { ok: true, balanceAfter: updated.balance };
+}
+
+/**
+ * Drains up to `amount`, stopping at whatever the balance actually holds.
+ *
+ * For metered work that has already been delivered — a streamed chatbot reply,
+ * a processed form submission — refusing to bill because the balance is short
+ * is the worst of both worlds: the customer received the work *and* the
+ * operator never learns that it went unbilled. This atomically takes
+ * `min(amount, balance)` so a short balance zeroes itself out instead of
+ * quietly funding free usage forever, and the caller can alert on the
+ * shortfall.
+ *
+ * The clamped `$set` is a pipeline update, so read-and-clamp is one atomic
+ * step: two concurrent drains of 100 against a balance of 60 charge exactly 60
+ * between them — the first takes all of it, the second takes what is left,
+ * which is nothing. The "before" document is returned, and because pipeline
+ * application is atomic per document, the stored result is exactly
+ * `max(0, before - amount)` — so `charged` is derived from the same state the
+ * write saw, not from a second read that could interleave.
+ */
+export async function debitUpTo(input: DebitInput): Promise<DebitUpToResult> {
+  if (!isPositiveInt(input.amount)) {
+    return {
+      charged: 0,
+      shortfall: 0,
+      balanceAfter: await getBalance(input.ownerId, input.product),
+    };
+  }
+  const now = input.now ?? new Date();
+  const balances = await walletBalances();
+
+  const before = await balances.findOneAndUpdate(
+    { _id: balanceId(input.ownerId, input.product) },
+    [
+      {
+        $set: {
+          balance: {
+            $max: [
+              0,
+              { $subtract: [{ $ifNull: ["$balance", 0] }, input.amount] },
+            ],
+          },
+          updatedAt: now,
+        },
+      },
+    ],
+    { returnDocument: "before" },
+  );
+
+  // No balance document: nothing was ever credited, so nothing can be taken.
+  if (!before) {
+    return { charged: 0, shortfall: input.amount, balanceAfter: 0 };
+  }
+
+  const held = before.balance ?? 0;
+  const charged = Math.min(held, input.amount);
+  const balanceAfter = held - charged;
+
+  if (charged > 0) {
+    await appendLedgerRow({
+      ownerId: input.ownerId,
+      product: input.product,
+      delta: -charged,
+      kind: "deduct",
+      balanceAfter,
+      subjectId: input.subjectId ?? null,
+      refId: input.refId ?? null,
+      expiresAt: null,
+      note: input.note ?? null,
+      createdAt: now,
+    });
+  }
+
+  return { charged, shortfall: input.amount - charged, balanceAfter };
 }
 
 /** Recent journal rows for one product, newest first — for the usage UI. */

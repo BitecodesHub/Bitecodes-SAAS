@@ -3,26 +3,33 @@ import "server-only";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import { z } from "zod";
 
-import { completeJson } from "@/lib/server/ai/automation";
 import { getSettingsFresh } from "@/lib/server/settings";
-import {
-  outreachOpeningSchema,
-  type OutreachOpeningOutput,
-} from "@/lib/prospecting/research";
-import {
-  buildResearchFacts,
-  type ResearchFactInput,
-  type ResearchFactSheet,
-} from "@/lib/prospecting/research";
+import { draftOutreachOpening } from "@/lib/server/prospecting/research";
 import {
   getProspect,
+  listProspectsAwaitingOutreachDraft,
   saveProspectOutreachDraft,
 } from "@/lib/server/prospecting/repository";
-
-const payloadSchema = z.object({ prospectId: z.string().min(1) });
+import type { ProspectDoc } from "@/lib/server/db/types";
 
 /**
- * `outreach.draft` — Drafts personalised outreach for qualified prospects into the approval queue.
+ * The scheduled job carries `{ date }` (from the cadence registry); an
+ * operator-triggered run may carry `{ prospectId }`. Both shapes are valid —
+ * requiring a single id is what previously made every scheduled run throw.
+ */
+const payloadSchema = z.object({
+  prospectId: z.string().min(1).optional(),
+  date: z.string().max(40).optional(),
+});
+
+/** A bounded batch: each draft is an AI call that can take tens of seconds. */
+const MAX_DRAFTS_PER_RUN = 10;
+/** Don't start a call without enough run budget left to finish it. */
+const MIN_AI_BUDGET_MS = 25_000;
+
+/**
+ * `outreach.draft` — Drafts personalised outreach for qualified prospects into
+ * the approval queue.
  *
  * Contract: return `{ skipped: "disabled" }` when
  * `settings.growth.outreachDrafts` is off, stay idempotent, respect
@@ -35,116 +42,139 @@ export async function handleOutreachDraft(
   const parsed = payloadSchema.safeParse(payload);
   if (!parsed.success) throw new Error("Invalid outreach draft payload.");
 
-  const { prospectId } = parsed.data;
-
   const settings = await getSettingsFresh();
   if (!settings.growth.outreachDrafts) {
     context.log("Outreach drafts are switched off in settings.");
     return { skipped: "disabled" };
   }
 
-  const prospect = await getProspect(prospectId);
-  if (!prospect) {
-    context.log("Prospect no longer exists; nothing to draft.");
-    return { skipped: "missing" };
+  const { prospectId } = parsed.data;
+  if (prospectId) {
+    const prospect = await getProspect(prospectId);
+    if (!prospect) {
+      context.log("Prospect no longer exists; nothing to draft.");
+      return { skipped: "missing" };
+    }
+
+    const result = await draftOne(prospect, context);
+    return {
+      ...result,
+      requiresApproval: settings.automation.requireApproval,
+    };
   }
 
-  // Already drafted — idempotent no-op.
-  if (prospect.outreachDraftedAt) {
-    context.log("Prospect already has a draft; skipping.");
-    return { skipped: "idempotent" };
-  }
+  // Scheduled mode: draft the best qualified candidates, newest enquiry first,
+  // stopping before the run deadline so the job never loses its lock mid-call.
+  const candidates =
+    await listProspectsAwaitingOutreachDraft(MAX_DRAFTS_PER_RUN);
+  const summary: {
+    candidates: number;
+    drafted: number;
+    skipped: Record<string, number>;
+  } = { candidates: candidates.length, drafted: 0, skipped: {} };
 
-  // Respect the run deadline.
-  if (context.deadline && Date.now() > context.deadline) {
-    context.log("Deadline exceeded before outreach draft could run.");
-    return { skipped: "deadline" };
-  }
-
-  // Only qualified prospects can receive outreach drafts.
-  if (prospect.status !== "qualified" && prospect.status !== "enriching") {
-    context.log(
-      `Prospect ${prospect.name} is not qualified (status: ${prospect.status}); skipping draft.`,
-    );
-    return { skipped: "not-qualified" };
-  }
-
-  // Build the fact sheet for the AI opening draft.
-  const factInput: ResearchFactInput = {
-    name: prospect.name,
-    categoryLabel: prospect.categoryLabel,
-    city: prospect.city,
-    region: prospect.region,
-    countryCode: prospect.countryCode,
-    website: prospect.website,
-    socialUrl: prospect.socialUrl,
-    signals: prospect.signals,
-    classification: prospect.classification,
-    auditScore: prospect.auditScore,
-  };
-
-  const factSheet = buildResearchFacts(factInput);
-
-  // Call the AI operator to draft the outreach opening.
-  const providerChain = ["nvidia", "openrouter", "groq", "bedrock"];
-
-  let modelOutput: OutreachOpeningOutput | null = null;
-  let providerUsed = "";
-
-  for (const provider of providerChain) {
-    try {
-      const result = await completeJson({
-        purpose: "outreach-draft",
-        system: buildOutreachPrompt(factSheet),
-        user: "",
-        schema: outreachOpeningSchema,
-        temperature: 0.3,
-        deadlineMs: 30_000,
-        providerSilenceMs: 20_000,
-      });
-
-      modelOutput = result.data;
-      providerUsed = result.provider;
-      break;
-    } catch (error) {
+  for (const prospect of candidates) {
+    if (context.deadline && Date.now() + MIN_AI_BUDGET_MS > context.deadline) {
+      summary.skipped.deadline = (summary.skipped.deadline ?? 0) + 1;
       context.log(
-        `Provider ${provider} failed: ${error instanceof Error ? error.message : String(error)}`,
+        "Run deadline reached; leaving remaining drafts for the next run.",
       );
-      continue;
+      break;
+    }
+
+    const result = await draftOne(prospect, context);
+    if (result.drafted) {
+      summary.drafted += 1;
+    } else {
+      summary.skipped[result.skipped] =
+        (summary.skipped[result.skipped] ?? 0) + 1;
     }
   }
 
-  if (!modelOutput) {
-    context.log("All AI providers failed to draft an outreach opening.");
-    return { skipped: "ai-failed" };
+  return summary;
+}
+
+type DraftOutcome =
+  | { drafted: true; subject: string; opening: string }
+  | { drafted: false; skipped: string };
+
+/**
+ * Drafts one prospect, or returns why it did not.
+ *
+ * The subject and opening are both required: storing only one would mark the
+ * prospect as drafted while leaving the operator with half a message.
+ */
+async function draftOne(
+  prospect: ProspectDoc,
+  context: JobContext,
+): Promise<DraftOutcome> {
+  if (prospect.outreachDraftedAt) {
+    context.log(`${prospect.name} already has a draft; skipping.`);
+    return { drafted: false, skipped: "idempotent" };
   }
 
-  // Persist the draft and mark the prospect as having a draft.
-  await saveProspectOutreachDraft(prospectId, {
-    subject: modelOutput.subject,
-    opening: modelOutput.opening,
+  if (prospect.status !== "qualified" && prospect.status !== "enriching") {
+    context.log(
+      `${prospect.name} is not qualified (status: ${prospect.status}); skipping draft.`,
+    );
+    return { drafted: false, skipped: "not-qualified" };
+  }
+
+  // Research may have found a reason this business must not be contacted at
+  // all (a competitor, a closed location). Spending an AI call on a draft that
+  // can never be sent is wasteful and invites someone to send it anyway.
+  if (prospect.research?.doNotContactReason) {
+    context.log(`${prospect.name} is marked do-not-contact; skipping draft.`);
+    return { drafted: false, skipped: "do-not-contact" };
+  }
+
+  const id = prospect._id?.toHexString();
+  if (!id) {
+    context.log("Prospect has no id; skipping draft.");
+    return { drafted: false, skipped: "missing" };
+  }
+
+  if (context.deadline && Date.now() > context.deadline - 5_000) {
+    context.log("Deadline exceeded before outreach draft could run.");
+    return { drafted: false, skipped: "deadline" };
+  }
+
+  const deadlineMs = context.deadline
+    ? Math.min(30_000, Math.max(5_000, context.deadline - Date.now() - 5_000))
+    : 30_000;
+
+  let draft: Awaited<ReturnType<typeof draftOutreachOpening>>;
+  try {
+    draft = await draftOutreachOpening(prospect, { deadlineMs });
+  } catch (error) {
+    context.log(
+      `AI provider failed for ${prospect.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return { drafted: false, skipped: "ai-failed" };
+  }
+
+  if (!draft.subject || !draft.opening) {
+    // A claim the fact sheet cannot support is dropped, never "fixed up". The
+    // prospect stays undrafted so a later run can try again.
+    context.log(
+      `Draft for ${prospect.name} failed grounding checks; left undrafted.`,
+    );
+    return { drafted: false, skipped: "ungrounded" };
+  }
+
+  await saveProspectOutreachDraft(id, {
+    subject: draft.subject,
+    opening: draft.opening,
     draftedAt: new Date(),
-    model: "nemotron",
-    provider: providerUsed,
+    model: draft.model,
+    provider: draft.provider,
   });
 
   context.log(
-    `Wrote outreach draft for ${prospect.name} (provider: ${providerUsed}, subject: "${modelOutput.subject}").`,
+    `Wrote outreach draft for ${prospect.name} (provider: ${draft.provider}, subject: "${draft.subject}").`,
   );
 
-  return {
-    subject: modelOutput.subject,
-    opening: modelOutput.opening,
-    requiresApproval: settings.automation.requireApproval,
-  };
-}
-
-function buildOutreachPrompt(factSheet: ResearchFactSheet): string {
-  const { lines, segmentName } = factSheet;
-  return `You are Bitecodes, a growth agency assistant. Write a personalised outreach opening (subject + 2-3 sentence opening paragraph) for the business below. Ground every claim in the fact sheet lines. Do not invent numbers, links, or superlatives not present in the fact sheet. The subject must be under 160 characters. The opening must be 10-600 characters.
-
-Fact:
-${lines.join("\n")}
-
-ICP segment: ${segmentName ?? "none"}.`;
+  return { drafted: true, subject: draft.subject, opening: draft.opening };
 }

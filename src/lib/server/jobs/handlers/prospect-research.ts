@@ -3,26 +3,33 @@ import "server-only";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import { z } from "zod";
 
-import { completeJson } from "@/lib/server/ai/automation";
 import { getSettingsFresh } from "@/lib/server/settings";
-import {
-  prospectResearchSchema,
-  type ProspectResearchOutput,
-  type ResearchFactSheet,
-} from "@/lib/prospecting/research";
-import {
-  buildResearchFacts,
-  type ResearchFactInput,
-} from "@/lib/prospecting/research";
+import { runProspectResearch } from "@/lib/server/prospecting/research";
 import {
   getProspect,
+  listProspectsAwaitingResearch,
   saveProspectResearch,
 } from "@/lib/server/prospecting/repository";
-
-const payloadSchema = z.object({ prospectId: z.string().min(1) });
+import type { ProspectDoc } from "@/lib/server/db/types";
 
 /**
- * `prospect.research` — Writes an AI research brief for each newly enriched prospect.
+ * The scheduled job carries `{ date }` (from the cadence registry); an
+ * operator-triggered run may carry `{ prospectId }`. Accepting only the id made
+ * every scheduled run throw.
+ */
+const payloadSchema = z.object({
+  prospectId: z.string().min(1).optional(),
+  date: z.string().max(40).optional(),
+});
+
+/** A bounded batch: each brief is an AI call that can take tens of seconds. */
+const MAX_RESEARCH_PER_RUN = 10;
+/** Don't start a call without enough run budget left to finish it. */
+const MIN_AI_BUDGET_MS = 25_000;
+
+/**
+ * `prospect.research` — Writes an AI research brief for each newly enriched
+ * prospect.
  *
  * Contract: return `{ skipped: "disabled" }` when
  * `settings.growth.prospectResearch` is off, stay idempotent, respect
@@ -35,121 +42,112 @@ export async function handleProspectResearch(
   const parsed = payloadSchema.safeParse(payload);
   if (!parsed.success) throw new Error("Invalid research payload.");
 
-  const { prospectId } = parsed.data;
-
   const settings = await getSettingsFresh();
   if (!settings.growth.prospectResearch) {
     context.log("Prospect research is switched off in settings.");
     return { skipped: "disabled" };
   }
 
-  const prospect = await getProspect(prospectId);
-  if (!prospect) {
-    context.log("Prospect no longer exists; nothing to research.");
-    return { skipped: "missing" };
+  const { prospectId } = parsed.data;
+  if (prospectId) {
+    const prospect = await getProspect(prospectId);
+    if (!prospect) {
+      context.log("Prospect no longer exists; nothing to research.");
+      return { skipped: "missing" };
+    }
+
+    return researchOne(prospect, context);
   }
 
-  // Already researched — idempotent no-op.
-  if (prospect.research) {
-    context.log("Prospect already has a research brief; skipping.");
-    return { skipped: "idempotent" };
-  }
+  const candidates = await listProspectsAwaitingResearch(MAX_RESEARCH_PER_RUN);
+  const summary: {
+    candidates: number;
+    researched: number;
+    skipped: Record<string, number>;
+  } = { candidates: candidates.length, researched: 0, skipped: {} };
 
-  // Respect the run deadline.
-  if (context.deadline && Date.now() > context.deadline) {
-    context.log("Deadline exceeded before research could run.");
-    return { skipped: "deadline" };
-  }
-
-  // Build the fact sheet from stored enrichment data.
-  const factInput: ResearchFactInput = {
-    name: prospect.name,
-    categoryLabel: prospect.categoryLabel,
-    city: prospect.city,
-    region: prospect.region,
-    countryCode: prospect.countryCode,
-    website: prospect.website,
-    socialUrl: prospect.socialUrl,
-    signals: prospect.signals,
-    classification: prospect.classification,
-    auditScore: prospect.auditScore,
-  };
-
-  const factSheet = buildResearchFacts(factInput);
-
-  // Call the AI operator to write the research brief.
-  const providerChain = ["nvidia", "openrouter", "groq", "bedrock"];
-
-  let modelOutput: ProspectResearchOutput | null = null;
-  let providerUsed = "";
-
-  for (const provider of providerChain) {
-    try {
-      const result = await completeJson({
-        purpose: "prospect-research",
-        system: buildResearchPrompt(factSheet),
-        user: "",
-        schema: prospectResearchSchema,
-        temperature: 0.2,
-        deadlineMs: 30_000,
-        providerSilenceMs: 20_000,
-      });
-
-      modelOutput = result.data;
-      providerUsed = result.provider;
-      break;
-    } catch (error) {
+  for (const prospect of candidates) {
+    if (context.deadline && Date.now() + MIN_AI_BUDGET_MS > context.deadline) {
+      summary.skipped.deadline = (summary.skipped.deadline ?? 0) + 1;
       context.log(
-        `Provider ${provider} failed: ${error instanceof Error ? error.message : String(error)}`,
+        "Run deadline reached; leaving remaining prospects for the next run.",
       );
-      continue;
+      break;
+    }
+
+    const result = await researchOne(prospect, context);
+    if (result.researched) {
+      summary.researched += 1;
+    } else {
+      summary.skipped[result.skipped] =
+        (summary.skipped[result.skipped] ?? 0) + 1;
     }
   }
 
-  if (!modelOutput) {
-    context.log("All AI providers failed to produce a research brief.");
-    return { skipped: "ai-failed" };
-  }
-
-  // Persist the research brief.
-  await saveProspectResearch(prospectId, {
-    ...modelOutput,
-    model: "nemotron",
-    provider: providerUsed,
-    createdAt: new Date(),
-  });
-
-  context.log(
-    `Wrote research brief for ${prospect.name} (provider: ${providerUsed}, fitScore: ${modelOutput.fitScore}).`,
-  );
-
-  const primaryTag = prospect.classification?.primaryTag ?? "no-website";
-
-  return {
-    fitScore: modelOutput.fitScore,
-    summary: modelOutput.summary,
-    likelyNeeds: modelOutput.likelyNeeds,
-    personalizationHooks: modelOutput.personalizationHooks,
-    recommendedService: modelOutput.recommendedService,
-    primaryTag,
-  };
+  return summary;
 }
 
-function buildResearchPrompt(factSheet: ResearchFactSheet): string {
-  const { lines, segmentName } = factSheet;
-  const serviceSlugs = [
-    "restaurant",
-    "cafe",
-    "retail",
-    "consultant",
-    "healthcare",
-    "education",
-    "construction",
-  ];
-  return `You are Bitecodes, a growth agency assistant. Write a concise research brief (2-3 sentences summary, 3-5 likely needs, ICP segment, fit score 0-100, up to 3 personalization hooks, up to 3 risks, and a recommended service from: ${serviceSlugs.join(", ")}) for the business below. Ground every claim in the fact sheet lines. Do not invent numbers, links, or superlatives not present in the fact sheet.
+type ResearchOutcome =
+  | {
+      researched: true;
+      fitScore: number;
+      summary: string;
+      likelyNeeds: string[];
+      personalizationHooks: string[];
+      recommendedService: string | null;
+      primaryTag: string;
+    }
+  | { researched: false; skipped: string };
 
-Fact:
-${lines.join("\n")}
+async function researchOne(
+  prospect: ProspectDoc,
+  context: JobContext,
+): Promise<ResearchOutcome> {
+  if (prospect.research) {
+    context.log(`${prospect.name} already has a research brief; skipping.`);
+    return { researched: false, skipped: "idempotent" };
+  }
 
-ICP segment detected: ${segmentName ?? "none"}.`;
+  const id = prospect._id?.toHexString();
+  if (!id) {
+    context.log("Prospect has no id; skipping research.");
+    return { researched: false, skipped: "missing" };
+  }
+
+  if (context.deadline && Date.now() > context.deadline - 5_000) {
+    context.log("Deadline exceeded before research could run.");
+    return { researched: false, skipped: "deadline" };
+  }
+
+  const deadlineMs = context.deadline
+    ? Math.min(30_000, Math.max(5_000, context.deadline - Date.now() - 5_000))
+    : 30_000;
+
+  let brief: Awaited<ReturnType<typeof runProspectResearch>>;
+  try {
+    brief = await runProspectResearch(prospect, { deadlineMs });
+  } catch (error) {
+    context.log(
+      `AI provider failed for ${prospect.name}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+    return { researched: false, skipped: "ai-failed" };
+  }
+
+  await saveProspectResearch(id, brief);
+
+  context.log(
+    `Wrote research brief for ${prospect.name} (provider: ${brief.provider}, fitScore: ${brief.fitScore}).`,
+  );
+
+  return {
+    researched: true,
+    fitScore: brief.fitScore,
+    summary: brief.summary,
+    likelyNeeds: brief.likelyNeeds,
+    personalizationHooks: brief.personalizationHooks,
+    recommendedService: brief.recommendedService,
+    primaryTag: prospect.classification?.primaryTag ?? "no-website",
+  };
 }

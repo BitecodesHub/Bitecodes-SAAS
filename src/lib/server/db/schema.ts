@@ -20,6 +20,7 @@ export const COLLECTIONS = {
   jobs: "jobs",
   discoveryCache: "discovery_cache",
   siteSettings: "site_settings",
+  systemState: "system_state",
   analyticsEvents: "analytics_events",
   blogPosts: "blog_posts",
   blogRevisions: "blog_revisions",
@@ -108,6 +109,7 @@ export const COLLECTIONS = {
 
   // ===== growth:seo-tech =====
   seoAudits: "seo_audits",
+  searchSubmissions: "search_submissions",
   // ===== end growth:seo-tech =====
 
   // ===== growth:magnets =====
@@ -198,6 +200,8 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   [COLLECTIONS.discoveryCache]: [
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
+  // A handful of singleton liveness documents; _id is the key.
+  [COLLECTIONS.systemState]: [{ key: { updatedAt: -1 } }],
   [COLLECTIONS.analyticsEvents]: [
     { key: { createdAt: -1 } },
     { key: { type: 1, createdAt: -1 } },
@@ -532,7 +536,9 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   ],
   [COLLECTIONS.referrals]: [
     { key: { code: 1 }, unique: true },
-    { key: { referrerId: 1 } },
+    // One code per account: `getOrCreateReferral` relies on this to resolve
+    // two simultaneous first views without creating duplicate codes.
+    { key: { referrerId: 1 }, unique: true },
     { key: { "redemptions.referredId": 1 } },
   ],
   // One current risk row per customer, replaced by each daily scan.
@@ -545,6 +551,13 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   // ===== growth:seo-tech =====
   // One self-audit per UTC date.
   [COLLECTIONS.seoAudits]: [{ key: { date: 1 }, unique: true }],
+  // Failed IndexNow URLs: one row per path, retried by the daily ping.
+  [COLLECTIONS.searchSubmissions]: [
+    { key: { path: 1 }, unique: true },
+    { key: { state: 1, nextAttemptAt: 1 } },
+    // An abandoned row is diagnostic, not permanent; let it age out.
+    { key: { lastAttemptAt: 1 }, expireAfterSeconds: 90 * DAY_SECONDS },
+  ],
   // ===== end growth:seo-tech =====
 
   // ===== growth:magnets =====

@@ -13,6 +13,7 @@ import {
 import { consumeAiRateLimit } from "@/lib/server/rate-limit";
 import { createDeterministicConsultantQuote } from "@/lib/server/consultant-quote";
 import { captureLead } from "@/lib/server/leads/capture";
+import { notifyNewLead } from "@/lib/server/email/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
           // is the transactional reply the person asked for by entering an
           // address.
           try {
-            await captureLead(
+            const lead = await captureLead(
               {
                 kind: "magnet",
                 source: "ai-project-consultant",
@@ -182,6 +183,17 @@ export async function POST(request: NextRequest) {
               },
               now,
             );
+
+            if (lead.created) {
+              await notifyNewLead({
+                leadId: lead.id,
+                reference: lead.reference,
+                source: "ai-project-consultant",
+                kindLabel: "AI project brief",
+                email,
+                message: `Recommended ${result.recommendation.recommendedPackage}.`,
+              }).catch(() => undefined);
+            }
           } catch (leadError) {
             console.error(
               "[consultant] Could not capture the lead:",

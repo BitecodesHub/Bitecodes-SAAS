@@ -2,7 +2,7 @@ import "server-only";
 
 import { getServerEnv } from "@/lib/server/env";
 import { queueEmail } from "@/lib/server/email/send";
-import { getSettingsFresh } from "@/lib/server/settings";
+import { getSettingsFresh, recipientsForChannel } from "@/lib/server/settings";
 import type { EmailBlock } from "@/lib/email/template";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import { collectDigestSections } from "@/lib/server/digest/collect";
@@ -32,16 +32,25 @@ export async function handleDailyDigest(
 
   const range = { from, to };
 
-  // Collect all digest sections in parallel (each has its own timeout).
+  // Collect all digest sections in parallel (each has its own timeout). A
+  // section that fails is recorded here rather than reported as an empty one:
+  // "0 leads" from a failed query is worse than no section at all, because it
+  // reads like a good day.
+  const sectionFailures: Array<{ id: string; message: string }> = [];
   const sections = await collectDigestSections(range, {
-    onError: (id, message) =>
-      context.log(`[digest] Section "${id}" skipped: ${message}`),
+    onError: (id, message) => {
+      sectionFailures.push({ id, message });
+      context.log(`[digest] Section "${id}" skipped: ${message}`);
+    },
   });
 
   // Fetch failed / dead-lettered jobs in the last 24 hours.
-  let failedJobCount = 0;
-  let deadJobCount = 0;
-  const failedJobTypes: string[] = [];
+  let jobStats: {
+    failed: number;
+    dead: number;
+    types: string[];
+  } | null = null;
+  let jobStatsError: string | null = null;
   try {
     const collection = await jobs();
     const [failedDocs, dead] = await Promise.all([
@@ -55,21 +64,20 @@ export async function handleDailyDigest(
         updatedAt: { $gte: from },
       }),
     ]);
-    failedJobCount = failedDocs.length;
-    deadJobCount = dead;
+    const types: string[] = [];
     for (const doc of failedDocs.slice(0, 10)) {
       const t = (doc as { type?: string }).type;
-      if (t && !failedJobTypes.includes(t)) failedJobTypes.push(t);
+      if (t && !types.includes(t)) types.push(t);
     }
+    jobStats = { failed: failedDocs.length, dead, types };
   } catch (error) {
-    context.log(
-      `[digest] Could not read job stats: ${error instanceof Error ? error.message : error}`,
-    );
+    jobStatsError = error instanceof Error ? error.message : String(error);
+    context.log(`[digest] Could not read job stats: ${jobStatsError}`);
   }
 
   // Fetch AI automation run stats for the period.
-  let aiRuns = 0;
-  let aiFailures = 0;
+  let aiStats: { runs: number; failures: number } | null = null;
+  let aiStatsError: string | null = null;
   try {
     const { aiAutomationRuns } = await import("@/lib/server/db/collections");
     const col = await aiAutomationRuns();
@@ -77,27 +85,31 @@ export async function handleDailyDigest(
       col.countDocuments({ createdAt: { $gte: from, $lt: to } }),
       col.countDocuments({ createdAt: { $gte: from, $lt: to }, ok: false }),
     ]);
-    aiRuns = runs;
-    aiFailures = failures;
+    aiStats = { runs, failures };
   } catch (error) {
-    context.log(
-      `[digest] Could not read AI run stats: ${error instanceof Error ? error.message : error}`,
-    );
+    aiStatsError = error instanceof Error ? error.message : String(error);
+    context.log(`[digest] Could not read AI run stats: ${aiStatsError}`);
   }
 
-  // Build the email body.
-  const dateLabel = from.toISOString().slice(0, 10);
+  // Build the email body. The full window is stated, with its timezone, so any
+  // figure can be reconciled against a query on the same range.
+  const fromLabel = from.toISOString().slice(0, 16).replace("T", " ");
+  const toLabel = to.toISOString().slice(0, 16).replace("T", " ");
+  const dateLabel = `${from.toISOString().slice(0, 10)} → ${to.toISOString().slice(0, 10)}`;
   const blocks: EmailBlock[] = [
     {
       type: "p",
-      text: `Owner daily digest — ${dateLabel} UTC.`,
+      text: `Owner daily digest — ${fromLabel} to ${toLabel} UTC.`,
     },
   ];
 
   if (sections.length === 0) {
     blocks.push({
       type: "p",
-      text: "Nothing to report for this period. All sections returned empty or timed out.",
+      text:
+        sectionFailures.length > 0
+          ? "No section could be built for this period; the failures are listed below."
+          : "No section had anything to report for this period.",
     });
   } else {
     for (const section of sections) {
@@ -126,31 +138,67 @@ export async function handleDailyDigest(
     }
   }
 
+  // A source query that failed must not be reported as a zero.
+  if (sectionFailures.length > 0) {
+    blocks.push({ type: "h2", text: "Reporting gaps" });
+    blocks.push({
+      type: "p",
+      text: `${sectionFailures.length} section${sectionFailures.length === 1 ? "" : "s"} could not be built for this period. The figures they would have contributed are unknown, not zero.`,
+    });
+    blocks.push({
+      type: "ul",
+      items: sectionFailures.map(
+        (failure) => `${failure.id}: ${failure.message}`,
+      ),
+    });
+  }
+
   // Operations section: job health + AI stats.
   blocks.push({ type: "h2", text: "Operations" });
-  const opsItems: string[] = [
-    `AI automation calls: ${aiRuns} (${aiFailures} failure${aiFailures === 1 ? "" : "s"}).`,
-    `Jobs failed in last 24 h: ${failedJobCount} (${deadJobCount} dead-lettered).`,
-  ];
-  if (failedJobTypes.length > 0) {
-    opsItems.push(`Affected types: ${failedJobTypes.join(", ")}.`);
+  const opsItems: string[] = [];
+  opsItems.push(
+    aiStats
+      ? `AI automation calls: ${aiStats.runs} (${aiStats.failures} failure${aiStats.failures === 1 ? "" : "s"}).`
+      : `AI automation calls: unavailable (${aiStatsError}).`,
+  );
+  if (jobStats) {
+    opsItems.push(
+      `Jobs failed in last 24 h: ${jobStats.failed} (${jobStats.dead} dead-lettered).`,
+    );
+    if (jobStats.types.length > 0) {
+      opsItems.push(`Affected types: ${jobStats.types.join(", ")}.`);
+    }
+  } else {
+    opsItems.push(`Job failures: unavailable (${jobStatsError}).`);
   }
   blocks.push({ type: "ul", items: opsItems });
 
-  // Resolve recipients: notification settings → fallback to CONTACT_NOTIFICATION_TO.
+  // Owner reports have their own channel: a digest is not a failed-job alert,
+  // and routing it through that channel meant customising failure recipients
+  // silently changed who received the daily report.
+  const configuredRecipients = recipientsForChannel(settings, "ownerReports");
   const notifRecipients =
-    settings.notifications.channels.failedJob.recipients.length > 0
-      ? settings.notifications.channels.failedJob.recipients
-      : settings.notifications.defaultRecipients.length > 0
-        ? settings.notifications.defaultRecipients
-        : env.CONTACT_NOTIFICATION_TO;
+    configuredRecipients.length > 0
+      ? configuredRecipients
+      : settings.notifications.channels.ownerReports.enabled
+        ? env.CONTACT_NOTIFICATION_TO
+        : [];
 
   if (notifRecipients.length === 0) {
     context.log("[digest] No recipients configured — digest not sent.");
-    return { sections: sections.length, recipients: 0 };
+    return {
+      sections: sections.length,
+      sectionFailures: sectionFailures.length,
+      recipients: 0,
+    };
   }
 
-  const subject = `Daily digest — ${dateLabel}: ${sections.length} section${sections.length === 1 ? "" : "s"}${failedJobCount > 0 ? `, ${failedJobCount} job failure${failedJobCount === 1 ? "" : "s"}` : ""}`;
+  const failedJobsLabel = jobStats
+    ? jobStats.failed > 0
+      ? `, ${jobStats.failed} job failure${jobStats.failed === 1 ? "" : "s"}`
+      : ""
+    : ", job stats unavailable";
+  const subject = `Daily digest — ${dateLabel}: ${sections.length} section${sections.length === 1 ? "" : "s"}${sectionFailures.length > 0 ? `, ${sectionFailures.length} reporting gap${sectionFailures.length === 1 ? "" : "s"}` : ""}${failedJobsLabel}`;
 
   const results = await Promise.allSettled(
     notifRecipients.map((recipient) =>
@@ -165,31 +213,48 @@ export async function handleDailyDigest(
     ),
   );
 
-  const sent = results.filter((r) => r.status === "fulfilled").length;
-  const errors = results
-    .filter((r) => r.status === "rejected")
-    .map((r) =>
-      r.status === "rejected"
-        ? r.reason instanceof Error
-          ? r.reason.message
-          : String(r.reason)
-        : "",
-    );
-
-  for (const err of errors) {
-    context.log(`[digest] Send error: ${err}`);
+  // A gate-refused or undeliverable message is not a sent digest, even though
+  // `queueEmail` resolved. Counting fulfilled promises reported success for
+  // mail that was explicitly skipped.
+  let sent = 0;
+  let skipped = 0;
+  for (const result of results) {
+    if (
+      result.status === "fulfilled" &&
+      (result.value.status === "queued" ||
+        result.value.status === "pending_approval")
+    ) {
+      sent += 1;
+      continue;
+    }
+    if (result.status === "fulfilled") {
+      skipped += 1;
+      context.log(
+        `[digest] Recipient refused by the email gate: ${result.value.skipReason ?? result.value.status}.`,
+      );
+    } else {
+      context.log(
+        `[digest] Send error: ${
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason)
+        }`,
+      );
+    }
   }
 
   context.log(
-    `Digest sent to ${sent}/${notifRecipients.length} recipient(s). Sections: ${sections.length}. AI: ${aiRuns} runs, ${aiFailures} failures.`,
+    `Digest queued for ${sent}/${notifRecipients.length} recipient(s) (${skipped} refused). Sections: ${sections.length}, gaps: ${sectionFailures.length}. AI: ${aiStats ? `${aiStats.runs} runs, ${aiStats.failures} failures` : "unavailable"}.`,
   );
 
   return {
     sections: sections.length,
+    sectionFailures: sectionFailures.length,
     recipients: sent,
-    aiRuns,
-    aiFailures,
-    failedJobCount,
-    deadJobCount,
+    refused: skipped,
+    aiRuns: aiStats?.runs ?? null,
+    aiFailures: aiStats?.failures ?? null,
+    failedJobCount: jobStats?.failed ?? null,
+    deadJobCount: jobStats?.dead ?? null,
   };
 }

@@ -96,7 +96,14 @@ export const razorpayProvider: BillingProvider = {
     let event: {
       event?: string;
       payload?: {
-        payment?: { entity?: { id?: string; notes?: { orderId?: string } } };
+        payment?: {
+          entity?: {
+            id?: string;
+            amount?: number;
+            currency?: string;
+            notes?: { orderId?: string };
+          };
+        };
         order?: { entity?: { receipt?: string } };
       };
     };
@@ -118,10 +125,22 @@ export const razorpayProvider: BillingProvider = {
       event.payload?.order?.entity?.receipt ??
       null;
 
+    const outcome = /^(payment\.captured|order\.paid)$/.test(event.event ?? "")
+      ? "captured"
+      : event.event === "payment.failed"
+        ? "failed"
+        : "other";
+
     return {
       eventId,
       orderId,
-      paid: event.event === "payment.captured" || event.event === "order.paid",
+      outcome,
+      amount:
+        typeof paymentEntity?.amount === "number" ? paymentEntity.amount : null,
+      currency:
+        typeof paymentEntity?.currency === "string"
+          ? paymentEntity.currency
+          : null,
     };
   },
 };

@@ -12,10 +12,14 @@ import {
   selectForContext,
 } from "@/lib/chatbot/retrieval";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
-import { deduct, getBalance } from "@/lib/server/tokens-ledger/ledger";
+import { deductUpTo, getBalance } from "@/lib/server/tokens-ledger/ledger";
 import { streamChatCompletion } from "@/lib/server/ai-provider";
 import { sha256Hex } from "@/lib/server/crypto";
-import { notifyChatConversation } from "@/lib/server/email/notify";
+import {
+  notifyChatConversation,
+  notifyFailedJob,
+  notifyLowBalance,
+} from "@/lib/server/email/notify";
 import type { ChatbotDoc } from "@/lib/server/db/types";
 
 /**
@@ -96,6 +100,11 @@ export interface ChatRequest {
   origin: string | null;
   ip: string | null;
   history?: { role: "user" | "assistant"; content: string }[];
+  /**
+   * Aborted when the visitor disconnects. Passed straight to the provider so a
+   * closed tab stops paying for tokens nobody will read.
+   */
+  signal?: AbortSignal | null;
   /**
    * The bot, when the caller has already resolved it.
    *
@@ -293,6 +302,7 @@ export async function handleChat(request: ChatRequest): Promise<ChatOutcome> {
     maxTokens: chosen?.maxOutput,
     conversationId: request.conversationId,
     history: request.history,
+    signal: request.signal,
   });
 }
 
@@ -326,6 +336,7 @@ async function startStream(
     maxTokens?: number;
     conversationId?: string | null;
     history?: { role: "user" | "assistant"; content: string }[];
+    signal?: AbortSignal | null;
   },
 ): Promise<ChatOutcome> {
   // Only the last few turns travel, to bound the prompt and the cost.
@@ -345,6 +356,7 @@ async function startStream(
         MAX_ANSWER_TOKENS,
       ),
       temperature: 0.3,
+      signal: options.signal ?? undefined,
     });
   } catch (error) {
     if (error instanceof Error && error.message === "NOT_CONFIGURED") {
@@ -354,6 +366,11 @@ async function startStream(
   }
 
   const conversationId = options.conversationId?.trim() || randomUUID();
+
+  // One id per turn, not per conversation: the ledger's `refId` is the audit
+  // trail for "what did this spend pay for", and a conversation of ten turns
+  // used to collapse into one indistinguishable refId.
+  const turnId = randomUUID();
 
   // The answer is accumulated as it streams so the owner's alert can quote it.
   // The route consumes the generator and never hands the text back, so
@@ -367,10 +384,13 @@ async function startStream(
     }
   };
 
-  // `settle` is called twice on the error path (once by the stream loop, once
-  // by its catch), and the token debit is idempotent enough not to care. An
-  // email is not, so notification is guarded by its own flag as well as by the
-  // per-conversation counter in `notify.ts`.
+  // `settle` is invoked on both the success and the error path of the route's
+  // stream loop. The first call wins and later ones return the recorded usage,
+  // so a turn is billed exactly once no matter how the stream ends.
+  let settledUsage: { inputTokens: number; outputTokens: number } | null = null;
+
+  // The conversation alert is additionally throttled per conversation in
+  // `notify.ts`; this flag stops a second `settle` from even trying.
   let notified = false;
 
   return {
@@ -380,18 +400,55 @@ async function startStream(
     sources,
     grounded,
     settle: async () => {
+      if (settledUsage) return settledUsage;
       const usage = completion.usage();
+      settledUsage = usage;
       const total = usage.inputTokens + usage.outputTokens;
       if (total > 0) {
-        // Best-effort: a failed debit must not corrupt a delivered answer, and
-        // the pre-flight balance check already prevented unbounded free use.
-        await deduct({
-          ownerId: bot.ownerId,
-          amount: total,
-          chatbotId: bot.chatbotId,
-          messageId: conversationId,
-          note: `chat:${completion.model}`,
-        }).catch(() => undefined);
+        // A delivered answer is not refundable, so the spend is clamped at
+        // whatever the balance holds rather than refused. A refusal here
+        // would mean the answer went out free *and* silently: the balance
+        // would sit just above the pre-flight floor forever, funding one
+        // free reply per request. A shortfall instead zeroes the balance —
+        // the next request is then refused honestly — and tells the owner.
+        try {
+          const result = await deductUpTo({
+            ownerId: bot.ownerId,
+            amount: total,
+            chatbotId: bot.chatbotId,
+            messageId: turnId,
+            note: `chat:${completion.model}`,
+          });
+          if (result.shortfall > 0) {
+            await notifyLowBalance({
+              ownerId: bot.ownerId,
+              product: "chatbot",
+              balance: result.balanceAfter,
+            }).catch(() => undefined);
+          }
+        } catch (error) {
+          // An unbillable-but-delivered answer is an anomaly the operator
+          // must see, not a silent free ride. Best-effort: the alert itself
+          // must never fail the response.
+          const message =
+            error instanceof Error
+              ? `${error.name}: ${error.message}`
+              : String(error);
+          console.error(
+            "[chat] token settlement failed for",
+            bot.chatbotId,
+            message,
+          );
+          // An answer was delivered but could not be charged. Left as a log
+          // line, this is money that disappears quietly; the operator alert is
+          // throttled per failure type so a database outage does not spam.
+          await notifyFailedJob({
+            jobType: "chat.settlement",
+            jobId: turnId,
+            error: message,
+            attempts: 1,
+          }).catch(() => undefined);
+        }
       }
 
       if (!notified) {

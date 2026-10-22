@@ -63,10 +63,13 @@ function ensureHandlersRegistered() {
   registerJobHandler(JOB_TYPES.autopilotTick, async (_payload, context) => {
     const { runAutopilotTick } = await import("@/lib/server/autopilot");
     const summary = await runAutopilotTick();
+    const discovery = summary.presetRun
+      ? `Discovery preset run: ${summary.presetRun}.`
+      : "Discovery: no preset due.";
     context.log(
       summary.enabled
-        ? `Preset run: ${summary.presetRun ?? "none due"}; ${summary.enrolled}/${summary.candidates} candidate(s) enrolled.`
-        : "Autopilot is switched off.",
+        ? `${discovery} ${summary.enrolled}/${summary.candidates} candidate(s) enrolled.`
+        : `${discovery} Auto-enrolment is off; prospects were discovered but not contacted.`,
     );
     return summary as unknown as Record<string, unknown>;
   });
@@ -194,6 +197,12 @@ function ensureHandlersRegistered() {
     const { handleMonthlyReports } =
       await import("@/lib/server/jobs/handlers/report-monthly");
     return handleMonthlyReports(payload, context);
+  });
+
+  registerJobHandler(JOB_TYPES.referralReconcile, async (payload, context) => {
+    const { handleReferralReconcile } =
+      await import("@/lib/server/jobs/handlers/referral-reconcile");
+    return handleReferralReconcile(payload, context);
   });
 }
 

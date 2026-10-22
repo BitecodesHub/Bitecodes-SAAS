@@ -10,11 +10,19 @@ vi.mock("@/lib/server/blog/repository", () => ({
   getPublishedPosts: vi.fn(),
 }));
 vi.mock("@/lib/server/search-ping", () => ({ pingIndexNow: vi.fn() }));
+vi.mock("@/lib/server/search-submissions", () => ({
+  dueSearchSubmissions: vi.fn(),
+  searchSubmissionSummary: vi.fn(),
+}));
 
 import { getSettings } from "@/lib/server/settings";
 import { getIndexNowKey } from "@/lib/server/env";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { pingIndexNow } from "@/lib/server/search-ping";
+import {
+  dueSearchSubmissions,
+  searchSubmissionSummary,
+} from "@/lib/server/search-submissions";
 import { handleSearchPing } from "@/lib/server/jobs/handlers/search-ping";
 
 const NOW = new Date("2026-10-19T06:00:00.000Z"); // Monday
@@ -93,6 +101,12 @@ describe("handleSearchPing", () => {
     vi.mocked(getIndexNowKey).mockReturnValue("key");
     vi.mocked(getPublishedPosts).mockResolvedValue([]);
     vi.mocked(pingIndexNow).mockResolvedValue(true);
+    vi.mocked(dueSearchSubmissions).mockResolvedValue([]);
+    vi.mocked(searchSubmissionSummary).mockResolvedValue({
+      pending: 0,
+      due: 0,
+      abandoned: 0,
+    });
   });
 
   afterEach(() => {
@@ -130,5 +144,49 @@ describe("handleSearchPing", () => {
       expect.arrayContaining(["/blog/new"]),
     );
     expect(result).toMatchObject({ pinged: true });
+  });
+
+  it("includes URLs whose retry is due", async () => {
+    vi.mocked(dueSearchSubmissions).mockResolvedValue(["/blog/retry"]);
+
+    const result = await handleSearchPing({}, context);
+
+    expect(pingIndexNow).toHaveBeenCalledWith(
+      expect.arrayContaining(["/blog/retry"]),
+    );
+    expect(result).toMatchObject({ pinged: true, retried: 1 });
+  });
+
+  it("reports the durable retry queue when IndexNow refuses the batch", async () => {
+    vi.mocked(dueSearchSubmissions).mockResolvedValue(["/blog/retry"]);
+    vi.mocked(pingIndexNow).mockResolvedValue(false);
+    vi.mocked(searchSubmissionSummary).mockResolvedValue({
+      pending: 1,
+      due: 0,
+      abandoned: 2,
+    });
+
+    const result = await handleSearchPing({}, context);
+
+    expect(result).toMatchObject({
+      pinged: false,
+      retried: 1,
+      queue: { pending: 1, due: 0, abandoned: 2 },
+    });
+  });
+
+  it("does nothing when the week has no changes and no retries are due", async () => {
+    // Tuesday, so the Monday static-page batch is not added.
+    vi.setSystemTime(new Date("2026-10-20T06:00:00.000Z"));
+
+    const result = await handleSearchPing({}, context);
+
+    expect(result).toEqual({
+      pinged: false,
+      count: 0,
+      paths: [],
+      retried: 0,
+    });
+    expect(pingIndexNow).not.toHaveBeenCalled();
   });
 });

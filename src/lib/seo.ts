@@ -119,6 +119,22 @@ export function socialProfiles(): string[] {
 }
 
 /**
+ * Primary sales markets plus worldwide reach.
+ *
+ * Organization and every Service reference the same list, so a country added
+ * to the studio's stated markets cannot appear in one schema and not another.
+ */
+function primaryAreaServed() {
+  return [
+    ...siteConfig.markets.map((name) => ({
+      "@type": "Country" as const,
+      name,
+    })),
+    "Worldwide",
+  ];
+}
+
+/**
  * Speakable specification for a page.
  *
  * Voice assistants and some answer engines read only the nominated elements,
@@ -184,9 +200,9 @@ export function organizationSchema() {
     url: siteConfig.url,
     logo: {
       "@type": "ImageObject",
-      url: `${siteConfig.url}/apple-icon`,
-      width: 180,
-      height: 180,
+      url: `${siteConfig.url}/icon-512.png`,
+      width: 512,
+      height: 512,
     },
     image: `${siteConfig.url}/opengraph-image`,
     description: siteConfig.description,
@@ -210,7 +226,7 @@ export function organizationSchema() {
     // A qualitative band, not a quote. Specific starting prices live on each
     // service page and in the Offer nodes; a numeric range here would go stale.
     priceRange: "$$",
-    currenciesAccepted: "USD, INR, AUD, GBP",
+    currenciesAccepted: CURRENCIES.map((c) => c.code).join(", "),
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
@@ -222,13 +238,7 @@ export function organizationSchema() {
     // Explicit primary markets in addition to worldwide reach, so answer
     // engines can match a country-scoped question ("software company in the
     // UK") to Bitecodes rather than treating "Worldwide" as no signal.
-    areaServed: [
-      { "@type": "Country", name: "United States" },
-      { "@type": "Country", name: "United Kingdom" },
-      { "@type": "Country", name: "Australia" },
-      { "@type": "Country", name: "India" },
-      "Worldwide",
-    ],
+    areaServed: primaryAreaServed(),
     knowsAbout: technologies.map((t) => t.name),
     contactPoint: [
       {
@@ -237,7 +247,7 @@ export function organizationSchema() {
         email: siteConfig.contact.salesEmail,
         telephone: siteConfig.contact.phone,
         availableLanguage: ["English"],
-        areaServed: ["US", "GB", "AU", "IN"],
+        areaServed: [...siteConfig.marketCodes],
       },
       {
         "@type": "ContactPoint",
@@ -295,7 +305,7 @@ export function serviceSchema(service: Service) {
     serviceType: service.title,
     description: service.description,
     url: serviceUrl,
-    areaServed: "Worldwide",
+    areaServed: primaryAreaServed(),
     availableLanguage: ["English"],
     provider: {
       "@type": "Organization",

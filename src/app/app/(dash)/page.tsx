@@ -30,6 +30,10 @@ import {
   crossSellSuggestion,
 } from "@/lib/server/lifecycle";
 import { ReferralCard } from "@/components/account/referral-card";
+import {
+  getOrCreateReferral,
+  REFERRAL_REWARD_DESCRIPTION,
+} from "@/lib/server/referrals";
 import { FeedbackPrompt } from "@/components/account/feedback-prompt";
 import { Button } from "@/components/ui/button";
 
@@ -75,6 +79,7 @@ export default async function AppOverviewPage() {
     bookingLedger,
     emailLedger,
     ownerDoc,
+    referral,
   ] = await Promise.all([
     listChatbots(session.userId),
     listForms(session.userId),
@@ -90,6 +95,7 @@ export default async function AppOverviewPage() {
     adminUsers().then((col) =>
       col.findOne({ _id: session.userId as unknown as ObjectId }),
     ),
+    getOrCreateReferral(session.userId),
   ]);
 
   // --- Onboarding progress ---
@@ -468,7 +474,11 @@ export default async function AppOverviewPage() {
 
       {/* ── Referral and feedback ── */}
       <div className="space-y-4">
-        <ReferralCard />
+        <ReferralCard
+          code={referral.code}
+          redemptionCount={referral.redemptions.length}
+          rewardLabel={REFERRAL_REWARD_DESCRIPTION}
+        />
         <FeedbackPrompt />
       </div>
     </div>

@@ -1,8 +1,23 @@
 import "server-only";
 
 import { getAiProviderConfig } from "@/lib/server/ai-provider";
-import { getSettingsFresh } from "@/lib/server/settings";
+import {
+  getSettingsFresh,
+  recipientsForChannel,
+  type ResolvedSettings,
+} from "@/lib/server/settings";
 import type { JobContext } from "@/lib/server/jobs/worker";
+import { getAnalyticsOverview } from "@/lib/server/analytics/repository";
+import { countLeadsInRange } from "@/lib/server/leads/repository";
+import {
+  blogPostDocs,
+  emailMessages,
+  prospects,
+} from "@/lib/server/db/collections";
+import { getServerEnv } from "@/lib/server/env";
+import { normalizeEmail } from "@/lib/email/address";
+import { queueEmail } from "@/lib/server/email/send";
+import type { EmailBlock } from "@/lib/email/template";
 
 /**
  * `report.weekly` — The owner's weekly growth report with AI executive summary.
@@ -39,21 +54,21 @@ export async function handleWeeklyReport(
     Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate() - 7),
   );
 
-  const span = end.getTime() - start.getTime();
-  const previousStart = new Date(end.getTime() - span);
-  const previousEnd = start;
-
   const [
     analyticsOverview,
     leadStats,
     prospectStats,
-    blogPosts,
+    contentDrafts,
     emailSentStats,
   ] = await Promise.all([
     getAnalyticsOverview({ from: start, to: end }),
-    countLeadsInRange(start, end),
-    getProspectStats(),
-    getBlogPostsDrafts(),
+    getLeadStats(
+      start,
+      end,
+      new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000),
+    ),
+    getProspectStats(start, end),
+    getBlogPostsDrafts(start, end),
     countEmailsSentRange(start, end),
   ]);
 
@@ -62,8 +77,10 @@ export async function handleWeeklyReport(
     pageviews: analyticsOverview.totals.pageviews,
     visitors: analyticsOverview.totals.visitors,
     leadsNew: leadStats.total,
-    leadsChange: leadStats.previousTotal,
+    leadsPrevious: leadStats.previousTotal,
+    leadsChange: leadStats.total - leadStats.previousTotal,
     prospectsNew: prospectStats.total,
+    contentDrafts,
     emailsSent: emailSentStats.sent,
   };
 
@@ -79,8 +96,9 @@ export async function handleWeeklyReport(
       const userPrompt = `Past week analytics:
 - Page views: ${metrics.pageviews}
 - Daily visitors: ${metrics.visitors}
-- New leads: ${metrics.leadsNew} (change: ${metrics.leadsChange ? metrics.leadsChange : "unknown"})
+- New leads: ${metrics.leadsNew} (change from prior week: ${metrics.leadsChange >= 0 ? "+" : ""}${metrics.leadsChange})
 - New prospects: ${metrics.prospectsNew}
+- Content drafts created: ${metrics.contentDrafts}
 - Emails sent: ${metrics.emailsSent}
 
 Generate a 3-5 sentence executive summary.`;
@@ -129,39 +147,162 @@ Generate a 3-5 sentence executive summary.`;
 
   const summaryText = aiSummary || "No AI summary available.";
 
-  // Log and return
-  context.log(`Weekly report generated: ${summaryText}`);
+  const recipients = getReportRecipients(settings);
+  let emailed = 0;
+  const emailErrors: string[] = [];
+  const subject = `Weekly growth report — ${start.toISOString().slice(0, 10)}`;
+  if (recipients.length > 0) {
+    // A retry of this handler must not send the same week's report twice. The
+    // scheduled job is deduplicated by its idempotency key, but a process that
+    // dies after queueing and before completing the job is retried as new
+    // work — so the already-queued recipients are read back from the outbox.
+    const alreadyQueued = new Set(
+      (
+        await (
+          await emailMessages()
+        )
+          .find({
+            subject,
+            category: "internal",
+            createdAt: { $gte: start },
+          })
+          .project({ to: 1 })
+          .toArray()
+      ).map((document) => normalizeEmail(document.to)),
+    );
+    const pendingRecipients = recipients.filter(
+      (to) => !alreadyQueued.has(normalizeEmail(to)),
+    );
 
-  // TODO: In a full implementation, queue the email to the owner here.
-  // For now, we return the summary so the admin page can display it.
+    if (pendingRecipients.length === 0) {
+      context.log("Weekly report was already queued for every recipient.");
+      return {
+        skipped: "already-sent",
+        summary: summaryText,
+        emailed: 0,
+        recipients: recipients.length,
+        emailErrors,
+        period: {
+          start: start.toISOString().slice(0, 10),
+          end: end.toISOString().slice(0, 10),
+          timezone: "UTC",
+        },
+        metrics,
+      };
+    }
+
+    const blocks: EmailBlock[] = [
+      {
+        type: "p",
+        text: `Weekly growth report — ${start.toISOString().slice(0, 10)} to ${end.toISOString().slice(0, 10)} UTC.`,
+      },
+      { type: "p", text: summaryText },
+      {
+        type: "ul",
+        items: [
+          `Page views: ${metrics.pageviews}`,
+          `Visitors: ${metrics.visitors}`,
+          `New leads: ${metrics.leadsNew}`,
+          `New prospects: ${metrics.prospectsNew}`,
+          `Content drafts: ${metrics.contentDrafts}`,
+          `Emails sent: ${metrics.emailsSent}`,
+        ],
+      },
+    ];
+    const results = await Promise.allSettled(
+      pendingRecipients.map((to) =>
+        queueEmail({
+          to,
+          subject,
+          blocks,
+          category: "internal",
+          skipApproval: true,
+          track: false,
+        }),
+      ),
+    );
+    for (const result of results) {
+      if (result.status === "rejected") {
+        const message =
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason);
+        emailErrors.push(message);
+        context.log(`Weekly report email error: ${message}`);
+      } else if (result.value.status === "queued") {
+        emailed += 1;
+      } else {
+        // The email gate refused the address; counting the resolved promise as
+        // sent reported a report delivered that never entered the queue.
+        emailErrors.push(
+          `skipped: ${result.value.skipReason ?? result.value.status}`,
+        );
+        context.log(
+          `Weekly report email skipped: ${result.value.skipReason ?? result.value.status}`,
+        );
+      }
+    }
+  } else {
+    context.log("Weekly report has no configured recipients.");
+  }
+
+  context.log(`Weekly report generated: ${summaryText}`);
 
   return {
     skipped: false,
     summary: summaryText,
+    emailed,
+    recipients: recipients.length,
+    emailErrors,
     period: {
       start: start.toISOString().slice(0, 10),
       end: end.toISOString().slice(0, 10),
+      timezone: "UTC",
     },
     metrics,
   };
 }
 
-function getAnalyticsOverview(_range: { from: Date; to: Date }) {
-  return { totals: { pageviews: 0, visitors: 0 } };
+function getReportRecipients(settings: ResolvedSettings): string[] {
+  const env = getServerEnv();
+  const configured = recipientsForChannel(settings, "ownerReports");
+  if (configured.length > 0) return configured;
+  // Mirrors `notify()`: fall back to the deployment address only while the
+  // channel is enabled, so switching owner reports off actually stops them.
+  return settings.notifications.channels.ownerReports.enabled
+    ? [...new Set(env.CONTACT_NOTIFICATION_TO)]
+    : [];
 }
 
-function countLeadsInRange(from: Date, to: Date) {
-  return { total: 0, previousTotal: 0 };
+async function getLeadStats(from: Date, to: Date, previousFrom: Date) {
+  const [total, previousTotal] = await Promise.all([
+    countLeadsInRange(from, to),
+    countLeadsInRange(previousFrom, from),
+  ]);
+  return { total, previousTotal };
 }
 
-function getProspectStats() {
-  return { total: 0, withEmail: 0 };
+async function getProspectStats(from: Date, to: Date) {
+  const collection = await prospects();
+  const total = await collection.countDocuments({
+    createdAt: { $gte: from, $lt: to },
+  });
+  return { total };
 }
 
-function getBlogPostsDrafts() {
-  return [];
+async function getBlogPostsDrafts(from: Date, to: Date) {
+  const collection = await blogPostDocs();
+  return collection.countDocuments({
+    status: "draft",
+    createdAt: { $gte: from, $lt: to },
+  });
 }
 
-function countEmailsSentRange(from: Date, to: Date) {
-  return { sent: 0 };
+async function countEmailsSentRange(from: Date, to: Date) {
+  const collection = await emailMessages();
+  const sent = await collection.countDocuments({
+    status: "sent",
+    sentAt: { $gte: from, $lt: to },
+  });
+  return { sent };
 }

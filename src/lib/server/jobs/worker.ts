@@ -14,6 +14,7 @@ import {
   type JobType,
 } from "@/lib/server/jobs/queue";
 import { getJobHandlers } from "@/lib/server/jobs/handlers";
+import { notifyFailedJob } from "@/lib/server/email/notify";
 
 /**
  * The job worker.
@@ -54,6 +55,13 @@ export interface RunOptions {
   handlers?: JobHandlerMap;
   workerId?: string;
   now?: () => number;
+  /** Overridden in tests so a failure does not queue real email. */
+  notifyDeadJob?: (input: {
+    jobType: string;
+    jobId: string;
+    error: string;
+    attempts: number;
+  }) => Promise<unknown>;
 }
 
 export interface RunSummary {
@@ -81,6 +89,7 @@ export async function runDueJobs({
   handlers = getJobHandlers(),
   workerId = newWorkerId(),
   now = Date.now,
+  notifyDeadJob = notifyFailedJob,
 }: RunOptions = {}): Promise<RunSummary> {
   const startedAt = now();
   const deadline = startedAt + budgetMs;
@@ -116,7 +125,9 @@ export async function runDueJobs({
       // it surfaces in the admin panel instead of burning retries.
       summary.unhandled += 1;
       summary.failed += 1;
-      await deadLetter(jobId, `No handler registered for "${job.type}"`);
+      const message = `No handler registered for "${job.type}"`;
+      await deadLetter(jobId, message);
+      await alertDeadJob(notifyDeadJob, job.type, jobId, message, job.attempts);
       continue;
     }
 
@@ -132,6 +143,7 @@ export async function runDueJobs({
         jobId,
         { ...(result ?? {}), ...(lines.length ? { log: lines } : {}) },
         new Date(now()),
+        workerId,
       );
       summary.completed += 1;
     } catch (error) {
@@ -140,13 +152,45 @@ export async function runDueJobs({
         summary.deferred += 1;
         continue;
       }
-      await failJob(job, error, new Date(now()));
+      const { requeued } = await failJob(job, error, new Date(now()));
       summary.failed += 1;
+      if (!requeued) {
+        await alertDeadJob(
+          notifyDeadJob,
+          job.type,
+          jobId,
+          error instanceof Error ? error.message : String(error),
+          job.attempts,
+        );
+      }
     }
   }
 
   summary.durationMs = now() - startedAt;
   return summary;
+}
+
+/**
+ * A dead letter is the moment automation stops making progress on its own, so
+ * it is the one job failure that always tells a human. The notifier throttles
+ * per job type and swallows its own errors: an alert must never turn one failed
+ * job into a failed worker run.
+ */
+async function alertDeadJob(
+  notifyDeadJob: NonNullable<RunOptions["notifyDeadJob"]>,
+  jobType: string,
+  jobId: string,
+  error: string,
+  attempts: number,
+): Promise<void> {
+  try {
+    await notifyDeadJob({ jobType, jobId, error, attempts });
+  } catch (notifyError) {
+    console.error(
+      "[jobs] Dead-letter alert failed:",
+      notifyError instanceof Error ? notifyError.message : notifyError,
+    );
+  }
 }
 
 async function deadLetter(jobId: string, message: string) {

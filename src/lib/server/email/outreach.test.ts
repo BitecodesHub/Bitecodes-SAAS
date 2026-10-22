@@ -151,13 +151,57 @@ describeWithDatabase("outreach planner", () => {
     if (!second.ok) expect(second.reason).toBe("already-contacted");
   });
 
+  it("never queues two first-contact emails when two callers race", async () => {
+    // The old guard was a read-then-write: both callers could see
+    // contactCount 0 and both queue. The atomic claim makes that impossible.
+    const { prepareProspectOutreach } =
+      await import("@/lib/server/email/outreach");
+    const { getProspect } = await import("@/lib/server/prospecting/repository");
+    const { emailMessages } = await import("@/lib/server/db/collections");
+    const id = await seedProspect();
+
+    const results = await Promise.all([
+      prepareProspectOutreach(id),
+      prepareProspectOutreach(id),
+    ]);
+
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(
+      await (await emailMessages()).countDocuments({ prospectId: id }),
+    ).toBe(1);
+    expect((await getProspect(id))?.contactCount).toBe(1);
+  });
+
+  it("releases the first-contact claim when the gate refuses", async () => {
+    // A transient cap or suppression must not permanently burn the prospect's
+    // only first-contact slot.
+    const { prepareProspectOutreach } =
+      await import("@/lib/server/email/outreach");
+    const { getProspect } = await import("@/lib/server/prospecting/repository");
+    const { addSuppression, removeSuppression } =
+      await import("@/lib/server/email/suppression");
+    const id = await seedProspect();
+
+    await addSuppression("hello@rossi.example.com", "unsubscribed");
+    expect((await prepareProspectOutreach(id)).ok).toBe(false);
+    expect((await getProspect(id))?.contactCount).toBe(0);
+
+    await removeSuppression("hello@rossi.example.com");
+    expect((await prepareProspectOutreach(id)).ok).toBe(true);
+    expect((await getProspect(id))?.contactCount).toBe(1);
+  });
+
   it("allows a deliberate re-send when forced", async () => {
     const { prepareProspectOutreach } =
       await import("@/lib/server/email/outreach");
+    const { getProspect } = await import("@/lib/server/prospecting/repository");
     const id = await seedProspect();
 
     await prepareProspectOutreach(id);
     expect((await prepareProspectOutreach(id, { force: true })).ok).toBe(true);
+    // A forced send is a real second contact, even though it skips the
+    // first-contact claim.
+    expect((await getProspect(id))?.contactCount).toBe(2);
   });
 
   it("refuses when the tag's template is disabled", async () => {

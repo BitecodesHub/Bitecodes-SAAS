@@ -39,15 +39,29 @@ describeWithDatabase("chatbot repository", () => {
   });
 
   it("isolates tenants: B cannot read or mutate A's bot", async () => {
-    const { createChatbot, getChatbot, updateChatbot, deleteChatbot } =
-      await import("@/lib/server/chatbot/repository");
-    const { chatbotId } = await createChatbot({ ownerId: A, name: "A bot" });
+    const {
+      createChatbot,
+      getChatbot,
+      getChatbotForWidget,
+      updateChatbot,
+      deleteChatbot,
+      rotatePublicToken,
+      setChatbotStatus,
+    } = await import("@/lib/server/chatbot/repository");
+    const { chatbotId, publicToken } = await createChatbot({
+      ownerId: A,
+      name: "A bot",
+    });
 
     expect(await getChatbot(B, chatbotId)).toBeNull();
     expect(await updateChatbot(B, chatbotId, { name: "hijacked" })).toBe(false);
     expect(await deleteChatbot(B, chatbotId)).toBe(false);
-    // A's bot is untouched.
+    // Status changes and token rotation are mutations too.
+    expect(await setChatbotStatus(B, chatbotId, "paused")).toBe(false);
+    expect(await rotatePublicToken(B, chatbotId)).toBeNull();
+    // A's bot is untouched, including its original public token.
     expect((await getChatbot(A, chatbotId))?.name).toBe("A bot");
+    expect(await getChatbotForWidget(chatbotId, publicToken)).not.toBeNull();
   });
 
   it("merges appearance on partial update without dropping fields", async () => {
@@ -56,13 +70,51 @@ describeWithDatabase("chatbot repository", () => {
     const { chatbotId } = await createChatbot({ ownerId: A, name: "Bot" });
 
     await updateChatbot(A, chatbotId, {
-      appearance: { primaryColor: "#000000" },
+      appearance: {
+        primaryColor: "#000000",
+        starterPrompts: ["What do you sell?"],
+      },
+    });
+    await updateChatbot(A, chatbotId, {
+      appearance: { welcomeMessage: "Hello there" },
     });
     const bot = await getChatbot(A, chatbotId);
     expect(bot?.appearance.primaryColor).toBe("#000000");
-    // Untouched defaults survive the partial update.
+    // Arrays and untouched defaults survive later partial updates too.
+    expect(bot?.appearance.starterPrompts).toEqual(["What do you sell?"]);
     expect(bot?.appearance.position).toBe("bottom-right");
-    expect(bot?.appearance.welcomeMessage).toBeTruthy();
+    expect(bot?.appearance.welcomeMessage).toBe("Hello there");
+  });
+
+  it("upgrades a legacy appearance document on read", async () => {
+    const { createChatbot, getChatbotForWidget } =
+      await import("@/lib/server/chatbot/repository");
+    const { chatbots } = await import("@/lib/server/db/collections");
+    const { chatbotId, publicToken } = await createChatbot({
+      ownerId: A,
+      name: "Legacy",
+    });
+
+    // The shape stored before launcherLabel/starterPrompts existed.
+    await (
+      await chatbots()
+    ).updateOne(
+      { chatbotId },
+      {
+        $set: {
+          // Deliberately incomplete: this is the legacy stored shape.
+          appearance: { theme: "dark", primaryColor: "#123456" } as never,
+        },
+      },
+    );
+
+    const bot = await getChatbotForWidget(chatbotId, publicToken);
+    expect(bot?.appearance.theme).toBe("dark");
+    expect(bot?.appearance.primaryColor).toBe("#123456");
+    // Missing fields are filled from the current contract, not left undefined.
+    expect(bot?.appearance.launcherLabel).toBe("Open chat");
+    expect(bot?.appearance.starterPrompts).toEqual([]);
+    expect(bot?.appearance.secondaryColor).toBeTruthy();
   });
 
   it("resolves for the widget only with the right token and only when active", async () => {

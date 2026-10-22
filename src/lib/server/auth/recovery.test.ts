@@ -153,6 +153,106 @@ describeWithDatabase("account recovery", () => {
     expect((await redeemLoginLink(second)).ok).toBe(false);
   });
 
+  it("requires a valid second factor before redeeming a sign-in link", async () => {
+    const { generateTotp, generateTotpSecret } =
+      await import("@/lib/server/auth/totp");
+    const secret = generateTotpSecret();
+    userId = await seedUser({
+      totpSecret: secret,
+      totpEnabledAt: new Date(),
+      failedAttempts: 0,
+    });
+
+    const { inspectLoginLink, peekToken, redeemLoginLink } =
+      await import("@/lib/server/auth/recovery");
+    const token = await seedToken("login-link");
+
+    expect(await inspectLoginLink(token)).toEqual({
+      valid: true,
+      requiresTwoFactor: true,
+    });
+
+    // No code: the token is not consumed, so the visitor can retry.
+    expect(await redeemLoginLink(token)).toEqual({
+      ok: false,
+      reason: "two-factor-required",
+    });
+    expect(await peekToken(token, "login-link")).toBe(true);
+
+    const good = generateTotp(secret);
+    const bad = good === "000000" ? "111111" : "000000";
+    expect(await redeemLoginLink(token, bad)).toEqual({
+      ok: false,
+      reason: "invalid-code",
+    });
+    // A wrong code counts towards the same lockout as a wrong password.
+    const { adminUsers } = await import("@/lib/server/db/collections");
+    expect(
+      (await (await adminUsers()).findOne({ email: EMAIL }))?.failedAttempts,
+    ).toBe(1);
+    expect(await peekToken(token, "login-link")).toBe(true);
+
+    const result = await redeemLoginLink(token, good);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.role).toBe("owner");
+      expect(result.sessionEpoch).toBe(1);
+    }
+    expect(await peekToken(token, "login-link")).toBe(false);
+  });
+
+  it("locks the account after repeated bad second factors", async () => {
+    const { generateTotp, generateTotpSecret } =
+      await import("@/lib/server/auth/totp");
+    const secret = generateTotpSecret();
+    userId = await seedUser({
+      totpSecret: secret,
+      totpEnabledAt: new Date(),
+      failedAttempts: 0,
+    });
+
+    const { redeemLoginLink } = await import("@/lib/server/auth/recovery");
+    const token = await seedToken("login-link");
+    const good = generateTotp(secret);
+    const bad = good === "000000" ? "111111" : "000000";
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const result = await redeemLoginLink(token, bad);
+      expect(result.ok).toBe(false);
+    }
+
+    const locked = await redeemLoginLink(token, bad);
+    expect(locked.ok).toBe(false);
+    if (!locked.ok) expect(locked.reason).toBe("locked");
+  });
+
+  it("burns other unused tokens when a password is reset", async () => {
+    const { peekToken, performPasswordReset } =
+      await import("@/lib/server/auth/recovery");
+    const used = await seedToken("password-reset");
+    const otherReset = await seedToken("password-reset");
+    const signInLink = await seedToken("login-link");
+
+    expect((await performPasswordReset(used, "New-Password-22!")).ok).toBe(
+      true,
+    );
+
+    expect(await peekToken(otherReset, "password-reset")).toBe(false);
+    expect(await peekToken(signInLink, "login-link")).toBe(false);
+  });
+
+  it("burns outstanding recovery tokens when the password is changed", async () => {
+    const { changeAdminPassword } = await import("@/lib/server/auth/login");
+    const { peekToken } = await import("@/lib/server/auth/recovery");
+    const reset = await seedToken("password-reset");
+    const signInLink = await seedToken("login-link");
+
+    await changeAdminPassword(userId, "Another-Password-3!");
+
+    expect(await peekToken(reset, "password-reset")).toBe(false);
+    expect(await peekToken(signInLink, "login-link")).toBe(false);
+  });
+
   it("does not reveal whether an address exists", async () => {
     const { requestPasswordReset } = await import("@/lib/server/auth/recovery");
     // Unknown address: resolves without throwing and writes no token.

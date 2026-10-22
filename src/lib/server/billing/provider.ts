@@ -17,8 +17,18 @@ export interface VerifiedGatewayEvent {
   eventId: string;
   /** Our order id, recovered from the gateway payload. */
   orderId: string | null;
-  /** Whether this event means "the money arrived". */
-  paid: boolean;
+  /**
+   * captured = the money arrived; failed = the payment attempt failed; other =
+   * informational (refund, dispute, anything we do not act on).
+   */
+  outcome: "captured" | "failed" | "other";
+  /**
+   * Amount in integer minor units and its currency, when the payload states
+   * them. A valid signature proves origin, not that we agreed on the price —
+   * settlement compares these against the order.
+   */
+  amount?: number | null;
+  currency?: string | null;
 }
 
 export type CheckoutResult =

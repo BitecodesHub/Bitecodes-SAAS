@@ -3,7 +3,6 @@ import { getRandomValues } from "node:crypto";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import { getDatabase } from "@/lib/server/mongodb";
 import { COLLECTIONS } from "@/lib/server/db/schema";
-import type { FeedbackDoc } from "@/lib/server/db/types";
 import { getGrowthToggle } from "@/lib/growth/toggles";
 
 export async function handleFeedbackRequests(

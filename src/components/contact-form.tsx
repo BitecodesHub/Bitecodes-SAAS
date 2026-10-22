@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { jobOpenings } from "@/data/careers";
+import { trackConversion } from "@/lib/analytics-client";
 import { readAttribution } from "@/lib/attribution";
 import {
   contactBudgets,
@@ -43,12 +44,15 @@ export function ContactForm() {
   const searchParams = useSearchParams();
   const roleSlug = searchParams.get("role");
   const estimate = searchParams.get("estimate")?.slice(0, 1200);
+  const wantsCall = searchParams.get("intent") === "call";
   const role = jobOpenings.find((j) => j.slug === roleSlug);
   const defaultMessage = role
     ? `Hi Bitecodes team, I'd like to apply for the ${role.title} role. A little about me: `
     : estimate
       ? `Hi Bitecodes team, I used your cost calculator and would like a detailed proposal.\n\nEstimate: ${estimate}\n\nAdditional context: `
-      : "";
+      : wantsCall
+        ? `Hi Bitecodes team, I'd like to book the free 30-minute strategy call. Here's what I'm working on: `
+        : "";
 
   const {
     register,
@@ -90,6 +94,9 @@ export function ContactForm() {
       }
 
       setReference(result.reference);
+      // Careers applications arrive through this same form; keep them out of
+      // the sales conversion count.
+      if (!role) trackConversion("lead_contact", "/contact");
     } catch (error) {
       setSubmitError(
         error instanceof Error

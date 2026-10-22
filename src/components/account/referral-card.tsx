@@ -1,31 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CopyIcon, CheckIcon } from "lucide-react";
 
 /**
  * The customer's referral code and progress, for the /app dashboard.
  *
- * Shows the referral code, copy-to-clipboard action, and referral progress.
- * Owned by the lifecycle package.
+ * The code is created on the server and passed in; generating one in the
+ * browser produced a code that was never stored, so every visitor saw a
+ * different "their" code and none of them worked.
  */
-export function ReferralCard() {
-  const pathname = usePathname();
-  const code = `BC-${pathname.slice(-6).toUpperCase()}`;
-  const [referralCode] = useState(code);
+export function ReferralCard({
+  code,
+  redemptionCount,
+  rewardLabel,
+}: {
+  code: string;
+  redemptionCount: number;
+  rewardLabel: string;
+}) {
   const [copied, setCopied] = useState(false);
+
+  const shareLink = () =>
+    `${window.location.origin}/signup?ref=${encodeURIComponent(code)}`;
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(referralCode);
+      await navigator.clipboard.writeText(shareLink());
       setCopied(true);
       setTimeout(() => setCopied(false), 3000);
-    } catch (e) {
+    } catch {
       // Fallback for older browsers
       const textarea = document.createElement("textarea");
-      textarea.value = referralCode;
+      textarea.value = shareLink();
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
@@ -40,8 +48,9 @@ export function ReferralCard() {
       <div className="flex items-center gap-3">
         <span className="text-lg font-medium">Your Referral</span>
         <input
-          value={referralCode}
+          value={code}
           readOnly
+          aria-label="Your referral code"
           className="border-border focus-outline flex-1 rounded border px-3 py-2"
         />
         <Button
@@ -56,11 +65,14 @@ export function ReferralCard() {
           ) : (
             <CopyIcon className="size-4" />
           )}
-          {copied ? "Copied!" : "Copy"}
+          {copied ? "Link copied" : "Copy link"}
         </Button>
       </div>
       <p className="text-muted-foreground mt-2 text-xs">
-        Share your code and earn credits when friends sign up.
+        {redemptionCount > 0
+          ? `${redemptionCount} friend${redemptionCount === 1 ? "" : "s"} signed up. `
+          : ""}
+        You earn {rewardLabel} when someone you invite confirms their email.
       </p>
     </div>
   );

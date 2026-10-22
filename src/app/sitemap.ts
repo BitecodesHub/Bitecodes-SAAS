@@ -13,7 +13,6 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
-  const now = new Date();
   const blogPosts = await getPublishedPosts();
 
   const staticRoutes = [
@@ -54,28 +53,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/disclaimer", priority: 0.3 },
     // Maintenance and offline are operational utility pages and intentionally
     // excluded from the sitemap and search indexing.
-    // Machine-readable GEO document — discoverable via sitemap for AI crawlers.
+    // Machine-readable GEO documents — discoverable via sitemap for AI
+    // crawlers. The concise summary and its expanded companion are listed
+    // together so a crawler that finds one can reach the other.
+    { path: "/llms.txt", priority: 0.3 },
     { path: "/llms-full.txt", priority: 0.3 },
-    // Conversion and engagement pages
-    { path: "/book-a-call", priority: 0.9 },
+    // Conversion and engagement pages. `/book-a-call` is deliberately absent:
+    // it is a 307 to whichever booking destination is configured today, and a
+    // sitemap must list the canonical destination, not the redirect. `/thank-you`
+    // is reachable only after a form submission and is noindex.
     { path: "/demo", priority: 0.9 },
     { path: "/guarantees", priority: 0.8 },
-    { path: "/referral", priority: 0.7 },
-    { path: "/thank-you", priority: 0.3 },
     // Resources hub
     { path: "/resources", priority: 0.8 },
   ];
 
+  // No `lastModified` for pages whose content is compiled in: there is no
+  // honest modification timestamp, and stamping every request's clock teaches
+  // crawlers to ignore the field across the whole sitemap.
   const routes: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${base}${r.path}`,
-    lastModified: now,
     changeFrequency: "monthly",
     priority: r.priority,
   }));
 
   const serviceRoutes: MetadataRoute.Sitemap = services.map((s) => ({
     url: `${base}/services/${s.slug}`,
-    lastModified: now,
     changeFrequency: "monthly",
     priority: 0.7,
   }));
@@ -91,7 +94,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const projectRoutes: MetadataRoute.Sitemap = projects.map((p) => ({
     url: `${base}/portfolio/${p.slug}`,
-    lastModified: now,
     changeFrequency: "monthly",
     priority: 0.6,
   }));
@@ -115,7 +117,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const industryRoutes: MetadataRoute.Sitemap = industries.map((i) => ({
     url: `${base}/industries/${i.slug}`,
-    lastModified: now,
     changeFrequency: "monthly",
     priority: 0.7,
   }));

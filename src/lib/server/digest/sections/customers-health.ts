@@ -5,8 +5,9 @@ import { getDatabase } from "@/lib/server/mongodb";
 import { COLLECTIONS } from "@/lib/server/db/schema";
 
 export async function buildSection(
-  range: DigestRange,
+  _range: DigestRange,
 ): Promise<DigestSection | null> {
+  void _range;
   const db = await getDatabase();
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -26,12 +27,6 @@ export async function buildSection(
       status: "received",
       respondedAt: { $gte: thirtyDaysAgo },
     });
-
-  const testimonials = await db
-    .collection(COLLECTIONS.testimonials)
-    .find({ status: "approved" })
-    .limit(3)
-    .toArray();
 
   const highRiskCount = churnRisk.filter((r) => {
     let _a;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginLinkForm } from "@/components/account/login-link-form";
-import { peekToken } from "@/lib/server/auth/recovery";
+import { inspectLoginLink } from "@/lib/server/auth/recovery";
 
 export const metadata: Metadata = {
   title: "Complete sign-in",
@@ -23,18 +23,21 @@ export default async function CustomerLoginLinkPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const valid = token ? await peekToken(token, "login-link") : false;
+  const inspection = await inspectLoginLink(token);
 
   return (
     <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-      {valid && token ? (
+      {inspection.valid && token ? (
         <>
           <h1 className="text-xl font-semibold tracking-tight">Almost there</h1>
           <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
             Press the button to finish signing in.
           </p>
           <div className="mt-6">
-            <LoginLinkForm token={token} />
+            <LoginLinkForm
+              token={token}
+              requiresTwoFactor={inspection.requiresTwoFactor}
+            />
           </div>
         </>
       ) : (

@@ -20,6 +20,14 @@ export const siteConfig = {
   founded: 2021,
   founder: "Ismail",
 
+  /**
+   * Countries the studio actively sells into, in the order used by the site's
+   * copy and structured data. Kept here so Organization, Service, and
+   * ContactPoint JSON-LD cannot drift from each other.
+   */
+  markets: ["United States", "United Kingdom", "Australia", "India"],
+  marketCodes: ["US", "GB", "AU", "IN"],
+
   contact: {
     email: "bitecodes.global@gmail.com",
     salesEmail: "bitecodes.global@gmail.com",

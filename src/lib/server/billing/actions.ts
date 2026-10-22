@@ -122,7 +122,9 @@ const GRANTABLE_PRODUCTS = [
 const grantSchema = z.object({
   ownerId: z.string().trim().min(1).max(64),
   product: z.enum(GRANTABLE_PRODUCTS),
-  amount: z.number().int().min(1).max(1_000_000),
+  // Above the largest pack (6.25M chatbot tokens) so a manual reconciliation
+  // can always grant what a paid order promised.
+  amount: z.number().int().min(1).max(10_000_000),
   note: z.string().trim().max(200).optional(),
 });
 

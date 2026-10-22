@@ -9,6 +9,10 @@ import type {
 } from "@/lib/server/db/types";
 import { randomToken, sha256Hex } from "@/lib/server/crypto";
 import { normalizeDomainPattern } from "@/lib/chatbot/domains";
+import {
+  CHATBOT_APPEARANCE_DEFAULTS,
+  normalizeAppearance,
+} from "@/lib/chatbot/appearance";
 
 /**
  * Tenant-scoped data access for chatbots.
@@ -19,24 +23,12 @@ import { normalizeDomainPattern } from "@/lib/chatbot/domains";
  * exception and looks a bot up by its public-token hash, never by owner.
  */
 
-export const DEFAULT_APPEARANCE: ChatbotAppearance = {
-  theme: "auto",
-  avatar: null,
-  logo: null,
-  primaryColor: "#4f46e5",
-  secondaryColor: "#0ea5e9",
-  position: "bottom-right",
-  size: "regular",
-  displayMode: "bubble",
-  welcomeMessage: "Hi! How can I help you today?",
-  placeholder: "Ask a question…",
-  typingAnimation: true,
-  branding: true,
-  language: "en",
-  timezone: "UTC",
-  suggestedQuestions: [],
-  starterPrompts: [],
-};
+/**
+ * Kept as a named export because the create path and tests use it; the values
+ * themselves live in the shared contract so the editor and widget cannot drift.
+ */
+export const DEFAULT_APPEARANCE: ChatbotAppearance =
+  CHATBOT_APPEARANCE_DEFAULTS;
 
 export interface CreateChatbotInput {
   ownerId: string;
@@ -83,7 +75,7 @@ export async function createChatbot(
     websiteName: input.websiteName?.trim() || null,
     status: "active",
     allowedDomains: cleanDomains(input.allowedDomains),
-    appearance: { ...DEFAULT_APPEARANCE, ...input.appearance },
+    appearance: normalizeAppearance(input.appearance),
     modelKey: input.modelKey ?? null,
     systemPrompt:
       input.systemPrompt?.trim() ||
@@ -111,7 +103,13 @@ export async function getChatbot(
   chatbotId: string,
 ): Promise<ChatbotDoc | null> {
   const collection = await chatbots();
-  return collection.findOne({ ownerId, chatbotId });
+  const document = await collection.findOne({ ownerId, chatbotId });
+  // Legacy documents predate fields such as `launcherLabel` and
+  // `starterPrompts`. Normalising on read means every caller sees the current
+  // contract without a migration, including the admin editor and preview.
+  return document
+    ? { ...document, appearance: normalizeAppearance(document.appearance) }
+    : null;
 }
 
 /**
@@ -124,11 +122,14 @@ export async function getChatbotForWidget(
   publicToken: string,
 ): Promise<ChatbotDoc | null> {
   const collection = await chatbots();
-  return collection.findOne({
+  const document = await collection.findOne({
     chatbotId,
     publicTokenHash: sha256Hex(publicToken),
     status: "active",
   });
+  return document
+    ? { ...document, appearance: normalizeAppearance(document.appearance) }
+    : null;
 }
 
 export type UpdatableChatbotFields = Partial<
@@ -171,7 +172,10 @@ export async function updateChatbot(
       { projection: { appearance: 1 } },
     );
     if (!existing) return false;
-    set.appearance = { ...existing.appearance, ...patch.appearance };
+    set.appearance = normalizeAppearance({
+      ...existing.appearance,
+      ...patch.appearance,
+    });
   }
 
   const result = await collection.updateOne(

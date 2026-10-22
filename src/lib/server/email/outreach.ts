@@ -7,8 +7,10 @@ import { queueEmail, type QueueEmailResult } from "@/lib/server/email/send";
 import { getTemplateForTag } from "@/lib/server/email/templates";
 import { shortUrl } from "@/lib/prospecting/display";
 import {
+  claimProspectFirstContact,
   getProspect,
   recordProspectContacted,
+  releaseProspectFirstContact,
 } from "@/lib/server/prospecting/repository";
 import type { TemplateVariables } from "@/lib/email/template";
 import type { ProspectDoc } from "@/lib/server/db/types";
@@ -158,26 +160,54 @@ export async function prepareProspectOutreach(
     companyName: "Bitecodes",
   });
 
-  const result = await queueEmail({
-    to: prospect.email,
-    toName: prospect.name,
-    subject: template.subject,
-    blocks: template.blocks,
-    variables,
-    category: "outreach",
-    templateKey: template.key,
-    prospectId,
-    countryCode: prospect.countryCode,
-    sendAfter: options.sendAfter,
-    unsubscribeUrl: String(variables.unsubscribeUrl),
-    footerNote:
-      "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
-    track: true,
-  });
+  // The increment *is* the lock. Two callers that both read `contactCount: 0`
+  // a moment ago can still be racing here; only one gets past this claim, so a
+  // batch and the autopilot cannot both queue a first contact for one person.
+  // A forced re-send deliberately skips the claim and is counted afterwards.
+  if (!options.force) {
+    const claimed = await claimProspectFirstContact(prospectId);
+    if (!claimed) {
+      return {
+        ok: false,
+        reason: "already-contacted",
+        detail:
+          "Another first-contact attempt for this customer is already in progress or was already sent.",
+      };
+    }
+  }
+
+  let result: QueueEmailResult;
+  try {
+    result = await queueEmail({
+      to: prospect.email,
+      toName: prospect.name,
+      subject: template.subject,
+      blocks: template.blocks,
+      variables,
+      category: "outreach",
+      templateKey: template.key,
+      prospectId,
+      countryCode: prospect.countryCode,
+      sendAfter: options.sendAfter,
+      unsubscribeUrl: String(variables.unsubscribeUrl),
+      footerNote:
+        "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
+      track: true,
+    });
+  } catch (error) {
+    // Nothing was persisted, so the claim must be returned or a transient
+    // queue failure would permanently exclude a legitimate recipient.
+    if (!options.force) {
+      await releaseProspectFirstContact(prospectId).catch(() => undefined);
+    }
+    throw error;
+  }
 
   // A skipped message is a real outcome, not an error: suppression, a daily cap,
-  // or the consent-region guard. Surfaced so the caller can report it.
+  // or the consent-region guard. Surfaced so the caller can report it. The
+  // claim is released because no contact happened.
   if (result.status === "skipped") {
+    if (!options.force) await releaseProspectFirstContact(prospectId);
     return {
       ok: false,
       reason: "suppressed-or-capped",
@@ -186,10 +216,9 @@ export async function prepareProspectOutreach(
     };
   }
 
-  // Counted at queue time rather than at delivery. Queuing is the commitment;
-  // counting later would let a stalled queue produce a second first-contact
-  // email to the same person.
-  await recordProspectContacted(prospectId);
+  // A first contact was already counted by the claim. Only a forced re-send
+  // needs the extra increment here.
+  if (options.force) await recordProspectContacted(prospectId);
 
   return { ok: true, result, templateKey: template.key };
 }

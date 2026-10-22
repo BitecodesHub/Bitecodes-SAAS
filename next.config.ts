@@ -47,6 +47,9 @@ const noIndexPaths = [
   // The URI advertised in `List-Unsubscribe`. Covered too, because it is a real
   // URL that can end up in a forwarded email or a link scanner's logs.
   "/api/unsubscribe",
+  // Operational status, including authenticated deep checks. Not content.
+  "/api/health",
+  "/api/health/:path*",
   "/portal/:path*",
   "/onboarding/:path*",
   "/e/:path*",
@@ -58,9 +61,23 @@ const noIndexPaths = [
   "/app/:path*",
   // Credential-bearing URLs. `/login` and `/signup` are deliberately absent —
   // they are how customers find the product, and both should be indexed.
+  "/verify",
   "/verify/:path*",
+  "/reset",
   "/reset/:path*",
+  "/forgot",
   "/login/link",
+  // Private proposal: the URL token is the credential.
+  "/proposal",
+  "/proposal/:path*",
+  // One-click newsletter confirmation; the token is in the query string.
+  "/newsletter/confirm",
+  // Post-submission confirmation and operational utility pages. They have
+  // page-level robots metadata too, but the header also covers any non-HTML
+  // response a future route under these paths might add.
+  "/thank-you",
+  "/maintenance",
+  "/offline",
 ];
 
 const nextConfig: NextConfig = {

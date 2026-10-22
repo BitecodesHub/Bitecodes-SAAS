@@ -7,6 +7,7 @@ import {
 import { queueEmail } from "@/lib/server/email/send";
 import { getSiteUrl } from "@/lib/server/env";
 import { captureLead } from "@/lib/server/leads/capture";
+import { notifyNewLead } from "@/lib/server/email/notify";
 import { consumeRateLimit } from "@/lib/server/rate-limit";
 
 /**
@@ -119,6 +120,19 @@ export async function POST(request: NextRequest) {
       },
       now,
     );
+
+    if (lead.created) {
+      await notifyNewLead({
+        leadId: lead.id,
+        reference: lead.reference,
+        source: "website-audit",
+        kindLabel: "audit report request",
+        name: input.name,
+        email: input.email,
+        message: `Requested the website report for ${host}.`,
+        score: input.score ?? null,
+      }).catch(() => undefined);
+    }
 
     const attention = input.findings.filter(
       (finding) => finding.status !== "pass",

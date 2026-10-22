@@ -10,7 +10,6 @@ import {
 } from "./index";
 import type { CreditPack } from "@/lib/server/billing/packs";
 import type { WalletLedgerDoc } from "@/lib/server/db/types";
-import type { ObjectId } from "mongodb";
 
 // ---------------------------------------------------------------------------
 // Fixtures

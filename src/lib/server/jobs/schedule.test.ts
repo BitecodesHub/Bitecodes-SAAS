@@ -82,6 +82,7 @@ describe("registry", () => {
       "search.ping": { kind: "daily", hourUtc: 6 },
       "proposal.followups": { kind: "daily", hourUtc: 6 },
       "booking.reminders": { kind: "quarter-hour" },
+      "referral.reconcile": { kind: "daily", hourUtc: 7 },
       "report.weekly": { kind: "weekly", weekdaysUtc: [1], hourUtc: 3 },
       "social.drafts": { kind: "weekly", weekdaysUtc: [1], hourUtc: 4 },
       "feedback.requests": { kind: "weekly", weekdaysUtc: [3], hourUtc: 5 },
@@ -189,30 +190,43 @@ describe("daily cadence", () => {
 describe("weekly cadence", () => {
   const blog = { kind: "weekly", weekdaysUtc: [2, 5], hourUtc: 5 } as const;
 
-  it("is due only on listed weekdays after the hour", () => {
+  it("is due on the scheduled day and catches up the next day", () => {
     // 2026-10-20 is a Tuesday, 2026-10-23 a Friday.
     expect(due(blog, "2026-10-20T04:59:59.999Z")).toEqual([]);
     expect(due(blog, "2026-10-20T05:00:00.000Z")[0].idempotencyKey).toBe(
       "x:2026-10-20",
     );
-    expect(due(blog, "2026-10-21T05:00:00.000Z")).toEqual([]); // Wednesday
+    // Wednesday catches up Tuesday's key, so one missed tick does not lose a
+    // week of publishing.
+    expect(due(blog, "2026-10-21T05:00:00.000Z")[0].idempotencyKey).toBe(
+      "x:2026-10-20",
+    );
     expect(due(blog, "2026-10-23T23:59:00.000Z")[0].idempotencyKey).toBe(
       "x:2026-10-23",
     );
-    expect(due(blog, "2026-10-24T05:00:00.000Z")).toEqual([]); // Saturday
+    // Saturday catches up Friday; Sunday is beyond the one-day window.
+    expect(due(blog, "2026-10-24T05:00:00.000Z")[0].idempotencyKey).toBe(
+      "x:2026-10-23",
+    );
+    expect(due(blog, "2026-10-25T05:00:00.000Z")).toEqual([]); // Sunday
   });
 
   it("treats Sunday as weekday 0", () => {
     const sunday = { kind: "weekly", weekdaysUtc: [0], hourUtc: 2 } as const;
     expect(due(sunday, "2026-10-18T02:00:00.000Z")).toHaveLength(1); // Sunday
-    expect(due(sunday, "2026-10-19T02:00:00.000Z")).toEqual([]); // Monday
+    expect(due(sunday, "2026-10-19T02:00:00.000Z")[0].idempotencyKey).toBe(
+      "x:2026-10-18",
+    ); // Monday catch-up
+    expect(due(sunday, "2026-10-20T02:00:00.000Z")).toEqual([]); // Tuesday
   });
 
   it("uses the UTC weekday, not a local one", () => {
     // Monday 23:30 UTC is already Tuesday in India; it is still Monday here.
     const monday = { kind: "weekly", weekdaysUtc: [1], hourUtc: 3 } as const;
     expect(due(monday, "2026-10-19T23:30:00.000Z")).toHaveLength(1);
-    expect(due(monday, "2026-10-20T03:30:00.000Z")).toEqual([]);
+    expect(due(monday, "2026-10-20T03:30:00.000Z")[0].idempotencyKey).toBe(
+      "x:2026-10-19",
+    ); // Tuesday catch-up
   });
 });
 
@@ -332,7 +346,9 @@ describe("dueAutomations with the real registry", () => {
       ]),
     );
     expect(at0600).not.toContain("report.weekly"); // Monday only
-    expect(at0600).not.toContain("blog.generate"); // Tuesday and Friday
+    // Wednesday is still inside Tuesday's catch-up window; the key is Tuesday's,
+    // so the Tuesday run and this retry cannot both publish.
+    expect(at0600).toContain("blog.generate");
   });
 
   it("schedules the Monday, Thursday, and Sunday jobs on their days", () => {

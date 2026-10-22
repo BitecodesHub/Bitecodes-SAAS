@@ -11,6 +11,10 @@ import {
 } from "@/lib/server/crypto";
 import { normalizeEmail, isDeliverableEmail } from "@/lib/email/address";
 import { credit } from "@/lib/server/wallet/wallet";
+import {
+  qualifyReferralForUser,
+  registerReferralSignup,
+} from "@/lib/server/referrals";
 import { queueEmail } from "@/lib/server/email/send";
 import { getSiteUrl } from "@/lib/server/env";
 import { siteConfig } from "@/lib/site";
@@ -90,6 +94,8 @@ export interface SignupInput {
   email: string;
   password: string;
   company?: string;
+  /** Optional code from `/signup?ref=…`; invalid codes are ignored. */
+  referralCode?: string;
 }
 
 export type SignupResult =
@@ -173,6 +179,20 @@ export async function signUpCustomer(
       return { ok: true };
     }
     throw error;
+  }
+
+  // Attribution is best effort: a missing referral document must never fail a
+  // signup that is otherwise valid. The reward itself waits for verification —
+  // see `verifyEmail`.
+  if (input.referralCode) {
+    try {
+      await registerReferralSignup(input.referralCode, userId);
+    } catch (error) {
+      console.error(
+        "[signup] referral attribution failed",
+        error instanceof Error ? `${error.name}: ${error.message}` : error,
+      );
+    }
   }
 
   await sendVerificationEmail(userId, email, name);
@@ -282,6 +302,18 @@ export async function verifyEmail(token: string): Promise<VerifyOutcome> {
 
   if (activated) {
     await grantSignupBonus(userId);
+    // The address is now proven, which is exactly the condition a referral was
+    // waiting for. A failure here must not turn a successful verification into
+    // an error: the daily reconciliation job pays anything left qualified.
+    try {
+      await qualifyReferralForUser(userId);
+    } catch (error) {
+      console.error(
+        "[referral] qualification failed for",
+        userId,
+        error instanceof Error ? `${error.name}: ${error.message}` : error,
+      );
+    }
     return {
       ok: true,
       userId,

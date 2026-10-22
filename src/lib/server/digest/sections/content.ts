@@ -14,6 +14,7 @@ import { EmailBlock } from "@/lib/email/template";
 export async function buildSection(
   _range: DigestRange,
 ): Promise<DigestSection | null> {
+  void _range;
   const collection = await blogPostDocs();
   const blogPostsSnap = await collection
     .find<BlogPostDoc>({ status: "draft" })

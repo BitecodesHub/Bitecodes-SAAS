@@ -9,14 +9,25 @@ import {
 } from "@/lib/email/compliance";
 
 describe("isConsentRequiredCountry", () => {
-  it("flags EU, EEA, UK, Switzerland, and Canada", () => {
-    for (const code of ["DE", "FR", "IE", "NO", "IS", "LI", "GB", "CH", "CA"]) {
+  it("flags EU, EEA, UK, Switzerland, Canada, and Australia", () => {
+    for (const code of [
+      "DE",
+      "FR",
+      "IE",
+      "NO",
+      "IS",
+      "LI",
+      "GB",
+      "CH",
+      "CA",
+      "AU",
+    ]) {
       expect(isConsentRequiredCountry(code), code).toBe(true);
     }
   });
 
   it("does not flag opt-out jurisdictions", () => {
-    for (const code of ["IN", "US", "AU", "NZ", "SG", "AE", "JP", "BR", "ZA"]) {
+    for (const code of ["IN", "US", "NZ", "SG", "AE", "JP", "BR", "ZA"]) {
       expect(isConsentRequiredCountry(code), code).toBe(false);
     }
   });
@@ -35,8 +46,8 @@ describe("isConsentRequiredCountry", () => {
     expect(isConsentRequiredCountry("ZZ")).toBe(false);
   });
 
-  it("covers all 27 EU members plus EEA, UK, CH, and CA", () => {
-    expect(CONSENT_REQUIRED_COUNTRIES.size).toBe(33);
+  it("covers all 27 EU members plus EEA, UK, CH, CA, and AU", () => {
+    expect(CONSENT_REQUIRED_COUNTRIES.size).toBe(34);
   });
 });
 
@@ -48,6 +59,7 @@ describe("domainImpliesConsentRequired", () => {
       "example.co.uk",
       "example.ie",
       "example.ca",
+      "example.com.au",
     ]) {
       expect(domainImpliesConsentRequired(domain), domain).toBe(true);
     }
@@ -62,7 +74,6 @@ describe("domainImpliesConsentRequired", () => {
       "example.io",
       "example.co",
       "example.in",
-      "example.com.au",
       "example.dev",
     ]) {
       expect(domainImpliesConsentRequired(domain), domain).toBe(false);

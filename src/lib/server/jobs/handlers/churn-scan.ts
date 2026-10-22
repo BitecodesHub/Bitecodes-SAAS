@@ -3,15 +3,6 @@ import "server-only";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import { getDatabase } from "@/lib/server/mongodb";
 import { COLLECTIONS } from "@/lib/server/db/schema";
-import type { ChurnRiskDoc } from "@/lib/server/db/types";
-
-const CHURN_SCORE_WEIGHTS = {
-  recentActivityDays: 0.4,
-  sessionCount30d: 0.3,
-  subscriptionAgeMonths: 0.2,
-  supportTickets30d: 0.1,
-};
-
 export async function handleChurnScan(
   _payload: Record<string, unknown>,
   context: JobContext,
@@ -19,7 +10,6 @@ export async function handleChurnScan(
   const db = await getDatabase();
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   const customers = await db
     .collection("customers")

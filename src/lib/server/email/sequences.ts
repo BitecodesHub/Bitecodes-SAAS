@@ -27,7 +27,7 @@ import {
 import { getSiteUrl } from "@/lib/server/env";
 import { blockText } from "@/lib/server/email/templates";
 import { getTemplate, getTemplateForTag } from "@/lib/server/email/templates";
-import { queueEmail } from "@/lib/server/email/send";
+import { queueEmail, type QueueEmailResult } from "@/lib/server/email/send";
 import { isSuppressed } from "@/lib/server/email/suppression";
 import {
   buildOutreachVariables,
@@ -35,8 +35,10 @@ import {
   buildUnsubscribeUrl,
 } from "@/lib/server/email/outreach";
 import {
+  claimProspectFirstContact,
   getProspect,
   recordProspectContacted,
+  releaseProspectFirstContact,
 } from "@/lib/server/prospecting/repository";
 import { getSettingsFresh } from "@/lib/server/settings";
 import type {
@@ -81,6 +83,7 @@ export type StopReason =
   | "sequence-disabled"
   | "no-template"
   | "send-refused"
+  | "already-contacted"
   | "manual";
 
 /** Pipeline stages that mean a human has taken over. */
@@ -257,6 +260,18 @@ export async function enrollProspect(
       ok: false,
       reason: "already-enrolled",
       detail: "This customer is already part of a running sequence.",
+    };
+  }
+
+  // Step one is a first contact, so a sequence must never be the second one.
+  // The atomic re-check happens at send time; this is the fast, explanatory
+  // refusal for the common case.
+  if (prospect.contactCount > 0) {
+    return {
+      ok: false,
+      reason: "already-contacted",
+      detail:
+        "This customer has already received a first-contact email. Follow up manually instead of starting a new sequence.",
     };
   }
 
@@ -641,35 +656,71 @@ export async function advanceEnrollment(
         })
       : {};
 
-  const result = await queueEmail({
-    to: claimed.email,
-    toName: prospect?.name ?? leadName(lead) ?? null,
-    subject: template.subject,
-    blocks: template.blocks,
-    variables,
-    category: isLeadSequence ? "nurture" : "outreach",
-    templateKey: template.key,
-    prospectId: claimed.prospectId,
-    leadId: claimed.leadId,
-    enrollmentId,
-    sequenceStep: stepNumber,
-    countryCode:
-      prospect?.countryCode ??
-      (lead && "country" in lead.doc ? lead.doc.country : null) ??
-      null,
-    unsubscribeUrl: String(variables.unsubscribeUrl ?? ""),
-    // Only a lead sequence carries express consent. Cold outreach never does.
-    consented: isLeadSequence && Boolean(claimed.consentAt),
-    footerNote: isLeadSequence
-      ? "You are receiving this because you opted in when you contacted us. One click above removes you permanently."
-      : "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
-    track: true,
-  });
+  // Step one of a prospect sequence is that prospect's first contact. Claim
+  // it atomically here, immediately before the render and enqueue, so an
+  // operator "Send email" batch racing the autopilot cannot produce two first
+  // contacts. Later steps are follow-ups and are counted after queueing.
+  const claimsFirstContact = stepNumber === 1 && claimed.prospectId !== null;
+  if (claimsFirstContact) {
+    const claimedFirst = await claimProspectFirstContact(claimed.prospectId!);
+    if (!claimedFirst) {
+      await stopEnrollment(enrollmentId, "already-contacted", now);
+      return outcome(
+        false,
+        false,
+        "already-contacted",
+        "Another first-contact email was already queued for this customer.",
+        stepNumber,
+      );
+    }
+  }
+
+  let result: QueueEmailResult;
+  try {
+    result = await queueEmail({
+      to: claimed.email,
+      toName: prospect?.name ?? leadName(lead) ?? null,
+      subject: template.subject,
+      blocks: template.blocks,
+      variables,
+      category: isLeadSequence ? "nurture" : "outreach",
+      templateKey: template.key,
+      prospectId: claimed.prospectId,
+      leadId: claimed.leadId,
+      enrollmentId,
+      sequenceStep: stepNumber,
+      countryCode:
+        prospect?.countryCode ??
+        (lead && "country" in lead.doc ? lead.doc.country : null) ??
+        null,
+      unsubscribeUrl: String(variables.unsubscribeUrl ?? ""),
+      // Only a lead sequence carries express consent. Cold outreach never does.
+      consented: isLeadSequence && Boolean(claimed.consentAt),
+      footerNote: isLeadSequence
+        ? "You are receiving this because you opted in when you contacted us. One click above removes you permanently."
+        : "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
+      track: true,
+    });
+  } catch (error) {
+    // The queue may or may not have persisted the message before throwing, so
+    // retrying could duplicate it. Stop the enrolment explicitly instead of
+    // leaving it stranded with no next run. The first-contact claim is kept:
+    // a throw cannot prove nothing was written, and a duplicate first contact
+    // is worse than an operator having to re-check one prospect by hand.
+    await stopEnrollment(enrollmentId, "send-refused", now);
+    throw error;
+  }
 
   if (result.status === "skipped") {
     // A cap or a region guard is not the recipient's decision, so the enrolment
     // is stopped rather than retried — silently deferring would leave it in a
-    // state nobody is watching.
+    // state nobody is watching. Nothing was queued, so a first-contact claim is
+    // returned rather than burning the prospect's only slot.
+    if (claimsFirstContact) {
+      await releaseProspectFirstContact(claimed.prospectId!).catch(
+        () => undefined,
+      );
+    }
     await stopEnrollment(enrollmentId, "send-refused", now);
     return outcome(
       false,
@@ -680,7 +731,10 @@ export async function advanceEnrollment(
     );
   }
 
-  if (claimed.prospectId) await recordProspectContacted(claimed.prospectId);
+  // A first contact was counted by the claim above; follow-ups increment here.
+  if (claimed.prospectId && !claimsFirstContact) {
+    await recordProspectContacted(claimed.prospectId);
+  }
   if (claimed.leadId) {
     await recordLeadContacted(claimed.leadKind as LeadKind, claimed.leadId);
     await recordLeadActivity(

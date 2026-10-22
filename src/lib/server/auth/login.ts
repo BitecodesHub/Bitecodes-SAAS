@@ -160,6 +160,21 @@ async function recordFailure(user: AdminUserDoc, now: Date) {
 }
 
 /**
+ * Counts a failed second factor from a non-password flow (a magic link) against
+ * the same lockout as a wrong password. Without this, the link itself would be
+ * an unlimited oracle for guessing six digits.
+ */
+export async function recordSecondFactorFailure(
+  userId: string,
+  now = new Date(),
+): Promise<void> {
+  const users = await adminUsers();
+  const user = await users.findOne({ _id: new ObjectId(userId) });
+  if (!user) return;
+  await recordFailure(user, now);
+}
+
+/**
  * Changes a password and invalidates every existing session.
  *
  * Bumping `sessionEpoch` is what makes the invalidation total: sessions store
@@ -185,8 +200,13 @@ export async function changeAdminPassword(
     },
   );
 
-  const { revokeAllSessions } = await import("@/lib/server/auth/session");
-  await revokeAllSessions(userId);
+  // Outstanding reset and sign-in links are credentials too. Changing the
+  // password must not leave one issued before the change still usable.
+  const [{ revokeAllSessions }, { revokeUnusedTokens }] = await Promise.all([
+    import("@/lib/server/auth/session"),
+    import("@/lib/server/auth/recovery"),
+  ]);
+  await Promise.all([revokeAllSessions(userId), revokeUnusedTokens(userId)]);
 }
 
 /** Verifies a password without touching lockout state. For re-auth prompts. */

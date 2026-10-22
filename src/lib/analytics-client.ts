@@ -142,6 +142,36 @@ function bodyBytes(events: readonly AnalyticsClientEvent[]): number {
   return new Blob([JSON.stringify({ events })]).size;
 }
 
+/** Sends a finished batch, preferring `sendBeacon` so it survives navigation. */
+function sendEvents(events: readonly AnalyticsClientEvent[]): void {
+  if (typeof window === "undefined" || events.length === 0) return;
+  const body = JSON.stringify({ events });
+
+  try {
+    if (typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([body], { type: "application/json" });
+      if (navigator.sendBeacon(ENDPOINT, blob)) return;
+    }
+  } catch {
+    // Some privacy extensions replace sendBeacon with a throwing stub. Fall
+    // through to fetch rather than losing the batch.
+  }
+
+  try {
+    void fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      keepalive: true,
+      credentials: "omit",
+    }).catch(() => {
+      // Analytics is best-effort. A blocked request must never surface.
+    });
+  } catch {
+    // Same reasoning: a failed report is not a page error.
+  }
+}
+
 function enqueue(event: AnalyticsClientEvent): void {
   // A batch of maximal UTM strings can exceed the collector's 16KB ceiling
   // before it reaches twenty events, so size is checked alongside count.
@@ -181,6 +211,15 @@ export function trackPageview(path?: string): void {
   });
 }
 
+function boundedValue(value: number | undefined): number | undefined {
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= -MAX_EVENT_VALUE &&
+    value <= MAX_EVENT_VALUE
+    ? value
+    : undefined;
+}
+
 /**
  * Records a named interaction. This is the helper components import:
  *
@@ -198,15 +237,39 @@ export function track(name: string, value?: number): void {
     name: clean,
     ts: Date.now(),
   };
-  if (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    value >= -MAX_EVENT_VALUE &&
-    value <= MAX_EVENT_VALUE
-  ) {
-    event.value = value;
-  }
+  const bounded = boundedValue(value);
+  if (bounded !== undefined) event.value = bounded;
   enqueue(event);
+}
+
+/**
+ * Records a conversion on a page that does not mount the marketing beacon,
+ * such as sign-in, checkout, or a private proposal.
+ *
+ * The caller supplies an explicit, token-free path: these flows often carry a
+ * credential in the URL, and sending the real pathname would write that
+ * credential into the analytics collection. The event is sent immediately
+ * because the next action is usually a navigation or a redirect.
+ */
+export function trackConversion(
+  name: string,
+  path: string,
+  value?: number,
+): void {
+  if (!analyticsAllowed()) return;
+  const cleanName = cleanEventName(name);
+  const clean = cleanPath(path);
+  if (!cleanName || !clean) return;
+
+  const event: AnalyticsClientEvent = {
+    type: "event",
+    path: clean,
+    name: cleanName,
+    ts: Date.now(),
+  };
+  const bounded = boundedValue(value);
+  if (bounded !== undefined) event.value = bounded;
+  sendEvents([event]);
 }
 
 /** Reports one Web Vital. Unknown names are ignored rather than coerced. */
@@ -228,9 +291,8 @@ export function trackVital(name: string, value: number, path?: string): void {
 }
 
 /**
- * Sends everything queued, preferring `sendBeacon` so an in-flight batch
- * survives the page being hidden or unloaded. The fetch fallback uses
- * `keepalive` for the same reason.
+ * Sends everything queued. Called on the flush timer, page hide, and after a
+ * tracked form submission.
  */
 export function flushAnalytics(): void {
   if (flushTimer !== null) {
@@ -240,32 +302,5 @@ export function flushAnalytics(): void {
 
   const events = queue;
   queue = [];
-  if (events.length === 0) return;
-  if (typeof window === "undefined") return;
-
-  const body = JSON.stringify({ events });
-
-  try {
-    if (typeof navigator.sendBeacon === "function") {
-      const blob = new Blob([body], { type: "application/json" });
-      if (navigator.sendBeacon(ENDPOINT, blob)) return;
-    }
-  } catch {
-    // Some privacy extensions replace sendBeacon with a throwing stub. Fall
-    // through to fetch rather than losing the batch.
-  }
-
-  try {
-    void fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body,
-      keepalive: true,
-      credentials: "omit",
-    }).catch(() => {
-      // Analytics is best-effort. A blocked request must never surface.
-    });
-  } catch {
-    // Same reasoning: a failed report is not a page error.
-  }
+  sendEvents(events);
 }

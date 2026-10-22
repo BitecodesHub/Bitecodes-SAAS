@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { processWebhook } from "@/lib/server/billing/webhook";
+import { notifyFailedJob } from "@/lib/server/email/notify";
 
 /**
  * The payment gateway's callback.
@@ -21,12 +22,19 @@ export async function POST(request: NextRequest) {
   try {
     outcome = await processWebhook(rawBody, request.headers);
   } catch (error) {
-    console.error(
-      "[billing] Webhook processing failed:",
-      error instanceof Error ? error.message : error,
-    );
+    const message =
+      error instanceof Error ? error.message : String(error ?? "unknown");
+    console.error("[billing] Webhook processing failed:", message);
     // A 500 asks the gateway to retry, which is what we want for a transient
-    // database failure — the idempotency guard makes the retry safe.
+    // database failure — the idempotency guard makes the retry safe. Billing
+    // failures are also the one alert class the operator cannot see anywhere
+    // else: money arrived and the system could not record it.
+    await notifyFailedJob({
+      jobType: "billing.webhook",
+      jobId: "(delivery)",
+      error: message,
+      attempts: 1,
+    }).catch(() => undefined);
     return new Response(JSON.stringify({ ok: false }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

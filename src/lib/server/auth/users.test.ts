@@ -78,7 +78,7 @@ describeWithDatabase("admin user management", () => {
 
   it("resets a password, rotates the session epoch, and revokes sessions", async () => {
     const { resetAdminPassword } = await import("@/lib/server/auth/users");
-    const { adminUsers, adminSessions } =
+    const { adminUsers, adminSessions, adminTokens } =
       await import("@/lib/server/db/collections");
     const { ObjectId } = await import("mongodb");
 
@@ -102,6 +102,17 @@ describeWithDatabase("admin user management", () => {
       expiresAt: new Date(Date.now() + 1000),
       revokedAt: null,
     } as never);
+    // An outstanding recovery link that must not survive the reset.
+    await (
+      await adminTokens()
+    ).insertOne({
+      tokenHash: "reset-hash",
+      userId: targetId,
+      purpose: "password-reset",
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
+      usedAt: null,
+    } as never);
 
     const result = await resetAdminPassword(targetId, actorId);
     expect(result.ok).toBe(true);
@@ -120,5 +131,13 @@ describeWithDatabase("admin user management", () => {
       revokedAt: null,
     });
     expect(live).toBe(0);
+
+    const usableTokens = await (
+      await adminTokens()
+    ).countDocuments({
+      userId: targetId,
+      usedAt: null,
+    });
+    expect(usableTokens, "reset links must not outlive the reset").toBe(0);
   });
 });

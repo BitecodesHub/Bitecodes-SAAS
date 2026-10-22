@@ -19,7 +19,6 @@ vi.mock("@/lib/server/jobs/queue", () => ({
 
 vi.mock("@/lib/server/prospecting/repository", () => ({
   createProspectSearch: vi.fn(async () => {}),
-  setProspectStatus: vi.fn(async () => 1),
 }));
 
 const settings = {
@@ -73,22 +72,67 @@ describeWithDatabase("runAutopilotTick", () => {
   }
 
   beforeEach(async () => {
-    const { prospects, sequenceEnrollments } =
+    const { prospects, sequenceEnrollments, autopilotPresets } =
       await import("@/lib/server/db/collections");
     await (await prospects()).deleteMany({});
     await (await sequenceEnrollments()).deleteMany({});
+    await (await autopilotPresets()).deleteMany({});
     settings.automation.autopilot = true;
     settings.automation.autopilotScoreThreshold = 55;
     settings.automation.autopilotDailyEnrollCap = 20;
     vi.clearAllMocks();
   });
 
-  it("does nothing when autopilot is off", async () => {
+  it("does not enrol anyone when auto-contact is off", async () => {
     settings.automation.autopilot = false;
     const { runAutopilotTick } = await import("@/lib/server/autopilot");
     const summary = await runAutopilotTick();
     expect(summary.enabled).toBe(false);
     expect(summary.enrolled).toBe(0);
+    expect(summary.presetRun).toBeNull();
+  });
+
+  it("still runs due discovery when auto-contact is off", async () => {
+    settings.automation.autopilot = false;
+    const { autopilotPresets } = await import("@/lib/server/db/collections");
+    const now = new Date();
+    await (
+      await autopilotPresets()
+    ).insertOne({
+      presetId: "bootstrap:test",
+      label: "Test standing search",
+      lat: 1,
+      lng: 1,
+      radiusMeters: 1_000,
+      categories: ["health"],
+      cadenceHours: 24,
+      enabled: true,
+      lastRunAt: null,
+      lastSearchId: null,
+      createdById: null,
+      createdAt: now,
+      updatedAt: now,
+    } as never);
+
+    const { runAutopilotTick } = await import("@/lib/server/autopilot");
+    const { enqueueJob } = await import("@/lib/server/jobs/queue");
+    const { createProspectSearch } =
+      await import("@/lib/server/prospecting/repository");
+
+    const summary = await runAutopilotTick();
+
+    // Discovery is read-only external work plus internal rows, so it runs
+    // without the auto-contact switch. Enrolment remains off.
+    expect(summary.enabled).toBe(false);
+    expect(summary.presetRun).toBe("Test standing search");
+    expect(summary.enrolled).toBe(0);
+    expect(createProspectSearch).toHaveBeenCalledOnce();
+    expect(enqueueJob).toHaveBeenCalledOnce();
+
+    const preset = await (
+      await autopilotPresets()
+    ).findOne({ presetId: "bootstrap:test" });
+    expect(preset?.lastRunAt).not.toBeNull();
   });
 
   it("enrols qualified, high-score, contactable prospects", async () => {
@@ -164,5 +208,32 @@ describeWithDatabase("runAutopilotTick", () => {
     const summary = await runAutopilotTick();
     expect(summary.candidates).toBe(0);
     expect(summary.enrolled).toBe(0);
+  });
+
+  it("does not let opted-in lead follow-ups consume the cold-outreach cap", async () => {
+    const { sequenceEnrollments } = await import("@/lib/server/db/collections");
+    settings.automation.autopilotDailyEnrollCap = 1;
+    await (
+      await sequenceEnrollments()
+    ).insertOne({
+      enrollmentId: "lead-enrollment",
+      sequenceKey: "inbound.followup",
+      prospectId: null,
+      leadId: "lead-1",
+      leadKind: "enquiry",
+      email: "lead@example.in",
+      status: "active",
+      stoppedReason: null,
+      currentStep: 1,
+      nextRunAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+    await seedProspect({});
+
+    const { runAutopilotTick } = await import("@/lib/server/autopilot");
+    const summary = await runAutopilotTick();
+    expect(summary.candidates).toBe(1);
+    expect(summary.enrolled).toBe(1);
   });
 });

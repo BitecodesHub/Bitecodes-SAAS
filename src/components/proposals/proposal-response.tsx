@@ -7,6 +7,7 @@ import {
   acceptProposalAction,
   declineProposalAction,
 } from "@/lib/server/proposals/actions";
+import { trackConversion } from "@/lib/analytics-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +49,8 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
         setError(result.error);
         return;
       }
+      // The URL token is a credential; report only a stable path.
+      trackConversion("proposal_accepted", "/proposal");
       router.refresh();
     });
   }
@@ -60,6 +63,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
         setError(result.error);
         return;
       }
+      trackConversion("proposal_declined", "/proposal");
       router.refresh();
     });
   }

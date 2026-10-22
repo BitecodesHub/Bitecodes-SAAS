@@ -1,8 +1,12 @@
 import "server-only";
 
-import { generateBlogDraft, pickTopic } from "@/lib/server/blog/generator";
+import {
+  generateBlogDraft,
+  pickUnusedTopic,
+} from "@/lib/server/blog/generator";
 import {
   createPost,
+  getUsedAiTopics,
   publishDueScheduledPosts,
 } from "@/lib/server/blog/repository";
 import { pingIndexNow } from "@/lib/server/search-ping";
@@ -46,8 +50,26 @@ export async function handleBlogGenerate(
 
   const dayOfYear =
     typeof payload.dayOfYear === "number" ? payload.dayOfYear : 0;
-  const topic =
-    typeof payload.topic === "string" ? payload.topic : pickTopic(dayOfYear);
+  const explicitTopic =
+    typeof payload.topic === "string" ? payload.topic : null;
+
+  // An explicit topic from an operator is always honoured. The rotation, on the
+  // other hand, must not publish a second article on a subject that already
+  // exists — near-duplicate pages compete with each other and neither ranks.
+  let topic: string;
+  if (explicitTopic) {
+    topic = explicitTopic;
+  } else {
+    const used = await getUsedAiTopics();
+    const next = pickUnusedTopic(dayOfYear, used);
+    if (!next) {
+      context.log(
+        "Every seed topic already has an article. Add new topics to BLOG_TOPICS to resume automatic publishing.",
+      );
+      return { skipped: "topics-exhausted", topics: used.size };
+    }
+    topic = next;
+  }
 
   // Leave the run enough time to save, revalidate, and ping afterwards. The
   // worker only claims this type with 90 seconds left (JOB_MIN_BUDGET_MS), so
@@ -95,6 +117,7 @@ export async function handleBlogGenerate(
     authorId: null,
     aiAssisted: true,
     aiModel: draft.model,
+    topic,
     scheduledFor: null,
   } as Parameters<typeof createPost>[0]);
 

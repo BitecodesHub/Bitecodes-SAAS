@@ -326,6 +326,29 @@ describeWithDatabase("sequence engine", () => {
     expect(enrollment?.status).toBe("active");
     // Step two scheduled four days out.
     expect(enrollment?.nextRunAt).toBeInstanceOf(Date);
+
+    // Step one is the first contact: it claims and records exactly one contact.
+    const { getProspect } = await import("@/lib/server/prospecting/repository");
+    const prospect = await getProspect(id);
+    expect(prospect?.contactCount).toBe(1);
+    expect(prospect?.status).toBe("contacted");
+  });
+
+  it("refuses to enrol a prospect who was already contacted directly", async () => {
+    // Step one is a first-contact email. Starting a sequence for someone who
+    // has already had one would produce a duplicate.
+    const { enrollProspect } = await import("@/lib/server/email/sequences");
+    const { prepareProspectOutreach } =
+      await import("@/lib/server/email/outreach");
+    const { emailMessages } = await import("@/lib/server/db/collections");
+
+    const id = await seedProspect();
+    expect((await prepareProspectOutreach(id)).ok).toBe(true);
+
+    const result = await enrollProspect(id);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.reason).toBe("already-contacted");
+    expect(await (await emailMessages()).countDocuments({})).toBe(1);
   });
 
   it("refuses a second enrolment while one is running", async () => {

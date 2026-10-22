@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { trackConversion } from "@/lib/analytics-client";
 import {
   consultantSummary,
   type ConsultantInput,
@@ -63,6 +64,7 @@ export function ProjectConsultant() {
       }
       setRecommendation(result.recommendation);
       setQuote(result.quote);
+      trackConversion("consultant_used", "/ai-project-consultant");
     } catch (caught) {
       setError(
         caught instanceof Error

@@ -301,6 +301,29 @@ export interface JobDoc {
   finishedAt: Date | null;
 }
 
+/**
+ * Liveness of the external scheduler, one document per concern.
+ *
+ * The cron endpoint writes this on every authenticated tick. Without it, a
+ * deployment whose scheduler silently stopped (missing secret, disabled
+ * workflow, expired GitHub schedule) looks exactly like a healthy one: the
+ * database answers, pages render, and no job has failed because none ran.
+ */
+export interface SystemStateDoc {
+  _id: string;
+  /** Last authenticated tick, successful run or not. */
+  lastTickAt: Date;
+  lastTickSource: string;
+  lastTickOk: boolean;
+  lastTickError: string | null;
+  /** Last tick that completed a queue drain without throwing. */
+  lastSuccessAt: Date | null;
+  /** Lifetime tick count, useful for spotting a freshly restored database. */
+  ticks: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /** Cached third-party responses (Overpass, Nominatim). TTL-expired. */
 export interface DiscoveryCacheDoc {
   _id: string;
@@ -366,6 +389,17 @@ export interface SiteSettingsDoc extends Timestamped {
    * its label, and its default). Missing keys fall back to the defaults.
    */
   growth?: Partial<GrowthSettings>;
+  /**
+   * Written by the autonomous bootstrap (`lib/server/bootstrap.ts`). Its
+   * presence is what makes first boot observable: when this is missing, the
+   * database has never been reconciled.
+   */
+  bootstrap?: {
+    version?: number;
+    completedAt?: Date;
+    lastReconciledAt?: Date;
+    source?: string;
+  };
 }
 
 export interface AnalyticsEventDoc {
@@ -413,6 +447,11 @@ export interface BlogPostDoc extends Timestamped {
   /** True when any part of the draft came from the model. */
   aiAssisted: boolean;
   aiModel: string | null;
+  /**
+   * The seed topic an AI article was generated from. Used to stop the daily
+   * rotation from re-publishing the same subject as a duplicate post.
+   */
+  topic?: string | null;
   revision: number;
 }
 
@@ -864,6 +903,8 @@ export type ChatbotStatus = "active" | "paused";
 /** Public-safe appearance/behaviour, resolved for the embeddable widget. */
 export interface ChatbotAppearance {
   theme: "light" | "dark" | "auto";
+  /** A single safe launcher emoji. Empty/null uses the default chat icon. */
+  emoji: string | null;
   avatar: string | null;
   logo: string | null;
   primaryColor: string;
@@ -875,9 +916,15 @@ export interface ChatbotAppearance {
   placeholder: string;
   typingAnimation: boolean;
   branding: boolean;
+  /** Accessible name of the launcher button; never rendered as visible text. */
+  launcherLabel: string;
+  /** Reserved: no translation policy is wired up yet. */
   language: string;
+  /** Reserved: no per-bot timezone policy is wired up yet. */
   timezone: string;
+  /** Quick replies shown after an answer to keep the conversation going. */
   suggestedQuestions: string[];
+  /** Quick replies shown with the welcome message, before the first message. */
   starterPrompts: string[];
 }
 
@@ -1127,6 +1174,11 @@ export interface BillingOrderDoc extends Timestamped {
   gatewayOrderId: string | null;
   status: BillingOrderStatus;
   paidAt: Date | null;
+  /**
+   * Set once by the single delivery that finishes a settlement the original
+   * claimant crashed before crediting. Null on every older document.
+   */
+  settlementResumedAt?: Date | null;
 }
 
 /**
@@ -1921,6 +1973,29 @@ export interface SeoAuditDoc {
   overallScore: number | null;
   regressions: string[];
   createdAt: Date;
+}
+
+/**
+ * A URL IndexNow did not accept, kept for a bounded retry.
+ *
+ * IndexNow is best-effort: a publish must not fail because Bing was briefly
+ * unavailable. Without a record, though, the submission disappears and the new
+ * page waits for a crawler to find it. This row makes the failure explicit and
+ * lets the daily ping retry it with backoff until it is accepted or abandoned.
+ */
+export interface SearchSubmissionDoc {
+  _id?: ObjectId;
+  /** Site-relative path, unique. */
+  path: string;
+  /** Failed submission attempts, including the first. */
+  attempts: number;
+  firstFailedAt: Date;
+  lastAttemptAt: Date;
+  /** When the daily job may try again; ignored once abandoned. */
+  nextAttemptAt: Date;
+  state: "pending" | "abandoned";
+  /** HTTP status or transport error, for the health report. Never the key. */
+  lastError: string | null;
 }
 // ===== end growth:seo-tech =====
 

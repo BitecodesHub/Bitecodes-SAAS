@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getChatbotForWidget } from "@/lib/server/chatbot/repository";
 import { isOriginAllowed } from "@/lib/chatbot/domains";
+import { CHATBOT_APPEARANCE_VERSION } from "@/lib/chatbot/appearance";
 
 /**
  * Public, read-only appearance config for the chat widget.
@@ -97,6 +98,9 @@ export async function GET(
         chatbotId: bot.chatbotId,
         name: bot.name,
         appearance: bot.appearance,
+        // Version of the appearance contract, not of the script. Older widgets
+        // ignore it and unknown appearance fields; newer ones can branch on it.
+        appearanceVersion: CHATBOT_APPEARANCE_VERSION,
       },
     }),
     {

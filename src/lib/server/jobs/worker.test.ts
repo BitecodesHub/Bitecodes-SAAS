@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { describeWithDatabase, useTestDatabase } from "@/test/mongo";
 
 describe("job minimum budgets", () => {
@@ -111,6 +111,81 @@ describeWithDatabase("job worker deadline", () => {
     const cron = await runDueJobs({ budgetMs: 270_000, handlers });
     expect(ran).toEqual(["ping", "blog"]);
     expect(cron.completed).toBe(1);
+  });
+
+  it("alerts when a job exhausts its attempts", async () => {
+    const { enqueueJob, JOB_TYPES } = await import("@/lib/server/jobs/queue");
+    const { runDueJobs } = await import("@/lib/server/jobs/worker");
+    const { jobs } = await import("@/lib/server/db/collections");
+    const { ObjectId } = await import("mongodb");
+    const id = await enqueueJob({
+      type: JOB_TYPES.analyticsRollup,
+      maxAttempts: 1,
+    });
+    const notifyDeadJob = vi.fn().mockResolvedValue(undefined);
+
+    const summary = await runDueJobs({
+      budgetMs: 30_000,
+      notifyDeadJob,
+      handlers: {
+        [JOB_TYPES.analyticsRollup]: async () => {
+          throw new Error("aggregation query failed");
+        },
+      },
+    });
+
+    expect(summary).toMatchObject({ claimed: 1, failed: 1 });
+    expect(notifyDeadJob).toHaveBeenCalledWith({
+      jobType: JOB_TYPES.analyticsRollup,
+      jobId: id,
+      error: "aggregation query failed",
+      attempts: 1,
+    });
+    const job = await (await jobs()).findOne({ _id: new ObjectId(id) });
+    expect(job).toMatchObject({
+      status: "failed",
+      lastError: "aggregation query failed",
+    });
+  });
+
+  it("alerts when no handler is registered for a queued type", async () => {
+    const { enqueueJob, JOB_TYPES } = await import("@/lib/server/jobs/queue");
+    const { runDueJobs } = await import("@/lib/server/jobs/worker");
+    await enqueueJob({ type: JOB_TYPES.searchPing });
+    const notifyDeadJob = vi.fn().mockResolvedValue(undefined);
+
+    const summary = await runDueJobs({
+      budgetMs: 30_000,
+      handlers: {},
+      notifyDeadJob,
+    });
+
+    expect(summary).toMatchObject({ unhandled: 1, failed: 1 });
+    expect(notifyDeadJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jobType: JOB_TYPES.searchPing,
+        error: `No handler registered for "${JOB_TYPES.searchPing}"`,
+      }),
+    );
+  });
+
+  it("does not fail the run when the dead-letter alert itself fails", async () => {
+    const { enqueueJob, JOB_TYPES } = await import("@/lib/server/jobs/queue");
+    const { runDueJobs } = await import("@/lib/server/jobs/worker");
+    await enqueueJob({ type: JOB_TYPES.analyticsRollup, maxAttempts: 1 });
+    const notifyDeadJob = vi.fn().mockRejectedValue(new Error("smtp down"));
+
+    const summary = await runDueJobs({
+      budgetMs: 30_000,
+      notifyDeadJob,
+      handlers: {
+        [JOB_TYPES.analyticsRollup]: async () => {
+          throw new Error("boom");
+        },
+      },
+    });
+
+    expect(summary).toMatchObject({ failed: 1 });
   });
 
   it("requeues a deferred job without spending an attempt", async () => {

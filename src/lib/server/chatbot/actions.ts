@@ -23,6 +23,7 @@ import {
 } from "@/lib/server/chatbot/models";
 import { deleteSource, ingestContent } from "@/lib/server/knowledge/repository";
 import { getChatbot } from "@/lib/server/chatbot/repository";
+import { appearancePatchSchema } from "@/lib/chatbot/appearance-schema";
 import type { KnowledgeFormat } from "@/lib/chatbot/extract";
 
 /**
@@ -76,67 +77,12 @@ export async function createChatbotAction(input: {
   return { ok: true, data: created };
 }
 
-/** Hex colour, three or six digits, as the widget's CSS requires. */
-const hexColour = z
-  .string()
-  .trim()
-  .regex(
-    /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/,
-    "Use a hex colour such as #4f46e5.",
-  );
-
-/**
- * A URL for an avatar or logo, or an empty string meaning "none".
- *
- * Restricted to http(s) and `data:image/…`. The widget puts this in a CSS
- * `background-image`, so an unrestricted value is a way to point a customer's
- * visitors at arbitrary content, and `javascript:` in a CSS url() is a historic
- * script vector. Empty is allowed because clearing the field must be possible.
- */
-const imageUrl = z.union([
-  z.literal(""),
-  z
-    .string()
-    .trim()
-    .max(2_000)
-    .refine((value) => {
-      try {
-        const { protocol } = new URL(value);
-        if (protocol === "http:" || protocol === "https:") return true;
-        return protocol === "data:" && value.startsWith("data:image/");
-      } catch {
-        return false;
-      }
-    }, "Use an https:// image URL."),
-]);
-
 /**
  * Appearance is a PARTIAL: `updateChatbot` merges it onto the stored value, so an
- * editor can send only what changed without clobbering the rest.
- *
- * Its absence here was a silent data-loss bug. `z.object()` strips unknown keys,
- * so an appearance patch was removed before validation ever failed —
- * `updateChatbot` received an empty object, reported success, and the operator's
- * brand colour and welcome message were gone on the next page load with no error
- * anywhere. Fields must be declared to be saved.
+ * editor can send only what changed without clobbering the rest. The schema
+ * itself lives in `@/lib/chatbot/appearance-schema` because a `"use server"`
+ * module can only export async functions, and that schema needs direct tests.
  */
-const appearanceSchema = z
-  .object({
-    theme: z.enum(["light", "dark", "auto"]),
-    avatar: imageUrl.nullable(),
-    logo: imageUrl.nullable(),
-    primaryColor: hexColour,
-    secondaryColor: hexColour,
-    position: z.enum(["bottom-right", "bottom-left"]),
-    size: z.enum(["compact", "regular", "large"]),
-    displayMode: z.enum(["bubble", "popup", "fullscreen", "embedded"]),
-    welcomeMessage: z.string().trim().max(300),
-    placeholder: z.string().trim().max(120),
-    typingAnimation: z.boolean(),
-    branding: z.boolean(),
-  })
-  .partial();
-
 const updateSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   description: z.string().trim().max(500).nullable().optional(),
@@ -144,7 +90,7 @@ const updateSchema = z.object({
   allowedDomains: z.array(z.string().trim().max(120)).max(50).optional(),
   modelKey: z.string().trim().max(120).nullable().optional(),
   systemPrompt: z.string().trim().max(8000).optional(),
-  appearance: appearanceSchema.optional(),
+  appearance: appearancePatchSchema.optional(),
 });
 
 export async function updateChatbotAction(

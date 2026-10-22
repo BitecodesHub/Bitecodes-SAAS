@@ -3,6 +3,10 @@ import "server-only";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { getIndexNowKey } from "@/lib/server/env";
 import { pingIndexNow } from "@/lib/server/search-ping";
+import {
+  dueSearchSubmissions,
+  searchSubmissionSummary,
+} from "@/lib/server/search-submissions";
 import { getSettings } from "@/lib/server/settings";
 import type { JobContext } from "@/lib/server/jobs/worker";
 import type { BlogPost } from "@/types/content";
@@ -14,9 +18,10 @@ import type { BlogPost } from "@/types/content";
  * the key static pages are added, so changes to a landing page that has no
  * publish timestamp still reach Bing and the other IndexNow participants.
  *
- * No state is written: IndexNow submissions are idempotent, and re-pinging a
- * URL is harmless. Google ignores IndexNow and rediscovers the same URLs from
- * the sitemap.
+ * The batch also includes any URL whose earlier submission failed. A failed
+ * publish-time ping is recorded in `search_submissions`; this job is what
+ * retries it, with backoff and a bounded attempt count. Google ignores
+ * IndexNow and rediscovers the same URLs from the sitemap.
  */
 
 /** One hour of overlap covers a late cron run without widening the window much. */
@@ -85,19 +90,57 @@ export async function handleSearchPing(
 
   const now = new Date();
   const posts = await getPublishedPosts();
-  const paths = selectSearchPingPaths(posts, now);
+  const changed = selectSearchPingPaths(posts, now);
+
+  // A broken queue must not stop fresh URLs being submitted; the failure is
+  // logged and the current run proceeds with the pages it knows about.
+  let retries: string[] = [];
+  try {
+    retries = await dueSearchSubmissions(now);
+  } catch (error) {
+    context.log(
+      `Could not read the IndexNow retry queue: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  const paths = [...new Set([...changed, ...retries])];
 
   if (paths.length === 0) {
-    context.log("No pages changed in the last 26 hours.");
-    return { pinged: false, count: 0, paths: [] };
+    context.log(
+      "No pages changed in the last 26 hours and no retries are due.",
+    );
+    return { pinged: false, count: 0, paths: [], retried: 0 };
   }
 
   const pinged = await pingIndexNow(paths);
+
+  let queue: Awaited<ReturnType<typeof searchSubmissionSummary>> | null = null;
+  if (!pinged) {
+    try {
+      queue = await searchSubmissionSummary(now);
+    } catch {
+      // The ping itself already returned a usable failure; the summary is
+      // diagnostic only.
+    }
+  }
+
   context.log(
     pinged
-      ? `Submitted ${paths.length} URL${paths.length === 1 ? "" : "s"} to IndexNow.`
-      : `IndexNow did not accept the submission for ${paths.length} URL${paths.length === 1 ? "" : "s"}.`,
+      ? `Submitted ${paths.length} URL${paths.length === 1 ? "" : "s"} to IndexNow${
+          retries.length > 0 ? ` (${retries.length} retried)` : ""
+        }.`
+      : `IndexNow did not accept the submission for ${paths.length} URL${
+          paths.length === 1 ? "" : "s"
+        }; it has been queued for retry.`,
   );
 
-  return { pinged, count: paths.length, paths };
+  return {
+    pinged,
+    count: paths.length,
+    paths,
+    retried: retries.length,
+    ...(queue ? { queue } : {}),
+  };
 }

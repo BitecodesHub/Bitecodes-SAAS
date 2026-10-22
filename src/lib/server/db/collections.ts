@@ -51,6 +51,7 @@ import type {
   SequenceEnrollmentDoc,
   SiteSettingsDoc,
   SuppressionDoc,
+  SystemStateDoc,
 } from "@/lib/server/db/types";
 
 /*
@@ -98,7 +99,7 @@ import type {
 // ===== end growth:loyalty =====
 
 // ===== growth:seo-tech =====
-import type { SeoAuditDoc } from "@/lib/server/db/types";
+import type { SeoAuditDoc, SearchSubmissionDoc } from "@/lib/server/db/types";
 // ===== end growth:seo-tech =====
 
 // ===== growth:magnets =====
@@ -143,6 +144,8 @@ export const discoveryCache = () =>
   collection<DiscoveryCacheDoc>(COLLECTIONS.discoveryCache);
 export const siteSettings = () =>
   collection<SiteSettingsDoc>(COLLECTIONS.siteSettings);
+export const systemState = () =>
+  collection<SystemStateDoc>(COLLECTIONS.systemState);
 export const analyticsEvents = () =>
   collection<AnalyticsEventDoc>(COLLECTIONS.analyticsEvents);
 
@@ -274,6 +277,8 @@ export const churnRisk = () => collection<ChurnRiskDoc>(COLLECTIONS.churnRisk);
 
 // ===== growth:seo-tech =====
 export const seoAudits = () => collection<SeoAuditDoc>(COLLECTIONS.seoAudits);
+export const searchSubmissions = () =>
+  collection<SearchSubmissionDoc>(COLLECTIONS.searchSubmissions);
 // ===== end growth:seo-tech =====
 
 // ===== growth:magnets =====

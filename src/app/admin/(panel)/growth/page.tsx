@@ -11,6 +11,7 @@ import { kickJobs } from "@/lib/server/jobs/worker";
 import { z } from "zod";
 import { isGrowthToggleKey } from "@/lib/growth/toggles";
 import { jobs, aiAutomationRuns } from "@/lib/server/db/collections";
+import { BootstrapPanel } from "@/components/admin/bootstrap-panel";
 
 export const metadata: Metadata = { title: "Growth Engine" };
 export const dynamic = "force-dynamic";
@@ -307,6 +308,8 @@ export default async function AdminGrowthPage() {
           </ul>
         </section>
       )}
+
+      <BootstrapPanel />
 
       {/* AI chain status */}
       <section className="space-y-4">

@@ -72,6 +72,8 @@ export const JOB_TYPES = {
   seoSelfAudit: "seo.selfaudit",
   /** Monthly usage reports for customers. */
   reportMonthly: "report.monthly",
+  /** Finish referral rewards that qualified but were never journalled. */
+  referralReconcile: "referral.reconcile",
 } as const;
 
 export type JobType = (typeof JOB_TYPES)[keyof typeof JOB_TYPES];
@@ -131,11 +133,15 @@ const DEFAULT_MAX_ATTEMPTS = 5;
 /** Statuses a job never leaves on its own. */
 const TERMINAL_STATUSES = ["completed", "failed", "cancelled"] as const;
 /**
- * How long a claim is held. Long enough for the slowest handler (a website
- * audit allows 8s per request plus redirects) with a wide margin, short enough
- * that a crashed worker's job is retried promptly.
+ * How long a claim is held.
+ *
+ * Deliberately longer than the cron route's 300s `maxDuration`: a lock that
+ * expires while its worker is still alive lets a second tick claim and start
+ * the same job, which for an outbound email is a duplicate send. A crashed
+ * worker's job is retried after this window, so the cost of the margin is a
+ * ten-minute delay on recovery, not lost work.
  */
-export const LOCK_DURATION_MS = 5 * 60 * 1000;
+export const LOCK_DURATION_MS = 10 * 60 * 1000;
 
 // ---------------------------------------------------------------------------
 // Pure helpers
@@ -314,10 +320,19 @@ export async function completeJob(
   jobId: string,
   result: Record<string, unknown> | null = null,
   now = new Date(),
+  /**
+   * When provided, the write only applies while this worker still owns the
+   * lock. A worker that overran its lock (or was paused across a deployment)
+   * must not mark a job complete after another worker has reclaimed it.
+   */
+  workerId?: string,
 ): Promise<void> {
   const collection = await jobs();
   await collection.updateOne(
-    { _id: new ObjectId(jobId) },
+    {
+      _id: new ObjectId(jobId),
+      ...(workerId ? { lockedBy: workerId } : {}),
+    },
     {
       $set: {
         status: "completed",
@@ -349,10 +364,12 @@ export async function failJob(
     error instanceof Error ? error.message : String(error ?? "Unknown error");
   // Bound the stored message so a huge provider error cannot bloat the record.
   const lastError = message.slice(0, 1_000);
+  // Only the worker that holds the lock may write the outcome. See completeJob.
+  const owner = job.lockedBy ? { lockedBy: job.lockedBy } : {};
 
   if (isExhausted(job.attempts, job.maxAttempts)) {
     await collection.updateOne(
-      { _id: job._id },
+      { _id: job._id, ...owner },
       {
         $set: {
           status: "failed",
@@ -371,7 +388,7 @@ export async function failJob(
     now.getTime() + nextRetryDelayMs(job.attempts, random),
   );
   await collection.updateOne(
-    { _id: job._id },
+    { _id: job._id, ...owner },
     {
       $set: {
         status: "queued",
@@ -400,7 +417,10 @@ export async function deferJob(
   const collection = await jobs();
   const runAt = new Date(now.getTime() + Math.max(0, retryAfterMs));
   await collection.updateOne(
-    { _id: job._id },
+    {
+      _id: job._id,
+      ...(job.lockedBy ? { lockedBy: job.lockedBy } : {}),
+    },
     {
       $set: {
         status: "queued",

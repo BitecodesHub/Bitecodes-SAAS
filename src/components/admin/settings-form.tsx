@@ -163,15 +163,17 @@ export function SettingsForm({ initial, hasPlaceholders }: SettingsFormProps) {
         <div>
           <h2 className="text-lg font-semibold">Autopilot</h2>
           <p className="text-muted-foreground text-sm">
-            The hands-off pipeline. When on, saved searches re-run on their
-            cadence and qualified customers are contacted automatically — within
-            the caps above and never into a held region without your release.
+            Discovery and qualification always run on their schedule, so the
+            pipeline fills without anyone setting it up. This switch controls
+            only the step that contacts people: when on, qualified customers are
+            enrolled automatically — within the caps above and never into a held
+            region without your release.
           </p>
         </div>
 
         <ToggleRow
-          label="Run on autopilot"
-          description="Discover, check, and contact new customers without you. Leave off to keep everything manual."
+          label="Contact qualified customers automatically"
+          description="When off, prospects are discovered and drafted but nobody is enrolled or emailed without you. Leave off to review every customer first."
           checked={automation.autopilot}
           onChange={(autopilot) =>
             setForm({ ...form, automation: { ...automation, autopilot } })

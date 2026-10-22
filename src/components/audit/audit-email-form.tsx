@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackConversion } from "@/lib/analytics-client";
 import { captureAttribution } from "@/lib/attribution";
 import {
   AUDIT_FOLLOW_UP_CONSENT_TEXT,
@@ -76,6 +77,12 @@ export function AuditEmailForm({
         );
       }
       setSentTo(email);
+      // The report page path carries a token, so the event records the page
+      // type rather than the live pathname.
+      trackConversion(
+        "audit_request",
+        source === "report" ? "/report" : "/website-audit",
+      );
     } catch (caught) {
       setError(
         caught instanceof Error

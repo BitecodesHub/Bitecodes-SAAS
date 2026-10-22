@@ -3,8 +3,7 @@ import "server-only";
 import type { DigestRange, DigestSection } from "@/lib/server/digest/types";
 
 import { listProspects } from "@/lib/server/prospecting/repository";
-import { GROWTH_TOGGLES, getGrowthToggle } from "@/lib/growth/toggles";
-import { getSettingsFresh } from "@/lib/server/settings";
+import { getGrowthToggle } from "@/lib/growth/toggles";
 
 /**
  * Digest section "prospects": Prospects discovered, researched, and drafted for outreach.
@@ -15,7 +14,7 @@ import { getSettingsFresh } from "@/lib/server/settings";
 export async function buildSection(
   range: DigestRange,
 ): Promise<DigestSection | null> {
-  const settings = await getSettingsFresh();
+  void range;
 
   const prospectResearchToggle = getGrowthToggle("prospectResearch");
   const outreachDraftsToggle = getGrowthToggle("outreachDrafts");
@@ -49,11 +48,6 @@ export async function buildSection(
       }
     }
   }
-
-  const labels: Record<string, string> = {
-    researchEnabled: prospectResearchToggle.label,
-    outreachDraftsEnabled: outreachDraftsToggle.label,
-  };
 
   if (total === 0) {
     return null;

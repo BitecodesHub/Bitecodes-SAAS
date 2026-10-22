@@ -406,6 +406,47 @@ export async function getProspect(id: string): Promise<ProspectDoc | null> {
   return collection.findOne({ _id: new ObjectId(id) });
 }
 
+/**
+ * Prospects the scheduled research job should work on next, best fit first.
+ *
+ * `research: null` matches both an absent field and an explicit null, which is
+ * what makes the batch query idempotent across schemas and deploys.
+ */
+export async function listProspectsAwaitingResearch(
+  limit: number,
+): Promise<ProspectDoc[]> {
+  const collection = await prospects();
+  return collection
+    .find({
+      status: { $in: ["enriching", "qualified"] },
+      classification: { $ne: null },
+      research: null,
+    })
+    .sort({ "classification.score": -1, enrichedAt: -1 })
+    .limit(Math.max(1, Math.min(50, Math.round(limit))))
+    .toArray();
+}
+
+/**
+ * Qualified, contactable prospects whose first-contact draft has not been
+ * written yet. Sorted by fit so a bounded run drafts the best candidates.
+ */
+export async function listProspectsAwaitingOutreachDraft(
+  limit: number,
+): Promise<ProspectDoc[]> {
+  const collection = await prospects();
+  return collection
+    .find({
+      status: "qualified",
+      email: { $nin: [null, ""] },
+      classification: { $ne: null },
+      outreachDraftedAt: null,
+    })
+    .sort({ "classification.score": -1, enrichedAt: -1 })
+    .limit(Math.max(1, Math.min(50, Math.round(limit))))
+    .toArray();
+}
+
 export async function getProspectByReportShareId(
   shareId: string,
 ): Promise<ProspectDoc | null> {
@@ -576,6 +617,74 @@ export async function setProspectReportShareId(
   return result.matchedCount === 1;
 }
 
+/**
+ * Atomically claims the right to send this prospect's first contact.
+ *
+ * The check-then-write that used to guard first contact let two concurrent
+ * callers — an operator batch and the autopilot, or two workers draining the
+ * same batch — both observe `contactCount: 0` and both queue an email. The
+ * `contactCount: 0` filter makes the increment itself the lock: exactly one
+ * caller can match it, and every other caller is refused before anything is
+ * rendered or queued.
+ */
+export async function claimProspectFirstContact(
+  id: string,
+  now = new Date(),
+): Promise<boolean> {
+  const collection = await prospects();
+  const claimed = await collection.findOneAndUpdate(
+    { _id: toObjectId(id), contactCount: 0 },
+    {
+      $set: { lastContactedAt: now, updatedAt: now },
+      $inc: { contactCount: 1 },
+    },
+    { projection: { _id: 1 } },
+  );
+
+  if (!claimed) return false;
+
+  // Same filtered advance as `recordProspectContacted`: a later pipeline stage
+  // is never dragged backwards by a send.
+  await collection.updateOne(
+    {
+      _id: toObjectId(id),
+      status: { $in: ["discovered", "enriching", "qualified", "queued"] },
+    },
+    { $set: { status: "contacted" } },
+  );
+
+  return true;
+}
+
+/**
+ * Returns a first-contact claim when nothing was actually queued.
+ *
+ * A refusal at the compliance gate must not burn the prospect's only first-
+ * contact slot, or a transient cap would permanently exclude a legitimate
+ * recipient. `lastContactedAt` is cleared only when this release removed the
+ * last claim.
+ */
+export async function releaseProspectFirstContact(
+  id: string,
+  now = new Date(),
+): Promise<void> {
+  const collection = await prospects();
+  await collection.updateOne(
+    { _id: toObjectId(id), contactCount: { $gt: 0 } },
+    [
+      {
+        $set: {
+          contactCount: { $subtract: ["$contactCount", 1] },
+          lastContactedAt: {
+            $cond: [{ $lte: ["$contactCount", 1] }, null, "$lastContactedAt"],
+          },
+          updatedAt: now,
+        },
+      },
+    ],
+  );
+}
+
 export async function recordProspectContacted(
   id: string,
   now = new Date(),
@@ -668,7 +777,6 @@ export async function saveProspectOutreachDraft(
     model: string;
     provider: string;
   },
-  now = new Date(),
 ): Promise<boolean> {
   const collection = await prospects();
   const result = await collection.updateOne(
@@ -680,6 +788,7 @@ export async function saveProspectOutreachDraft(
         outreachDraftedAt: draft.draftedAt,
         model: draft.model,
         provider: draft.provider,
+        updatedAt: draft.draftedAt,
       },
     },
   );

@@ -1,28 +1,17 @@
-import { getDatabase } from "@/lib/server/mongodb";
-import type { TestimonialDoc } from "@/lib/server/db/types";
-import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { testimonials } from "@/lib/server/db/collections";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const approveSchema = z.object({
-  testimonialId: z.string().trim().min(1),
-  approvedBy: z.string().trim().min(1),
-});
-
-const rejectSchema = z.object({
-  testimonialId: z.string().trim().min(1),
-  rejectedBy: z.string().trim().min(1),
-});
-
-const db = await getDatabase();
-const collection = db.collection<TestimonialDoc>("testimonials");
-
 /**
  * GET: Return approved, consented testimonials for the public site.
+ *
+ * Reads only. Moderation is an authenticated admin action (server actions
+ * under `/admin/loyalty`); the previous public POST let anyone approve or
+ * reject a testimonial and trust a caller-supplied approver id.
  */
 export async function GET() {
+  const collection = await testimonials();
   const documents = await collection
     .find({
       status: "approved",
@@ -63,68 +52,4 @@ export async function GET() {
       },
     },
   );
-}
-
-/**
- * POST: Moderate a testimonial (approve or reject).
- */
-export async function POST(request: Request) {
-  const body = await request.json();
-  const approveAction = body.type === "approve";
-
-  if (approveAction) {
-    const parsed = approveSchema.safeParse(body);
-
-    if (!parsed.success) {
-      return new Response(JSON.stringify({ error: "Invalid approval data" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const { testimonialId, approvedBy } = parsed.data;
-
-    await collection.updateOne(
-      { _id: new ObjectId(testimonialId) },
-      {
-        $set: {
-          status: "approved",
-          approvedById: approvedBy,
-          approvedAt: new Date(),
-        },
-      },
-    );
-
-    return new Response(JSON.stringify({ success: true, action: "approved" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const parsed = rejectSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return new Response(JSON.stringify({ error: "Invalid rejection data" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const { testimonialId, rejectedBy } = parsed.data;
-
-  await collection.updateOne(
-    { _id: new ObjectId(testimonialId) },
-    {
-      $set: {
-        status: "rejected",
-        rejectedById: rejectedBy,
-        rejectedAt: new Date(),
-      },
-    },
-  );
-
-  return new Response(JSON.stringify({ success: true, action: "rejected" }), {
-    status: 200,
-    headers: { "Content-Type": "application/json" },
-  });
 }

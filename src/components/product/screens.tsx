@@ -249,6 +249,7 @@ export async function ChatbotDetailScreen({
       <ChatbotAppearanceEditor
         chatbotId={bot.chatbotId}
         appearance={bot.appearance}
+        name={bot.name}
       />
 
       <KnowledgeManager

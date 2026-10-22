@@ -309,8 +309,14 @@ export async function deliverMessage(
   const now = new Date();
 
   // Claim the message so two workers cannot both send it.
+  //
+  // `failed` is claimable so a job retry after an SMTP error actually resends;
+  // `sending` is not, because a crash between `sendMail` and the status update
+  // leaves the delivery outcome unknown. Retrying that would risk a duplicate
+  // send, which for cold outreach is worse than a message stuck visible for a
+  // human to reconcile.
   const claimed = await collection.findOneAndUpdate(
-    { messageId, status: { $in: ["queued", "sending"] } },
+    { messageId, status: { $in: ["queued", "failed"] } },
     { $set: { status: "sending", updatedAt: now }, $inc: { attempts: 1 } },
     { returnDocument: "after" },
   );
@@ -335,6 +341,39 @@ export async function deliverMessage(
       },
     );
     return { sent: false, skipped: true, reason: "suppressed" };
+  }
+
+  // Re-check the volume caps at delivery, not only at queue time.
+  //
+  // A batch queued at 09:00 may have been scheduled for 17:00, by which time
+  // other mail has spent the day's budget. Sending anyway would exceed the
+  // per-domain or global ceiling that protects the sending domain. The message
+  // is put back in the queue for the next UTC day instead of being dropped:
+  // the recipient has not refused it, and the cap resets.
+  if (isCommercial) {
+    const settings = await getSettingsFresh();
+    const [domainSentToday, globalSentToday] = await Promise.all([
+      countSentToday(emailDomain(claimed.to), now),
+      countSentToday(null, now),
+    ]);
+
+    if (globalSentToday >= settings.automation.globalDailyCap) {
+      return deferToNextDay(
+        claimed,
+        "global-cap",
+        `Deferred: the daily send cap of ${settings.automation.globalDailyCap} was reached before this message's turn.`,
+        now,
+      );
+    }
+
+    if (domainSentToday >= settings.automation.perDomainDailyCap) {
+      return deferToNextDay(
+        claimed,
+        "domain-cap",
+        `Deferred: the daily cap of ${settings.automation.perDomainDailyCap} for this recipient's domain was reached.`,
+        now,
+      );
+    }
   }
 
   const siteUrl = getSiteUrl();
@@ -397,6 +436,60 @@ export async function deliverMessage(
     // Rethrown so the job queue records the failure and applies backoff.
     throw error;
   }
+}
+
+/**
+ * Puts a capped commercial message back on tomorrow's queue.
+ *
+ * The new job gets a day-scoped idempotency key rather than the message's
+ * original key: that key belongs to the job currently finishing, and the queue
+ * treats a live key as a no-op. Duplicate sends are still impossible because
+ * `deliverMessage` claims the message document itself.
+ */
+async function deferToNextDay(
+  message: EmailMessageDoc,
+  reason: "global-cap" | "domain-cap",
+  detail: string,
+  now: Date,
+): Promise<DeliverResult> {
+  const nextDayStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
+  );
+  // Spread the retry over half an hour so a capped backlog does not all wake
+  // in the same second and immediately contend for the new day's budget.
+  const runAt = new Date(
+    nextDayStart.getTime() + Math.floor(Math.random() * 30 * 60_000),
+  );
+
+  const collection = await emailMessages();
+  const requeued = await collection.updateOne(
+    { messageId: message.messageId, status: "sending" },
+    {
+      $set: {
+        status: "queued",
+        sendAfter: runAt,
+        lastError: detail,
+        updatedAt: now,
+      },
+    },
+  );
+
+  if (requeued.modifiedCount !== 1) {
+    return { sent: false, skipped: true, reason: "not-queued" };
+  }
+
+  await enqueueJob({
+    type: JOB_TYPES.emailSend,
+    payload: { messageId: message.messageId, track: true },
+    runAt,
+    // `attempts` distinguishes two deferrals of the same message to the same
+    // day; the date alone could collide with an already-finished job.
+    idempotencyKey: `email:${message.messageId}:defer:${runAt
+      .toISOString()
+      .slice(0, 10)}:${message.attempts}`,
+  });
+
+  return { sent: false, skipped: true, reason };
 }
 
 /** Quotes are stripped so a display name cannot break out of the header. */

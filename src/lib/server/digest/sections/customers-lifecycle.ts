@@ -9,8 +9,9 @@ import type { DigestMetric } from "@/lib/server/digest/types";
  * Returns null when there is nothing to report.
  */
 export async function buildSection(
-  range: DigestRange,
+  _range: DigestRange,
 ): Promise<DigestSection | null> {
+  void _range;
   const { getDatabase } = await import("@/lib/server/mongodb");
   const database = await getDatabase();
   const now = new Date();
@@ -18,10 +19,6 @@ export async function buildSection(
   const dayStart = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
-
-  const period = `${dayStart.getUTCFullYear()}-${String(
-    dayStart.getUTCMonth() + 1,
-  ).padStart(2, "0")}`;
 
   const lifecycleEventsCollection = database.collection<{
     kind: string;

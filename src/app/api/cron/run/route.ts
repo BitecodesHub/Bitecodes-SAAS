@@ -5,6 +5,8 @@ import { safeCompare } from "@/lib/server/crypto";
 import { runDueJobs } from "@/lib/server/jobs/worker";
 import { getQueueStats } from "@/lib/server/jobs/queue";
 import { enqueueDueAutomations } from "@/lib/server/jobs/schedule";
+import { recordHeartbeat } from "@/lib/server/jobs/heartbeat";
+import { runBootstrap } from "@/lib/server/bootstrap";
 
 /**
  * The job runner.
@@ -79,6 +81,46 @@ async function handle(request: NextRequest) {
   if (auth === "unauthorized") return unauthorized();
   const startedAt = Date.now();
 
+  // Reconcile first boot before scheduling work. The full pass runs once a
+  // day; every other heartbeat repairs only an entirely empty preset list and
+  // re-checks that the schedule still has handlers. A bootstrap failure is
+  // reported and logged, never allowed to stop the drain — a broken settings
+  // write must not also stop email that is already queued.
+  let bootstrap: {
+    ok: boolean;
+    reconciled: boolean;
+    settingsCreated: boolean;
+    presetsCreated: number;
+    presetsTotal: number;
+    scheduleOk: boolean;
+    outboundGate: string;
+    errors: string[];
+  } | null = null;
+  try {
+    const report = await runBootstrap({ source: "heartbeat" });
+    bootstrap = {
+      ok: report.ok,
+      reconciled: report.reconciled,
+      settingsCreated: report.settings.created,
+      presetsCreated: report.presets.created,
+      presetsTotal: report.presets.total,
+      scheduleOk: report.schedules.ok,
+      outboundGate: report.gates.state,
+      errors: report.errors,
+    };
+    if (!report.ok) {
+      console.error(
+        "[cron] Bootstrap reconciliation reported errors:",
+        report.errors.join(" | "),
+      );
+    }
+  } catch (error) {
+    console.error(
+      "[cron] Bootstrap reconciliation threw:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
   // Enqueue every recurring automation that is due (see `schedule.ts`) before
   // draining the queue, so a single cron cadence drives everything. Each key
   // is bucketed to its cadence, so repeated cron calls — or two instances
@@ -93,7 +135,20 @@ async function handle(request: NextRequest) {
     );
   }
 
-  const summary = await runDueJobs({ budgetMs: RUN_BUDGET_MS });
+  let summary: Awaited<ReturnType<typeof runDueJobs>>;
+  try {
+    summary = await runDueJobs({ budgetMs: RUN_BUDGET_MS });
+  } catch (error) {
+    // A thrown drain is the one cron failure worth persisting explicitly: the
+    // next successful tick must not erase the fact that automation stalled.
+    await recordHeartbeat({
+      source: "cron",
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+  await recordHeartbeat({ source: "cron", ok: true });
 
   // If the budget ran out with work still queued, start another pass after the
   // response so a backlog drains without waiting for the next cron tick — but
@@ -109,7 +164,7 @@ async function handle(request: NextRequest) {
   }
 
   return Response.json(
-    { ok: true, ...summary, queue: await getQueueStats() },
+    { ok: true, ...summary, bootstrap, queue: await getQueueStats() },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

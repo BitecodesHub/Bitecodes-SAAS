@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { trackConversion } from "@/lib/analytics-client";
 import { captureAttribution } from "@/lib/attribution";
 import {
   RESOURCE_FOLLOW_UP_CONSENT_TEXT,
@@ -70,6 +71,7 @@ export function ResourceChecklistForm({
         throw new Error(payload.message ?? "The checklist is unavailable.");
       }
       setResult(payload);
+      trackConversion("lead_magnet", `/resources/${slug}`);
     } catch (caught) {
       setError(
         caught instanceof Error

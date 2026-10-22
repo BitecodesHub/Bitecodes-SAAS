@@ -81,10 +81,12 @@ export const SETTINGS_DEFAULTS = {
  */
 export const NOTIFICATION_CHANNELS = [
   "formSubmission",
+  "newLead",
   "chatConversation",
   "booking",
   "lowBalance",
   "failedJob",
+  "ownerReports",
 ] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
@@ -123,10 +125,15 @@ export const NOTIFICATION_DEFAULTS: NotificationSettings = {
   defaultRecipients: [],
   channels: {
     formSubmission: { enabled: true, recipients: [] },
+    // Lead magnets, audit requests, consultant briefs, and callbacks. Separate
+    // from `formSubmission` because these arrive while the visitor is still on
+    // the site, which makes a fast reply worth more than a routine form inbox.
+    newLead: { enabled: true, recipients: [] },
     chatConversation: { enabled: true, recipients: [] },
     booking: { enabled: true, recipients: [] },
     lowBalance: { enabled: true, recipients: [] },
     failedJob: { enabled: true, recipients: [] },
+    ownerReports: { enabled: true, recipients: [] },
   },
   chat: { everyConversation: false, maxAlertsPerBotPerHour: 6 },
   lowBalance: { threshold: 50 },
@@ -216,14 +223,19 @@ export function recipientsForChannel(
   extra: string[] = [],
 ): string[] {
   const prefs = settings.notifications.channels[channel];
-  if (!prefs.enabled) return [];
+  const ownList = cleanRecipients(extra);
+
+  // Switching a channel off silences the *central* lists, not a recipient list
+  // that a form or booking page owns. That list is the product's own "tell
+  // these people" answer and the central switch is not allowed to override it.
+  if (!prefs.enabled) return ownList;
 
   // The default list applies *in addition to* a channel's own list, so one
   // global "copy me on everything" address does not have to be repeated in
   // five places — and so clearing a channel's list never means "nobody".
   return cleanRecipients([
     ...prefs.recipients,
-    ...extra,
+    ...ownList,
     ...settings.notifications.defaultRecipients,
   ]);
 }

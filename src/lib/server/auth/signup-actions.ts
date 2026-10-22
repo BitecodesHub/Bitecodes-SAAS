@@ -33,11 +33,18 @@ async function hashedRequestIp(): Promise<string> {
   return createHash("sha256").update(ip).digest("hex");
 }
 
+/** Rate-limit keys are always hashes — never a raw address in the database. */
+function hashedAddress(email: string): string {
+  return createHash("sha256").update(normalizeEmail(email)).digest("hex");
+}
+
 const signupSchema = z.object({
   name: z.string().trim().min(1).max(120),
   email: z.string().trim().min(3).max(254),
   password: z.string().min(1).max(200),
   company: z.string().trim().max(120).optional(),
+  /** Optional referral code; an unknown or malformed one is ignored. */
+  referralCode: z.string().trim().max(32).optional(),
   /** Unused field the widget scripts leave empty. Filled in means a bot. */
   website: z.string().max(200).optional(),
   terms: z.string().optional(),
@@ -50,7 +57,12 @@ export type SignupState =
       error: string;
       field?: "name" | "email" | "password" | "terms";
       /** Echoed so a rejected attempt does not clear the whole form. */
-      values?: { name?: string; email?: string; company?: string };
+      values?: {
+        name?: string;
+        email?: string;
+        company?: string;
+        referralCode?: string;
+      };
     }
   | undefined;
 
@@ -63,6 +75,7 @@ export async function signupAction(
     email: formData.get("email"),
     password: formData.get("password"),
     company: formData.get("company") || undefined,
+    referralCode: formData.get("referralCode") || undefined,
     website: formData.get("website") || undefined,
     terms: formData.get("terms") || undefined,
   };
@@ -75,6 +88,8 @@ export async function signupAction(
         name: typeof raw.name === "string" ? raw.name : "",
         email: typeof raw.email === "string" ? raw.email : "",
         company: typeof raw.company === "string" ? raw.company : "",
+        referralCode:
+          typeof raw.referralCode === "string" ? raw.referralCode : "",
       },
     };
   }
@@ -83,6 +98,7 @@ export async function signupAction(
     name: parsed.data.name,
     email: parsed.data.email,
     company: parsed.data.company ?? "",
+    referralCode: parsed.data.referralCode ?? "",
   };
 
   if (parsed.data.website) {
@@ -99,13 +115,19 @@ export async function signupAction(
     };
   }
 
-  const throttle = await consumeNamedRateLimit(
-    "signup",
-    await hashedRequestIp(),
-  );
-  if (!throttle.allowed) {
+  const [ipThrottle, addressThrottle] = await Promise.all([
+    consumeNamedRateLimit("signup", await hashedRequestIp()),
+    consumeNamedRateLimit("signupAddress", hashedAddress(parsed.data.email)),
+  ]);
+  if (!ipThrottle.allowed) {
     return {
-      error: `Too many sign-ups from this connection. Try again in ${Math.ceil(throttle.retryAfterSeconds / 60)} minutes.`,
+      error: `Too many sign-ups from this connection. Try again in ${Math.ceil(ipThrottle.retryAfterSeconds / 60)} minutes.`,
+      values,
+    };
+  }
+  if (!addressThrottle.allowed) {
+    return {
+      error: `Too many messages sent to this address. Try again in ${Math.ceil(addressThrottle.retryAfterSeconds / 60)} minutes.`,
       values,
     };
   }
@@ -115,6 +137,7 @@ export async function signupAction(
     email: parsed.data.email,
     password: parsed.data.password,
     company: parsed.data.company,
+    referralCode: parsed.data.referralCode,
   });
 
   if (!result.ok) {
@@ -200,10 +223,11 @@ export async function resendVerificationAction(
     return { error: "Enter the email address you signed up with." };
   }
 
-  const throttle = await consumeNamedRateLimit(
-    "verifyResend",
-    await hashedRequestIp(),
-  );
+  const [ipThrottle, addressThrottle] = await Promise.all([
+    consumeNamedRateLimit("verifyResend", await hashedRequestIp()),
+    consumeNamedRateLimit("verifyResendAddress", hashedAddress(email)),
+  ]);
+  const throttle = !ipThrottle.allowed ? ipThrottle : addressThrottle;
   if (!throttle.allowed) {
     return {
       error: `Too many requests. Try again in ${Math.ceil(throttle.retryAfterSeconds / 60)} minutes.`,

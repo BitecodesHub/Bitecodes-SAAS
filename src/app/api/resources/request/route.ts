@@ -9,6 +9,7 @@ import {
 import { leadMagnetRequests } from "@/lib/server/db/collections";
 import type { LeadConsent } from "@/lib/server/db/types";
 import { captureLead } from "@/lib/server/leads/capture";
+import { notifyNewLead } from "@/lib/server/email/notify";
 import { subscribeToNewsletter } from "@/lib/server/newsletter/subscribe";
 import { consumeRateLimit } from "@/lib/server/rate-limit";
 import { getResource } from "@/data/resources";
@@ -161,6 +162,39 @@ export async function POST(request: NextRequest) {
         createdAt: now,
         updatedAt: now,
       });
+    }
+
+    // The owner should hear about this while the visitor is still on the site.
+    // A retry of the same request (`created: false`) must not ring twice.
+    if (lead.created) {
+      await notifyNewLead({
+        leadId: lead.id,
+        reference: lead.reference,
+        source: `resources/${resource.slug}`,
+        kindLabel: "checklist request",
+        name: input.name,
+        email: input.email,
+        message: `Requested “${resource.checklist.title}”.`,
+      }).catch(() => undefined);
+
+      // Newsletter opt-in is marketing consent, which is what the inbound
+      // follow-up sequence requires. The contact-only follow-up box does not
+      // authorise email marketing and must not be treated as if it did.
+      if (input.newsletter) {
+        try {
+          const { enrollLead } = await import("@/lib/server/email/sequences");
+          await enrollLead({
+            leadKind: "enquiry",
+            leadId: lead.id,
+            email: input.email,
+            name: input.name,
+            consentAt: now,
+          });
+        } catch {
+          // The lead and the checklist are safe; a sequence failure is
+          // recoverable and must not turn a successful request into a 502.
+        }
+      }
     }
 
     let newsletterStatus: string = "not-requested";

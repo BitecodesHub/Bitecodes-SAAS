@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { BookingAppearance } from "@/lib/server/db/types";
+import { trackConversion } from "@/lib/analytics-client";
 import { useClientValue } from "@/lib/use-client-value";
 
 /**
@@ -161,11 +162,14 @@ export function BookingRenderer({
   publicToken,
   appearance,
   confirmationMessage,
+  analyticsPath = null,
 }: {
   bookingId: string;
   publicToken: string;
   appearance: BookingAppearance;
   confirmationMessage: string;
+  /** Set only for Bitecodes' own discovery booking, never a tenant's. */
+  analyticsPath?: string | null;
 }) {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -176,6 +180,7 @@ export function BookingRenderer({
   const [email, setEmail] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const startedTracked = useRef(false);
   const [confirmed, setConfirmed] = useState<{
     slot: Slot;
     message: string;
@@ -269,6 +274,9 @@ export function BookingRenderer({
           slot: chosen,
           message: payload?.message ?? confirmationMessage,
         });
+        if (analyticsPath) {
+          trackConversion("booking_complete", analyticsPath);
+        }
         return;
       }
 
@@ -443,6 +451,10 @@ export function BookingRenderer({
                       onClick={() => {
                         setChosen(slot);
                         setBanner(null);
+                        if (analyticsPath && !startedTracked.current) {
+                          startedTracked.current = true;
+                          trackConversion("booking_start", analyticsPath);
+                        }
                       }}
                       className="border-border bg-background min-w-21 rounded-lg border px-3 py-2 text-sm hover:border-current"
                     >

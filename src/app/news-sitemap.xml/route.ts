@@ -1,18 +1,21 @@
-import { blogPosts } from "@/data/blog";
+import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { loc, xmlEscape, xmlResponse } from "@/lib/sitemap-xml";
 
 // Google News sitemap. Google requires entries to be articles published in
-// the LAST TWO DAYS. All current posts (2026-05-28 and earlier) are older
-// than that as of 2026-06-29, so this renders a VALID EMPTY <urlset> with the
-// news namespace declared. It auto-populates the moment a post <2 days old
-// is added to src/data/blog.ts and the site is rebuilt — no code change needed.
-export const dynamic = "force-static";
+// the last two days. Dynamic, and backed by the merged published set, so an
+// AI-published post appears here without a redeploy — the previous version
+// read the static data file at build time and could never list a database post.
+export const dynamic = "force-dynamic";
 
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
-export function GET(): Response {
+export async function GET(): Promise<Response> {
   const cutoff = Date.now() - TWO_DAYS_MS;
-  const recent = blogPosts.filter((p) => Date.parse(p.date) >= cutoff);
+  const posts = await getPublishedPosts();
+  const recent = posts.filter((p) => {
+    const published = Date.parse(p.date);
+    return Number.isFinite(published) && published >= cutoff;
+  });
 
   const entries = recent
     .map(

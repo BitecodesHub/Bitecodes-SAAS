@@ -58,7 +58,7 @@ export const RECURRING_AUTOMATIONS: RecurringAutomation[] = [
     type: JOB_TYPES.autopilotTick,
     label: "Prospecting autopilot",
     description:
-      "Runs due discovery presets and enrols qualified prospects when the autopilot is switched on in settings.",
+      "Runs due discovery presets. Qualified prospects are enrolled only when auto-contact is switched on in settings.",
     cadence: { kind: "quarter-hour" },
     toggle: null,
     sendsExternalEmail: true,
@@ -254,6 +254,17 @@ export const RECURRING_AUTOMATIONS: RecurringAutomation[] = [
     owner: "loyalty",
   },
   {
+    id: "referral-reconcile",
+    type: JOB_TYPES.referralReconcile,
+    label: "Referral rewards",
+    description:
+      "Pays referral rewards that qualified but were not journalled, recovering a settlement interrupted mid-request.",
+    cadence: { kind: "daily", hourUtc: 7 },
+    toggle: null,
+    sendsExternalEmail: false,
+    owner: "loyalty",
+  },
+  {
     id: "newsletter-draft",
     type: JOB_TYPES.newsletterDraft,
     label: "Newsletter draft",
@@ -327,7 +338,12 @@ function daysInUtcMonth(now: Date): number {
  * - minute: every call, keyed to the minute.
  * - quarter-hour: every call, keyed to the 15-minute bucket.
  * - daily: from `hourUtc` onwards, keyed to the UTC date.
- * - weekly: on a listed weekday from `hourUtc` onwards, keyed to the UTC date.
+ * - weekly: from `hourUtc` on a listed weekday onwards, keyed to that weekday's
+ *   UTC date, and still due on the next day as a catch-up. A cron outage on
+ *   Monday therefore loses Monday's work only until Tuesday, not until next
+ *   week; the key is the scheduled date, so the normal run and its catch-up can
+ *   never both execute. The window is one day rather than the rest of the week
+ *   to keep every tick from re-attempting six days of already-spent keys.
  * - monthly: from `hourUtc` on `dayOfMonth` (clamped to the month's last
  *   day), and at any hour on every later day of that month, keyed to the
  *   UTC month — so a run missed on the 1st still happens on the 2nd.
@@ -354,9 +370,27 @@ function dueBucket(
       return { bucket: date, payload: { date } };
     }
     case "weekly": {
-      if (!cadence.weekdaysUtc.includes(now.getUTCDay())) return null;
-      if (hour < cadence.hourUtc) return null;
-      const date = utcDate(now);
+      // The most recent listed weekday, looking back at most six days.
+      let daysBack = Number.POSITIVE_INFINITY;
+      for (const weekday of cadence.weekdaysUtc) {
+        const back = (now.getUTCDay() - weekday + 7) % 7;
+        if (back < daysBack) daysBack = back;
+      }
+      if (!Number.isFinite(daysBack)) return null;
+      // Only the scheduled day and the day after it. Anything older either ran
+      // (its key is spent) or is a missed week, which the next cadence covers.
+      if (daysBack > 1) return null;
+      // On the scheduled day itself, wait for the hour. On the catch-up day,
+      // any hour is late enough.
+      if (daysBack === 0 && hour < cadence.hourUtc) return null;
+      const scheduled = new Date(
+        Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() - daysBack,
+        ),
+      );
+      const date = utcDate(scheduled);
       return { bucket: date, payload: { date } };
     }
     case "monthly": {

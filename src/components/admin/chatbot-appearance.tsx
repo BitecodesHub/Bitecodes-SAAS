@@ -1,51 +1,51 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Loader2, RotateCcw, Save } from "lucide-react";
+import { Loader2, RotateCcw, Save } from "lucide-react";
 import { updateChatbotAction } from "@/lib/server/chatbot/actions";
 import type { ChatbotAppearance } from "@/lib/server/db/types";
+import {
+  APPEARANCE_LIMITS,
+  CHATBOT_APPEARANCE_DEFAULTS,
+} from "@/lib/chatbot/appearance";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Appearance editor for one chatbot, with a live preview of the widget.
  *
- * The twelve fields below are the whole of `ChatbotAppearance` that a customer
- * can reasonably choose. `language`, `timezone`, `suggestedQuestions` and
- * `starterPrompts` are deliberately left out: nothing reads them yet either,
- * and a list editor for prompts that go nowhere is a bigger lie than a colour
- * picker that goes nowhere.
+ * Every control here is read by the deployed widget. `language` and `timezone`
+ * exist in the contract but have no translation or time policy behind them, so
+ * they are deliberately absent rather than offered as controls that do nothing.
  *
  * The preview is built from the values literally embedded in
  * `src/app/widget.js/route.ts` (see `WIDGET`), not from values that make the
  * result look good. An editor whose preview flatters the outcome would have the
  * operator shipping a brand colour that never appears on their site.
  *
- * When this was written the widget honoured NONE of these settings — it
- * hardcoded its CSS and there was no config endpoint to read appearance from —
- * so every control carried a warning. Both now exist
- * (`/api/v1/chatbots/[id]/config`), and theme, primary colour, position, size,
- * welcome message, placeholder, logo, avatar, typing indicator and branding are
- * all applied by the deployed widget. Those warnings were removed when that
- * landed, because a warning that understates the product does real harm: an
- * operator who reads "stored and ignored" will not set their brand colour at all.
- *
- * Two remain unimplemented and still say so: `secondaryColor`, which nothing
- * reads, and `displayMode` beyond `bubble`. Keep that list honest in both
- * directions — delete an entry the day a field starts working, add one back the
- * day it stops.
+ * Display modes are part of the embed contract: bubble is a floating launcher,
+ * popup opens centred on arrival, fullscreen fills the viewport, and embedded
+ * mounts into `data-container` (or the script's parent). See the widget route
+ * for the full embed API.
  */
 
 /** The subset this editor owns. A full `ChatbotAppearance` satisfies it. */
 export type EditableAppearance = Pick<
   ChatbotAppearance,
   | "theme"
+  | "emoji"
   | "avatar"
   | "logo"
   | "primaryColor"
@@ -57,10 +57,14 @@ export type EditableAppearance = Pick<
   | "placeholder"
   | "typingAnimation"
   | "branding"
+  | "launcherLabel"
+  | "starterPrompts"
+  | "suggestedQuestions"
 >;
 
 const KEYS = [
   "theme",
+  "emoji",
   "avatar",
   "logo",
   "primaryColor",
@@ -72,7 +76,22 @@ const KEYS = [
   "placeholder",
   "typingAnimation",
   "branding",
+  "launcherLabel",
+  "starterPrompts",
+  "suggestedQuestions",
 ] as const satisfies readonly (keyof EditableAppearance)[];
+
+/**
+ * Prompts are edited as one-per-line text. Parsing on every keystroke keeps the
+ * draft a plain string (so a trailing newline is not swallowed) while the saved
+ * value is the filtered list the server accepts.
+ */
+function parsePrompts(value: string): string[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 /**
  * Geometry and colours copied verbatim out of `widget.js/route.ts`. Changing a
@@ -129,51 +148,57 @@ const FRAME_H = 640;
 
 const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-/**
- * What the deployed widget ignores, per field. Written from reading
- * `widget.js/route.ts`, and phrased as what the visitor gets instead so the
- * operator can decide whether the setting is worth filling in yet.
- */
-/**
- * Warnings for settings the deployed widget still does not read.
- *
- * This map used to cover every field, because when this editor was written the
- * widget hardcoded its CSS and there was no config endpoint to read appearance
- * from. Both now exist, so most of those warnings became false — and a warning
- * that understates the product is as harmful as one that overstates it: an
- * operator reading "stored and ignored" will not bother setting their brand
- * colour at all.
- *
- * Only these three remain. Keep this map honest: if a field starts working,
- * delete its entry the same day, and if one stops working, add it back.
- */
-const WARNINGS: Partial<Record<keyof EditableAppearance, string>> = {
-  secondaryColor:
-    "Nothing reads this yet — not the widget, not the chat API. It is stored only.",
-  displayMode:
-    "Only the bubble exists. Popup, fullscreen and embedded have no implementation.",
-};
-
-interface Draft extends Omit<EditableAppearance, "avatar" | "logo"> {
+interface Draft extends Omit<
+  EditableAppearance,
+  "avatar" | "logo" | "emoji" | "starterPrompts" | "suggestedQuestions"
+> {
   /** Empty string rather than null, because that is what an `<input>` holds. */
   avatar: string;
   logo: string;
+  emoji: string;
+  /** One prompt per line. */
+  starterPrompts: string;
+  suggestedQuestions: string;
 }
 
 function toDraft(a: EditableAppearance): Draft {
-  return { ...a, avatar: a.avatar ?? "", logo: a.logo ?? "" };
+  return {
+    ...a,
+    avatar: a.avatar ?? "",
+    logo: a.logo ?? "",
+    emoji: a.emoji ?? "",
+    launcherLabel: a.launcherLabel ?? "",
+    starterPrompts: (a.starterPrompts ?? []).join("\n"),
+    suggestedQuestions: (a.suggestedQuestions ?? []).join("\n"),
+  };
 }
 
 function fromDraft(d: Draft): EditableAppearance {
   return {
     ...d,
+    emoji: d.emoji.trim() || null,
     avatar: d.avatar.trim() || null,
     logo: d.logo.trim() || null,
     primaryColor: d.primaryColor.trim(),
     secondaryColor: d.secondaryColor.trim(),
     welcomeMessage: d.welcomeMessage.trim(),
     placeholder: d.placeholder.trim(),
+    launcherLabel: d.launcherLabel.trim() || "Open chat",
+    starterPrompts: parsePrompts(d.starterPrompts),
+    suggestedQuestions: parsePrompts(d.suggestedQuestions),
   };
+}
+
+/** Why a prompt list cannot be saved yet, or null when it is valid. */
+function promptProblem(value: string): string | null {
+  const lines = parsePrompts(value);
+  if (lines.length > APPEARANCE_LIMITS.prompts) {
+    return `Use at most ${APPEARANCE_LIMITS.prompts} prompts — the extras would not be saved.`;
+  }
+  if (lines.some((line) => line.length > APPEARANCE_LIMITS.promptLength)) {
+    return `Keep each prompt to ${APPEARANCE_LIMITS.promptLength} characters or fewer.`;
+  }
+  return null;
 }
 
 /**
@@ -212,9 +237,12 @@ function readSystemDark(): boolean {
 export function ChatbotAppearanceEditor({
   chatbotId,
   appearance,
+  name,
 }: {
   chatbotId: string;
   appearance: EditableAppearance;
+  /** The bot's display name, which the widget uses as its header title. */
+  name?: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -225,7 +253,7 @@ export function ChatbotAppearanceEditor({
   );
   const [draft, setDraft] = useState<Draft>(() => toDraft(appearance));
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [showDeployed, setShowDeployed] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   // Mirrors the widget's `@media(prefers-color-scheme:dark)` so theme "auto"
   // previews as what this operator's own OS would give a visitor. Subscribed
   // rather than read into state so there is no render-then-correct flash.
@@ -238,20 +266,34 @@ export function ChatbotAppearanceEditor({
   function set<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => ({ ...d, [key]: value }));
     setConfirmDiscard(false);
+    setConfirmReset(false);
   }
 
   const primaryValid = HEX.test(draft.primaryColor.trim());
   const secondaryValid = HEX.test(draft.secondaryColor.trim());
   const colorsValid = primaryValid && secondaryValid;
+  const starterProblem = promptProblem(draft.starterPrompts);
+  const suggestedProblem = promptProblem(draft.suggestedQuestions);
+  const promptsValid = !starterProblem && !suggestedProblem;
+  const valid = colorsValid && promptsValid;
 
   const patch = useMemo(() => {
     const next = fromDraft(draft);
     const out: Partial<EditableAppearance> = {};
     for (const key of KEYS) {
-      if (next[key] !== saved[key]) {
+      const before = saved[key];
+      const after = next[key];
+      // Arrays are rebuilt by `fromDraft` on every render, so identity would
+      // report a change that did not happen and make Discard unavailable.
+      const changed =
+        Array.isArray(before) && Array.isArray(after)
+          ? before.length !== after.length ||
+            before.some((value, index) => value !== after[index])
+          : before !== after;
+      if (changed) {
         // A per-key assignment keeps each value's own type; the index write is
         // the only way to build a Partial in a loop without a cast per branch.
-        (out as Record<string, unknown>)[key] = next[key];
+        (out as Record<string, unknown>)[key] = after;
       }
     }
     return out;
@@ -259,8 +301,20 @@ export function ChatbotAppearanceEditor({
 
   const dirty = Object.keys(patch).length > 0;
 
+  // Guard reloads and closing the tab. In-app Next.js navigation cannot be
+  // intercepted here, which is why Discard is explicit and saving is one click.
+  useEffect(() => {
+    if (!dirty) return;
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [dirty]);
+
   function save() {
-    if (!dirty || !colorsValid) return;
+    if (!dirty || !valid) return;
     start(async () => {
       const next = fromDraft(draft);
       // Only the changed keys. `updateChatbot` merges the partial onto the stored
@@ -286,39 +340,36 @@ export function ChatbotAppearanceEditor({
   function discard() {
     setDraft(toDraft(saved));
     setConfirmDiscard(false);
+    setConfirmReset(false);
   }
 
-  // The preview's effective configuration. In "deployed" mode every setting is
-  // replaced by the widget's own literal, which is the point of the toggle.
-  const view = showDeployed
-    ? {
-        theme: "auto" as EditableAppearance["theme"],
-        displayMode: "bubble" as EditableAppearance["displayMode"],
-        position: "bottom-right" as EditableAppearance["position"],
-        size: "regular" as EditableAppearance["size"],
-        accent: WIDGET.accent,
-        header: WIDGET.headerText,
-        welcome: WIDGET.greeting,
-        placeholder: WIDGET.placeholder,
-        typing: false,
-        branding: false,
-        avatar: null as string | null,
-        logo: null as string | null,
-      }
-    : {
-        theme: draft.theme,
-        displayMode: draft.displayMode,
-        position: draft.position,
-        size: draft.size,
-        accent: primaryValid ? draft.primaryColor.trim() : WIDGET.accent,
-        header: WIDGET.headerText,
-        welcome: draft.welcomeMessage.trim() || WIDGET.greeting,
-        placeholder: draft.placeholder.trim() || WIDGET.placeholder,
-        typing: draft.typingAnimation,
-        branding: draft.branding,
-        avatar: safeImageUrl(draft.avatar),
-        logo: safeImageUrl(draft.logo),
-      };
+  function resetToDefaults() {
+    setDraft(toDraft(CHATBOT_APPEARANCE_DEFAULTS));
+    setConfirmReset(false);
+    setConfirmDiscard(false);
+  }
+
+  // The preview's effective configuration, exactly as the widget computes it
+  // from the same values.
+  const view = {
+    theme: draft.theme,
+    displayMode: draft.displayMode,
+    position: draft.position,
+    size: draft.size,
+    emoji: draft.emoji.trim() || "💬",
+    accent: primaryValid ? draft.primaryColor.trim() : WIDGET.accent,
+    secondary: secondaryValid ? draft.secondaryColor.trim() : WIDGET.accent,
+    header: name?.trim() || WIDGET.headerText,
+    welcome: draft.welcomeMessage.trim() || WIDGET.greeting,
+    placeholder: draft.placeholder.trim() || WIDGET.placeholder,
+    typing: draft.typingAnimation,
+    branding: draft.branding,
+    avatar: safeImageUrl(draft.avatar),
+    logo: safeImageUrl(draft.logo),
+    launcherLabel: draft.launcherLabel.trim() || "Open chat",
+    starter: parsePrompts(draft.starterPrompts).slice(0, 4),
+    suggested: parsePrompts(draft.suggestedQuestions).slice(0, 4),
+  };
 
   const dims = SIZES[view.size];
   const dark = view.theme === "dark" || (view.theme === "auto" && systemDark);
@@ -326,29 +377,14 @@ export function ChatbotAppearanceEditor({
   // The real panel is `max-height:calc(100vh - 120px)`, so a taller size is
   // shrunk rather than clipped. The frame stands in for the viewport.
   const panelH = Math.min(dims.h, FRAME_H - 120);
-  /** Every non-bubble mode is centred in the frame; only bubble is corner-anchored. */
+  /** Popup centres, fullscreen and embedded fill the frame, bubble is anchored. */
+  const fills =
+    view.displayMode === "fullscreen" || view.displayMode === "embedded";
   const centred = view.displayMode !== "bubble";
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-      <div className="space-y-6">
-        <section
-          role="status"
-          className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
-        >
-          <p className="flex items-center gap-2 font-semibold">
-            <AlertTriangle className="size-4 shrink-0" />
-            None of this reaches the widget yet
-          </p>
-          <p className="mt-2">
-            <code>widget.js</code> embeds its styling literally, and there is no
-            public config endpoint for a chatbot to fetch appearance from —
-            forms have <code>/api/forms/[formId]/config</code>, chatbots have no
-            equivalent. Values you save here are stored on the chatbot and
-            served to nothing. Each control says what a visitor gets instead.
-          </p>
-        </section>
-
+      <div className="min-w-0 space-y-6">
         <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
           <h2 className="text-base font-semibold">Colours</h2>
           <p className="text-muted-foreground mt-1 text-sm">
@@ -372,7 +408,6 @@ export function ChatbotAppearanceEditor({
               valid={secondaryValid}
               fallback={saved.secondaryColor}
               onChange={(v) => set("secondaryColor", v)}
-              warning={WARNINGS.secondaryColor!}
             />
           </div>
         </section>
@@ -391,6 +426,41 @@ export function ChatbotAppearanceEditor({
                 <option value="dark">Dark</option>
                 <option value="auto">Auto (follow visitor)</option>
               </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ap-emoji">Launcher emoji</Label>
+              <Input
+                id="ap-emoji"
+                value={draft.emoji}
+                maxLength={16}
+                onChange={(e) => set("emoji", e.target.value)}
+                placeholder="💬"
+                aria-describedby="ap-emoji-help"
+              />
+              <p id="ap-emoji-help" className="text-muted-foreground text-xs">
+                One visible emoji. Leave blank for the default chat icon. Markup
+                and control characters are refused by the server.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="ap-launcher-label">Launcher name</Label>
+              <Input
+                id="ap-launcher-label"
+                value={draft.launcherLabel}
+                maxLength={APPEARANCE_LIMITS.launcherLabel}
+                onChange={(e) => set("launcherLabel", e.target.value)}
+                placeholder="Open chat"
+                aria-describedby="ap-launcher-label-help"
+              />
+              <p
+                id="ap-launcher-label-help"
+                className="text-muted-foreground text-xs"
+              >
+                Read by screen readers as the button&apos;s name. It is never
+                shown as visible text.
+              </p>
             </div>
 
             <div className="space-y-1.5">
@@ -435,12 +505,24 @@ export function ChatbotAppearanceEditor({
                   set("displayMode", e.target.value as Draft["displayMode"])
                 }
               >
-                <option value="bubble">Bubble (shipped)</option>
-                <option value="popup">Popup (not built)</option>
-                <option value="fullscreen">Fullscreen (not built)</option>
-                <option value="embedded">Embedded (not built)</option>
+                <option value="bubble">Bubble — floating launcher</option>
+                <option value="popup">
+                  Popup — opens on arrival, no launcher
+                </option>
+                <option value="fullscreen">
+                  Fullscreen — fills the viewport
+                </option>
+                <option value="embedded">
+                  Embedded — mounts in a container on the page
+                </option>
               </Select>
-              <FieldWarning text={WARNINGS.displayMode!} />
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Popup and fullscreen open as soon as the page loads. Embedded
+                needs a host element with a height; point the script at it with{" "}
+                <code>data-container=&quot;#chat&quot;</code>, or place the
+                script inside the element to use its parent. A single page can
+                override the mode with <code>data-mode=&quot;…&quot;</code>.
+              </p>
             </div>
           </div>
         </section>
@@ -463,11 +545,39 @@ export function ChatbotAppearanceEditor({
               <Input
                 id="ap-placeholder"
                 value={draft.placeholder}
-                maxLength={100}
+                maxLength={APPEARANCE_LIMITS.placeholder}
                 onChange={(e) => set("placeholder", e.target.value)}
                 placeholder={WIDGET.placeholder}
               />
             </div>
+          </div>
+        </section>
+
+        <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
+          <h2 className="text-base font-semibold">Quick replies</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Buttons a visitor can click instead of typing. Text is shown
+            literally — markup is never interpreted.
+          </p>
+          <div className="mt-4 space-y-4">
+            <PromptListField
+              id="ap-starter"
+              label="Starter prompts"
+              hint="Shown with the welcome message, before the first question."
+              value={draft.starterPrompts}
+              problem={starterProblem}
+              onChange={(value) => set("starterPrompts", value)}
+              placeholder={"What do you sell?\nHow much does it cost?"}
+            />
+            <PromptListField
+              id="ap-suggested"
+              label="Suggested questions"
+              hint="Shown after each answer to keep a conversation going. Also used with the welcome message when no starter prompts are set."
+              value={draft.suggestedQuestions}
+              problem={suggestedProblem}
+              onChange={(value) => set("suggestedQuestions", value)}
+              placeholder={"Do you offer refunds?\nHow do I contact support?"}
+            />
           </div>
         </section>
 
@@ -526,7 +636,7 @@ export function ChatbotAppearanceEditor({
         </section>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={save} disabled={pending || !dirty || !colorsValid}>
+          <Button onClick={save} disabled={pending || !dirty || !valid}>
             {pending ? (
               <Loader2 className="animate-spin" />
             ) : (
@@ -559,44 +669,63 @@ export function ChatbotAppearanceEditor({
             </Button>
           )}
 
+          {confirmReset ? (
+            <>
+              <Button
+                variant="outline"
+                onClick={resetToDefaults}
+                disabled={pending}
+              >
+                Confirm reset
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setConfirmReset(false)}
+                disabled={pending}
+              >
+                Keep editing
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={() => setConfirmReset(true)}
+              disabled={pending}
+            >
+              Reset to defaults
+            </Button>
+          )}
+
           <p className="text-muted-foreground text-xs">
             {!colorsValid
               ? "Fix the hex value before saving."
-              : dirty
-                ? `${Object.keys(patch).length} change${
-                    Object.keys(patch).length === 1 ? "" : "s"
-                  } to send — only these fields are written.`
-                : "No unsaved changes."}
+              : !promptsValid
+                ? "Fix the quick replies before saving."
+                : dirty
+                  ? `${Object.keys(patch).length} change${
+                      Object.keys(patch).length === 1 ? "" : "s"
+                    } to send — only these fields are written.`
+                  : "No unsaved changes."}
           </p>
         </div>
       </div>
 
       {/* Preview column. Sticky on a wide screen so it stays beside the field
           being edited; it is the whole reason to have two columns. */}
-      <div className="lg:sticky lg:top-6 lg:w-[440px]">
+      <div className="w-full lg:sticky lg:top-6 lg:w-[440px]">
         <section className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-base font-semibold">Preview</h2>
-            <Badge variant={showDeployed ? "muted" : "default"}>
-              {showDeployed ? "Deployed widget" : "Your settings"}
-            </Badge>
-          </div>
-
-          <div className="mt-3">
-            <Checkbox
-              id="ap-preview-deployed"
-              label="Show what a visitor gets today (ignores every setting)"
-              checked={showDeployed}
-              onChange={(e) => setShowDeployed(e.target.checked)}
-            />
           </div>
 
           <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
-            {showDeployed
-              ? `Exactly what widget.js renders: ${WIDGET.accent}, ${WIDGET.panelW}×${WIDGET.panelH}, bottom-right, OS theme, no avatar, no logo, no branding.`
-              : `${dims.w}×${panelH} panel, ${dims.bubble}px bubble, ${view.position}, ${dark ? "dark" : "light"} skin, ${view.displayMode} mode.`}{" "}
+            {fills
+              ? `${view.displayMode} mode fills the frame; the bubble size setting still controls typography.`
+              : `${dims.w}×${panelH} panel, ${dims.bubble}px launcher, ${view.position}, ${dark ? "dark" : "light"} skin, ${view.displayMode} mode.`}{" "}
             The frame below is {FRAME_H}px tall, so the panel is capped the same
             way the real one is by <code>max-height:calc(100vh - 120px)</code>.
+            Launcher name:{" "}
+            <span className="font-medium">{view.launcherLabel}</span>.
           </p>
 
           <div
@@ -604,12 +733,6 @@ export function ChatbotAppearanceEditor({
             className="border-border bg-muted/40 relative mt-3 overflow-hidden rounded-xl border"
             style={{ height: FRAME_H }}
           >
-            {view.displayMode !== "bubble" && (
-              <p className="absolute top-0 right-0 left-0 z-10 bg-amber-500 px-2 py-1 text-center text-[11px] font-medium text-amber-950">
-                {view.displayMode} is not implemented in widget.js
-              </p>
-            )}
-
             {view.displayMode === "popup" && (
               <div className="absolute inset-0 bg-black/40" />
             )}
@@ -632,15 +755,12 @@ export function ChatbotAppearanceEditor({
                     view.displayMode === "bubble" ? "absolute" : "static",
                   bottom: WIDGET.panelGap,
                   [view.position === "bottom-left" ? "left" : "right"]: 0,
-                  width:
-                    view.displayMode === "fullscreen"
-                      ? "100%"
-                      : Math.min(dims.w, 400),
-                  height: view.displayMode === "fullscreen" ? FRAME_H : panelH,
+                  width: fills ? "100%" : Math.min(dims.w, 400),
+                  height: fills ? FRAME_H : panelH,
                   background: skin.panelBg,
                   color: skin.fg,
                   // .panel{border-radius:16px}
-                  borderRadius: view.displayMode === "fullscreen" ? 0 : 16,
+                  borderRadius: fills ? 0 : 16,
                   boxShadow: "0 12px 40px rgba(0,0,0,.28)",
                   display: "flex",
                   flexDirection: "column",
@@ -658,7 +778,7 @@ export function ChatbotAppearanceEditor({
                     fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
-                    gap: 10,
+                    gap: 9,
                   }}
                 >
                   {view.logo && (
@@ -666,6 +786,7 @@ export function ChatbotAppearanceEditor({
                       style={{
                         width: 20,
                         height: 20,
+                        flex: "0 0 auto",
                         borderRadius: 4,
                         backgroundImage: `url("${view.logo}")`,
                         backgroundSize: "contain",
@@ -674,7 +795,31 @@ export function ChatbotAppearanceEditor({
                       }}
                     />
                   )}
-                  <span style={{ fontSize: 15 }}>{view.header}</span>
+                  <span
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      fontSize: 15,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {view.header}
+                  </span>
+                  {/* .close — hidden for embedded, which has nowhere to reopen. */}
+                  {view.displayMode !== "embedded" && (
+                    <span
+                      style={{
+                        fontSize: 22,
+                        lineHeight: 1,
+                        padding: "0 4px",
+                        opacity: 0.9,
+                      }}
+                    >
+                      ×
+                    </span>
+                  )}
                 </div>
 
                 {/* .log{flex:1;padding:14px;gap:10px} */}
@@ -695,6 +840,15 @@ export function ChatbotAppearanceEditor({
                     accent={view.accent}
                     avatar={view.avatar}
                   />
+                  {(view.starter.length > 0 || view.suggested.length > 0) && (
+                    <PreviewChips
+                      items={
+                        view.starter.length > 0 ? view.starter : view.suggested
+                      }
+                      skin={skin}
+                      accent={view.accent}
+                    />
+                  )}
                   <PreviewMessage
                     who="user"
                     text="Do you offer refunds?"
@@ -717,6 +871,13 @@ export function ChatbotAppearanceEditor({
                       skin={skin}
                       accent={view.accent}
                       avatar={view.avatar}
+                    />
+                  )}
+                  {view.suggested.length > 0 && view.starter.length > 0 && (
+                    <PreviewChips
+                      items={view.suggested}
+                      skin={skin}
+                      accent={view.accent}
                     />
                   )}
                 </div>
@@ -781,7 +942,7 @@ export function ChatbotAppearanceEditor({
                     width: dims.bubble,
                     height: dims.bubble,
                     borderRadius: "50%",
-                    background: view.accent,
+                    background: `linear-gradient(135deg, ${view.accent}, ${view.secondary})`,
                     color: "#fff",
                     fontSize: 24,
                     display: "grid",
@@ -789,13 +950,13 @@ export function ChatbotAppearanceEditor({
                     boxShadow: "0 6px 20px rgba(0,0,0,.25)",
                   }}
                 >
-                  💬
+                  {view.emoji}
                 </div>
               )}
             </div>
           </div>
 
-          {!showDeployed && !primaryValid && (
+          {!primaryValid && (
             <p className="mt-3 text-xs text-amber-600">
               Showing {WIDGET.accent} — the primary colour you typed is not a
               valid hex value.
@@ -807,15 +968,81 @@ export function ChatbotAppearanceEditor({
   );
 }
 
-function FieldWarning({ text, indent }: { text: string; indent?: boolean }) {
+/**
+ * One prompt per line. The textarea keeps the raw string so a trailing newline
+ * survives typing; validation reports what the server would refuse before the
+ * operator presses Save.
+ */
+function PromptListField({
+  id,
+  label,
+  hint,
+  value,
+  problem,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  value: string;
+  problem: string | null;
+  onChange: (value: string) => void;
+  placeholder: string;
+}) {
   return (
-    <p
-      className={`text-xs leading-relaxed text-amber-600 dark:text-amber-500 ${
-        indent ? "pl-7" : ""
-      }`}
-    >
-      {text}
-    </p>
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <Textarea
+        id={id}
+        value={value}
+        rows={4}
+        spellCheck={false}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        aria-invalid={Boolean(problem)}
+        aria-describedby={`${id}-help`}
+        className={problem ? "border-destructive" : undefined}
+      />
+      <p id={`${id}-help`} className="text-muted-foreground text-xs">
+        {hint} One per line, up to {APPEARANCE_LIMITS.prompts}, and{" "}
+        {APPEARANCE_LIMITS.promptLength} characters each.
+      </p>
+      {problem && <p className="text-destructive text-xs">{problem}</p>}
+    </div>
+  );
+}
+
+/** The widget's `.suggestions` row: text-only chips, not interactive here. */
+function PreviewChips({
+  items,
+  skin,
+  accent,
+}: {
+  items: string[];
+  skin: typeof WIDGET.light | typeof WIDGET.dark;
+  accent: string;
+}) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+      {items.map((item) => (
+        <span
+          key={item}
+          style={{
+            border: `1px solid ${accent}`,
+            borderRadius: 999,
+            padding: "6px 10px",
+            fontSize: 12,
+            lineHeight: 1.3,
+            color: skin.fg,
+            maxWidth: "100%",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {item}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -832,7 +1059,6 @@ function ColorField({
   valid,
   fallback,
   onChange,
-  warning,
 }: {
   id: string;
   label: string;
@@ -840,8 +1066,6 @@ function ColorField({
   valid: boolean;
   fallback: string;
   onChange: (value: string) => void;
-  /** Only for a field the widget still ignores. */
-  warning?: string;
 }) {
   const swatch = valid
     ? value.trim()
@@ -877,7 +1101,6 @@ function ColorField({
           Not a hex colour. Use #rgb or #rrggbb — this will not be saved.
         </p>
       )}
-      {warning ? <FieldWarning text={warning} /> : null}
     </div>
   );
 }

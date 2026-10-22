@@ -1,68 +1,78 @@
 import type { Metadata } from "next";
 import { requireCapability } from "@/lib/server/auth/dal";
-import { getDatabase } from "@/lib/server/mongodb";
-import { COLLECTIONS } from "@/lib/server/db/schema";
-import { randomUUID } from "node:crypto";
+import {
+  getOrCreateReferral,
+  REFERRAL_REWARD_DESCRIPTION,
+} from "@/lib/server/referrals";
+import { ReferralCard } from "@/components/account/referral-card";
 
 export const metadata: Metadata = { title: "Referrals" };
 export const dynamic = "force-dynamic";
 
+/**
+ * The signed-in customer's own referral code and its redemptions.
+ *
+ * Scoped to the session user: the previous version listed every referral in the
+ * database, which showed one customer another customer's code.
+ */
 export default async function AppReferralsPage() {
-  await requireCapability("manage_chatbots");
+  const session = await requireCapability("manage_chatbots");
+  const referral = await getOrCreateReferral(session.userId);
 
-  const db = await getDatabase();
-  const referrals = await db
-    .collection(COLLECTIONS.referrals)
-    .find({})
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .toArray();
-
-  const myReferralCode = `BC-${randomUUID().toString().slice(-6).toUpperCase()}`;
+  const rewarded = referral.redemptions.filter(
+    (redemption) => redemption.rewardedAt !== null,
+  ).length;
+  const pending = referral.redemptions.length - rewarded;
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Referrals</h1>
         <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-          Share your code and earn credits when friends sign up.
+          Share your link. When someone creates an account and confirms their
+          email, you earn {REFERRAL_REWARD_DESCRIPTION}.
         </p>
       </header>
 
-      <div className="bg-card/50 rounded-lg border p-6">
-        <div className="mb-4 flex items-center gap-4">
-          <span className="text-xl font-medium">Your Referral Code</span>
-          <input
-            value={myReferralCode}
-            readOnly
-            className="border-border focus-outline flex-1 rounded border px-4 py-2"
-          />
-          <button
-            onClick={() => navigator.clipboard.writeText(myReferralCode)}
-            className="border-border hover:bg-primary rounded border px-4 py-2"
-          >
-            Copy
-          </button>
-        </div>
+      <ReferralCard
+        code={referral.code}
+        redemptionCount={referral.redemptions.length}
+        rewardLabel={REFERRAL_REWARD_DESCRIPTION}
+      />
 
-        <p className="text-muted-foreground mb-4 text-xs">
-          Share your code and earn credits when friends sign up.
+      <section className="bg-card/50 rounded-lg border p-6">
+        <h2 className="font-semibold">Your referrals</h2>
+        <p className="text-muted-foreground mt-1 text-sm">
+          {rewarded} rewarded
+          {pending > 0 ? `, ${pending} awaiting email confirmation` : ""}.
         </p>
 
-        <div className="space-y-4">
-          {referrals.map((ref) => (
-            <div key={ref._id.toString()} className="rounded border p-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm">{ref.code}</span>
-                <span className="text-muted-foreground text-xs">
-                  {ref.redemptions.length} redemption
-                  {ref.redemptions.length > 1 ? "s" : ""}
+        {referral.redemptions.length === 0 ? (
+          <p className="text-muted-foreground mt-4 text-sm">
+            No referrals yet. Share your link to get started.
+          </p>
+        ) : (
+          <ul className="mt-4 space-y-2">
+            {[...referral.redemptions].reverse().map((redemption) => (
+              <li
+                key={redemption.referredId}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border p-3 text-sm"
+              >
+                <span>
+                  Signed up {redemption.signedUpAt.toISOString().slice(0, 10)}
                 </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+                <span className="text-muted-foreground text-xs">
+                  {redemption.rewardedAt
+                    ? "Rewarded"
+                    : redemption.qualifiedAt
+                      ? "Verified — reward processing"
+                      : "Awaiting email confirmation"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

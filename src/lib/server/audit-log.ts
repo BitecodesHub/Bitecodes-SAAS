@@ -99,6 +99,7 @@ export const AUDIT_ACTIONS = {
   // Growth engine.
   growthSettingsUpdated: "growth.settings.updated",
   automationRunNow: "growth.automation.run_now",
+  bootstrapReconciled: "growth.bootstrap.reconciled",
   leadStageChanged: "lead.stage.changed",
   proposalCreated: "proposal.created",
   proposalSent: "proposal.sent",
