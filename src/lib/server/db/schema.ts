@@ -20,6 +20,7 @@ export const COLLECTIONS = {
   jobs: "jobs",
   discoveryCache: "discovery_cache",
   siteSettings: "site_settings",
+  systemState: "system_state",
   analyticsEvents: "analytics_events",
   blogPosts: "blog_posts",
   blogRevisions: "blog_revisions",
@@ -62,6 +63,58 @@ export const COLLECTIONS = {
   // Billing
   billingOrders: "billing_orders",
   billingEvents: "billing_events",
+
+  /*
+    Growth engine collections. One section per owning package, so parallel
+    work on different packages merges without conflicts. Edit only your own
+    section.
+  */
+
+  // ===== growth:foundation =====
+  aiAutomationRuns: "ai_automation_runs",
+  // ===== end growth:foundation =====
+
+  // ===== growth:analytics =====
+  analyticsDaily: "analytics_daily",
+  // ===== end growth:analytics =====
+
+  // ===== growth:leads-crm =====
+  leadActivities: "lead_activities",
+  // ===== end growth:leads-crm =====
+
+  // ===== growth:sales =====
+  proposals: "proposals",
+  // ===== end growth:sales =====
+
+  // ===== growth:assistant-calls =====
+  calls: "calls",
+  // ===== end growth:assistant-calls =====
+
+  // ===== growth:content-engine =====
+  socialDrafts: "social_drafts",
+  newsletterIssues: "newsletter_issues",
+  // ===== end growth:content-engine =====
+
+  // ===== growth:lifecycle =====
+  customerReports: "customer_reports",
+  lifecycleEvents: "lifecycle_events",
+  // ===== end growth:lifecycle =====
+
+  // ===== growth:loyalty =====
+  feedback: "feedback",
+  testimonials: "testimonials",
+  referrals: "referrals",
+  churnRisk: "churn_risk",
+  // ===== end growth:loyalty =====
+
+  // ===== growth:seo-tech =====
+  seoAudits: "seo_audits",
+  searchSubmissions: "search_submissions",
+  // ===== end growth:seo-tech =====
+
+  // ===== growth:magnets =====
+  leadMagnetRequests: "lead_magnet_requests",
+  // ===== end growth:magnets =====
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -147,6 +200,8 @@ export const INDEXES: Record<string, IndexDescription[]> = {
   [COLLECTIONS.discoveryCache]: [
     { key: { expiresAt: 1 }, expireAfterSeconds: 0 },
   ],
+  // A handful of singleton liveness documents; _id is the key.
+  [COLLECTIONS.systemState]: [{ key: { updatedAt: -1 } }],
   [COLLECTIONS.analyticsEvents]: [
     { key: { createdAt: -1 } },
     { key: { type: 1, createdAt: -1 } },
@@ -379,6 +434,138 @@ export const INDEXES: Record<string, IndexDescription[]> = {
     // The idempotency guard: a duplicate webhook delivery cannot insert twice.
     { key: { gateway: 1, eventId: 1 }, unique: true },
   ],
+
+  /*
+    Growth engine indexes. One section per owning package; edit only your own.
+  */
+
+  // ===== growth:foundation =====
+  // AI automation call log: newest-first admin list, per-purpose history,
+  // failure scan; raw rows expire after 90 days.
+  [COLLECTIONS.aiAutomationRuns]: [
+    { key: { purpose: 1, createdAt: -1 } },
+    { key: { ok: 1, createdAt: -1 } },
+    { key: { createdAt: 1 }, expireAfterSeconds: 90 * DAY_SECONDS },
+  ],
+  // ===== end growth:foundation =====
+
+  // ===== growth:analytics =====
+  // One roll-up row per UTC date and path ("*" for the site total); the
+  // unique key makes a re-run of the roll-up an upsert, never a duplicate.
+  [COLLECTIONS.analyticsDaily]: [
+    { key: { date: 1, path: 1 }, unique: true },
+    { key: { date: -1 } },
+  ],
+  // ===== end growth:analytics =====
+
+  // ===== growth:leads-crm =====
+  // A lead's timeline, newest first; and every touch for one address.
+  [COLLECTIONS.leadActivities]: [
+    { key: { leadId: 1, createdAt: -1 } },
+    { key: { email: 1, createdAt: -1 } },
+    { key: { type: 1, createdAt: -1 } },
+  ],
+  // ===== end growth:leads-crm =====
+
+  // ===== growth:sales =====
+  // Public proposal page looks a proposal up by its token hash. The viewed
+  // index drives the daily follow-up scan; the validity index drives expiry.
+  [COLLECTIONS.proposals]: [
+    { key: { proposalId: 1 }, unique: true },
+    { key: { tokenHash: 1 }, unique: true },
+    { key: { status: 1, updatedAt: -1 } },
+    { key: { leadRef: 1, createdAt: -1 } },
+    { key: { status: 1, viewedAt: 1 } },
+    { key: { status: 1, validUntil: 1 } },
+  ],
+  // ===== end growth:sales =====
+
+  // ===== growth:assistant-calls =====
+  // Callback queue (status + due time) and provider webhook lookups.
+  [COLLECTIONS.calls]: [
+    { key: { callId: 1 }, unique: true },
+    { key: { status: 1, scheduledFor: 1 } },
+    { key: { createdAt: -1 } },
+    {
+      key: { providerCallId: 1 },
+      unique: true,
+      partialFilterExpression: { providerCallId: { $type: "string" } },
+    },
+  ],
+  // ===== end growth:assistant-calls =====
+
+  // ===== growth:content-engine =====
+  [COLLECTIONS.socialDrafts]: [
+    { key: { status: 1, createdAt: -1 } },
+    { key: { weekKey: 1 } },
+  ],
+  // One issue per week key, so a re-run of the draft job cannot duplicate it.
+  [COLLECTIONS.newsletterIssues]: [
+    { key: { issueKey: 1 }, unique: true },
+    { key: { status: 1, createdAt: -1 } },
+  ],
+  // ===== end growth:content-engine =====
+
+  // ===== growth:lifecycle =====
+  // One report per customer per month; one lifecycle event per customer per
+  // key, which is what makes the daily tick idempotent.
+  [COLLECTIONS.customerReports]: [
+    { key: { ownerId: 1, period: 1 }, unique: true },
+    { key: { period: 1 } },
+  ],
+  [COLLECTIONS.lifecycleEvents]: [
+    { key: { ownerId: 1, key: 1 }, unique: true },
+    { key: { createdAt: -1 } },
+  ],
+  // ===== end growth:lifecycle =====
+
+  // ===== growth:loyalty =====
+  // Survey links are looked up by token hash; a token is stored only hashed.
+  [COLLECTIONS.feedback]: [
+    {
+      key: { tokenHash: 1 },
+      unique: true,
+      partialFilterExpression: { tokenHash: { $type: "string" } },
+    },
+    { key: { ownerId: 1, createdAt: -1 } },
+    { key: { status: 1, createdAt: -1 } },
+  ],
+  [COLLECTIONS.testimonials]: [
+    { key: { status: 1, approvedAt: -1 } },
+    { key: { ownerId: 1 } },
+  ],
+  [COLLECTIONS.referrals]: [
+    { key: { code: 1 }, unique: true },
+    // One code per account: `getOrCreateReferral` relies on this to resolve
+    // two simultaneous first views without creating duplicate codes.
+    { key: { referrerId: 1 }, unique: true },
+    { key: { "redemptions.referredId": 1 } },
+  ],
+  // One current risk row per customer, replaced by each daily scan.
+  [COLLECTIONS.churnRisk]: [
+    { key: { ownerId: 1 }, unique: true },
+    { key: { level: 1, score: -1 } },
+  ],
+  // ===== end growth:loyalty =====
+
+  // ===== growth:seo-tech =====
+  // One self-audit per UTC date.
+  [COLLECTIONS.seoAudits]: [{ key: { date: 1 }, unique: true }],
+  // Failed IndexNow URLs: one row per path, retried by the daily ping.
+  [COLLECTIONS.searchSubmissions]: [
+    { key: { path: 1 }, unique: true },
+    { key: { state: 1, nextAttemptAt: 1 } },
+    // An abandoned row is diagnostic, not permanent; let it age out.
+    { key: { lastAttemptAt: 1 }, expireAfterSeconds: 90 * DAY_SECONDS },
+  ],
+  // ===== end growth:seo-tech =====
+
+  // ===== growth:magnets =====
+  [COLLECTIONS.leadMagnetRequests]: [
+    { key: { email: 1, createdAt: -1 } },
+    { key: { resourceSlug: 1, createdAt: -1 } },
+  ],
+  // ===== end growth:magnets =====
 };
 
 /**

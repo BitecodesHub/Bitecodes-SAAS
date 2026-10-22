@@ -12,15 +12,8 @@ import {
 } from "@/lib/server/ai-provider";
 import { consumeAiRateLimit } from "@/lib/server/rate-limit";
 import { createDeterministicConsultantQuote } from "@/lib/server/consultant-quote";
-
-/** Reads an email from the brief without assuming the field exists. */
-function readEmail(input: unknown): string | null {
-  if (typeof input !== "object" || input === null) return null;
-  const value = (input as { email?: unknown }).email;
-  return typeof value === "string" && value.includes("@")
-    ? value.trim().toLowerCase().slice(0, 254)
-    : null;
-}
+import { captureLead } from "@/lib/server/leads/capture";
+import { notifyNewLead } from "@/lib/server/email/notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -109,11 +102,24 @@ export async function POST(request: NextRequest) {
   }
 
   const requestId = randomUUID();
+  // Contact fields are for the lead record, not for the model. Stripping them
+  // here keeps an address and a consent flag out of the provider prompt and out
+  // of the stored brief, while `consultantRequests.email` keeps the one field
+  // the admin inbox needs.
+  const {
+    email: submittedEmail,
+    consent: submittedConsent,
+    ...brief
+  } = parsed.data;
+  // The schema accepts an empty string so the optional field can be cleared;
+  // the lead record stores null rather than "".
+  const email = submittedEmail?.trim().toLowerCase() || null;
+  const consent = submittedConsent ?? false;
 
   try {
     const [result, quote] = await Promise.all([
-      createConsultantRecommendation(parsed.data),
-      Promise.resolve(createDeterministicConsultantQuote(parsed.data)),
+      createConsultantRecommendation(brief),
+      Promise.resolve(createDeterministicConsultantQuote(brief)),
     ]);
 
     // Persist after the response is composed but before returning, via
@@ -126,19 +132,75 @@ export async function POST(request: NextRequest) {
         await collection.insertOne({
           requestId,
           reference: `BC-AI-${requestId.slice(0, 8).toUpperCase()}`,
-          input: parsed.data as unknown as Record<string, unknown>,
+          input: brief as unknown as Record<string, unknown>,
           quote: quote as unknown as Record<string, unknown>,
           recommendation: result.recommendation as unknown as Record<
             string,
             unknown
           >,
           model: result.model,
-          email: readEmail(parsed.data),
+          email: email ?? null,
           status: "new",
           notes: [],
           createdAt: now,
           updatedAt: now,
         });
+
+        if (email) {
+          // A free tool that returns a detailed recommendation is a lead, not
+          // a page view. The consent box governs follow-up; the report itself
+          // is the transactional reply the person asked for by entering an
+          // address.
+          try {
+            const lead = await captureLead(
+              {
+                kind: "magnet",
+                source: "ai-project-consultant",
+                email,
+                message: `Requested an AI project recommendation (${result.recommendation.recommendedPackage}).`,
+                consent: {
+                  contact: consent ?? false,
+                  marketing: false,
+                  text: consent
+                    ? "I agree that Bitecodes may contact me about this project."
+                    : null,
+                },
+                detail: {
+                  requestId,
+                  reference: `BC-AI-${requestId.slice(0, 8).toUpperCase()}`,
+                  projectType: brief.projectType,
+                  stage: brief.stage,
+                  budget: brief.budget,
+                  timeline: brief.timeline,
+                  recommendedPackage: result.recommendation.recommendedPackage,
+                  quote: {
+                    minimum: quote.minimum,
+                    maximum: quote.maximum,
+                    currency: "INR",
+                  },
+                },
+                requestId: `consultant:${requestId}`,
+              },
+              now,
+            );
+
+            if (lead.created) {
+              await notifyNewLead({
+                leadId: lead.id,
+                reference: lead.reference,
+                source: "ai-project-consultant",
+                kindLabel: "AI project brief",
+                email,
+                message: `Recommended ${result.recommendation.recommendedPackage}.`,
+              }).catch(() => undefined);
+            }
+          } catch (leadError) {
+            console.error(
+              "[consultant] Could not capture the lead:",
+              leadError instanceof Error ? leadError.message : leadError,
+            );
+          }
+        }
       } catch (error) {
         // A failed write must never turn a successful recommendation into an
         // error for the visitor. Log and move on.

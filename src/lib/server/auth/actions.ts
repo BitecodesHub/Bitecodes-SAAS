@@ -15,6 +15,7 @@ import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { safeNextPath } from "@/lib/server/auth/next-path";
 import { isCustomerRole } from "@/lib/server/auth/roles";
 import type { AdminRole } from "@/lib/server/db/types";
+import { normalizeEmail } from "@/lib/email/address";
 import {
   performPasswordReset,
   redeemLoginLink,
@@ -199,6 +200,11 @@ async function hashedRequestIp(): Promise<string> {
   return createHash("sha256").update(ip).digest("hex");
 }
 
+/** Rate-limit keys are always hashes — never a raw address in the database. */
+function hashedAddress(email: string): string {
+  return createHash("sha256").update(normalizeEmail(email)).digest("hex");
+}
+
 /**
  * Sends a password-reset or one-click sign-in email.
  *
@@ -220,10 +226,14 @@ export async function requestRecoveryAction(
 
   const { email, mode } = parsed.data;
 
-  const throttle = await consumeNamedRateLimit(
-    mode === "reset" ? "passwordReset" : "loginLink",
-    await hashedRequestIp(),
-  );
+  const [ipThrottle, addressThrottle] = await Promise.all([
+    consumeNamedRateLimit(
+      mode === "reset" ? "passwordReset" : "loginLink",
+      await hashedRequestIp(),
+    ),
+    consumeNamedRateLimit("recoveryAddress", hashedAddress(email)),
+  ]);
+  const throttle = !ipThrottle.allowed ? ipThrottle : addressThrottle;
   if (!throttle.allowed) {
     return {
       email,
@@ -318,7 +328,16 @@ export async function resetPasswordAction(
  * inbox link-scanners prefetch every URL in an email, and a GET that consumed
  * the single-use token would burn the link before the owner ever saw it.
  */
-export type LoginLinkState = { error: string } | undefined;
+export type LoginLinkState =
+  | {
+      error: string;
+      /**
+       * Set when the account needs a code, so the form keeps the field visible
+       * after a rejected attempt.
+       */
+      needsTwoFactor?: boolean;
+    }
+  | undefined;
 
 export async function completeLoginLinkAction(
   _previous: LoginLinkState,
@@ -328,6 +347,10 @@ export async function completeLoginLinkAction(
   if (typeof token !== "string" || !token || token.length > 200) {
     return { error: "That sign-in link is incomplete." };
   }
+
+  const rawCode = formData.get("totpCode");
+  const totpCode =
+    typeof rawCode === "string" ? rawCode.trim().slice(0, 10) : undefined;
 
   const throttle = await consumeNamedRateLimit(
     "adminLogin",
@@ -339,8 +362,26 @@ export async function completeLoginLinkAction(
     };
   }
 
-  const result = await redeemLoginLink(token);
+  const result = await redeemLoginLink(token, totpCode || undefined);
   if (!result.ok) {
+    if (result.reason === "two-factor-required") {
+      return {
+        needsTwoFactor: true,
+        error: "Enter the six-digit code from your authenticator app.",
+      };
+    }
+    if (result.reason === "invalid-code") {
+      return {
+        needsTwoFactor: true,
+        error: "That code did not match. Try again.",
+      };
+    }
+    if (result.reason === "locked") {
+      return {
+        needsTwoFactor: true,
+        error: `Too many incorrect codes. Try again in ${Math.ceil(result.retryAfterSeconds / 60)} minutes.`,
+      };
+    }
     return {
       error:
         "That sign-in link has expired or was already used. Request a fresh one from the sign-in page.",

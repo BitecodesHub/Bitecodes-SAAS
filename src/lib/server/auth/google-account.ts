@@ -52,7 +52,8 @@ export type GoogleSignInOutcome =
         | "unverified-email"
         | "staff-account"
         | "disabled"
-        | "already-linked";
+        | "already-linked"
+        | "two-factor-required";
     };
 
 export async function signInWithGoogle(
@@ -143,6 +144,12 @@ async function activate(
   }
   if (user.status === "disabled") {
     return { ok: false, reason: "disabled" };
+  }
+  // Google proves the address, not the TOTP secret. Issuing a session here
+  // would let a stolen Google account bypass the second factor entirely, so
+  // those accounts must use the password + code form.
+  if (user.totpSecret && user.totpEnabledAt) {
+    return { ok: false, reason: "two-factor-required" };
   }
 
   if (user.status === "pending") {

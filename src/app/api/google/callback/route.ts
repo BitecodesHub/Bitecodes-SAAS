@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
   response.cookies.set(
     SESSION_COOKIE,
     session.token,
-    sessionCookieOptions(session.expiresAt),
+    sessionCookieOptions(session.cookieExpiresAt),
   );
   response.cookies.delete(GOOGLE_FLOW_COOKIE);
   return response;

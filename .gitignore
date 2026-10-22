@@ -48,3 +48,7 @@ next-env.d.ts
 # Same class of slip as the .mjs rule above: throwaway, never committed.
 # Also excluded from vitest collection — see vitest.config.ts.
 **/.*.test.ts
+
+# Prospect research holds third-party business contact details. This repository
+# is public, so lead research stays on the owner machine and is never committed.
+/docs/leads/

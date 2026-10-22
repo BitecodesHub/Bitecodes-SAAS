@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   runDesktopCompletion,
+  runTextChain,
   GatewayError,
 } from "@/lib/server/desktop/gateway";
 import type { ResolvedProvider } from "@/lib/server/desktop/providers";
@@ -28,6 +29,15 @@ const bedrock: ResolvedProvider = {
   region: "ap-southeast-2",
   model: "amazon.nova-lite-v1:0",
   visionModel: "amazon.nova-lite-v1:0",
+};
+
+const groq: ResolvedProvider = {
+  id: "groq",
+  apiKey: "gq",
+  baseUrl: "https://api.groq.com/openai/v1",
+  region: null,
+  model: "gq-text",
+  visionModel: "",
 };
 
 const sse = (chunks: string[]) => {
@@ -58,6 +68,19 @@ const textStream = (text: string, usage = true) =>
       : []),
     "data: [DONE]\n\n",
   ]);
+/** Sends `chunks`, then stays open until the request is aborted. */
+const hangingStream = (chunks: string[], signal?: AbortSignal | null) => {
+  const enc = new TextEncoder();
+  return new Response(
+    new ReadableStream({
+      start(c) {
+        for (const x of chunks) c.enqueue(enc.encode(x));
+        signal?.addEventListener("abort", () => c.error(new Error("aborted")));
+      },
+    }),
+    { status: 200 },
+  );
+};
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
     status,
@@ -271,5 +294,248 @@ describe("runDesktopCompletion — screenshots", () => {
     });
     expect(out.text).toBe("direct answer");
     expect(bodyOf(fetchImpl.mock.calls[1]).model).toBe("nv-vision");
+  });
+});
+
+describe("runTextChain — automations", () => {
+  it("sends the system prompt as a system message and returns the whole text", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(textStream("hello"));
+    const out = await runTextChain([openrouter], {
+      system: "be brief",
+      prompt: "hi",
+      fetchImpl,
+    });
+    expect(out.text).toBe("hello");
+    expect(out.provider).toBe("openrouter");
+    expect(out.usage).toEqual({ promptTokens: 11, completionTokens: 3 });
+    const body = bodyOf(fetchImpl.mock.calls[0]);
+    expect(body.messages).toEqual([
+      { role: "system", content: "be brief" },
+      { role: "user", content: "hi" },
+    ]);
+  });
+
+  it("omits the system message when none is given", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(textStream("x"));
+    await runTextChain([openrouter], { prompt: "hi", fetchImpl });
+    expect(bodyOf(fetchImpl.mock.calls[0]).messages).toEqual([
+      { role: "user", content: "hi" },
+    ]);
+  });
+
+  it("passes the system prompt to Bedrock in its system field", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        json(200, { output: { message: { content: [{ text: "ok" }] } } }),
+      );
+    const out = await runTextChain([bedrock], {
+      system: "rules",
+      prompt: "hi",
+      fetchImpl,
+    });
+    expect(out.text).toBe("ok");
+    const body = bodyOf(fetchImpl.mock.calls[0]);
+    expect(body.system).toEqual([{ text: "rules" }]);
+    expect(body.messages).toEqual([
+      { role: "user", content: [{ text: "hi" }] },
+    ]);
+  });
+
+  it("falls through on an HTTP failure", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(json(500, { error: { message: "boom" } }))
+      .mockResolvedValueOnce(textStream("second"));
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+    });
+    expect(out.text).toBe("second");
+    expect(out.attempted.map((a) => a.provider)).toEqual([
+      "nvidia",
+      "openrouter",
+    ]);
+    expect(out.attempted[0].outcome).toMatch(/^HTTP 500/);
+  });
+
+  it("falls through on a mid-stream failure instead of reporting STREAM_BROKEN", async () => {
+    const enc = new TextEncoder();
+    let reads = 0;
+    const broken = new Response(
+      new ReadableStream({
+        pull(c) {
+          if (reads++ === 0)
+            c.enqueue(
+              enc.encode(
+                `data: ${JSON.stringify({ choices: [{ delta: { content: "par" } }] })}\n\n`,
+              ),
+            );
+          else c.error(new Error("socket reset"));
+        },
+      }),
+      { status: 200 },
+    );
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(broken)
+      .mockResolvedValueOnce(textStream("whole"));
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+    });
+    expect(out.text).toBe("whole");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("treats a reasoning-only answer as empty and falls through", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(
+        sse([
+          `data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: "thinking" } }] })}\n\n`,
+          "data: [DONE]\n\n",
+        ]),
+      )
+      .mockResolvedValueOnce(textStream("content"));
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+    });
+    expect(out.text).toBe("content");
+    expect(out.attempted[0].outcome).toMatch(/empty answer/);
+  });
+
+  it("falls through when accept() rejects or throws, recording the reason", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(textStream("bad"))
+      .mockResolvedValueOnce(textStream("worse"))
+      .mockResolvedValueOnce(textStream("good"));
+    const out = await runTextChain([nvidia, openrouter, groq], {
+      prompt: "x",
+      fetchImpl,
+      accept: (text) => {
+        if (text === "worse") throw new Error("invalid JSON");
+        return text === "good";
+      },
+    });
+    expect(out.text).toBe("good");
+    expect(out.attempted.map((a) => a.outcome)).toEqual([
+      "output rejected",
+      "invalid JSON",
+      "ok",
+    ]);
+  });
+
+  it("abandons a silent provider at the deadline when another is waiting", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation((url: string, init: RequestInit) => {
+        if (String(url).includes("nvidia")) {
+          return new Promise((_, reject) =>
+            init.signal?.addEventListener("abort", () =>
+              reject(new Error("aborted")),
+            ),
+          );
+        }
+        return Promise.resolve(textStream("fast"));
+      });
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+      firstTokenDeadlineMs: 50,
+    });
+    expect(out.provider).toBe("openrouter");
+    expect(out.attempted[0].outcome).toMatch(/no response within/);
+  });
+
+  it("does not count a role-only chunk as life: a provider that then hangs is abandoned", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation((url: string, init: RequestInit) =>
+        Promise.resolve(
+          String(url).includes("nvidia")
+            ? hangingStream(
+                [
+                  `data: ${JSON.stringify({ choices: [{ delta: { role: "assistant", content: "" } }] })}\n\n`,
+                ],
+                init.signal,
+              )
+            : textStream("second"),
+        ),
+      );
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+      firstTokenDeadlineMs: 50,
+      // Far beyond the test timeout: only the first-token deadline can fire.
+      idleTimeoutMs: 60_000,
+    });
+    expect(out.provider).toBe("openrouter");
+    expect(out.text).toBe("second");
+    expect(out.attempted[0].outcome).toMatch(/no response within/);
+  });
+
+  it("hands over to the next provider when one stalls after it has started", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockImplementation((url: string, init: RequestInit) =>
+        Promise.resolve(
+          String(url).includes("nvidia")
+            ? hangingStream(
+                [
+                  `data: ${JSON.stringify({ choices: [{ delta: { reasoning_content: "thinking" } }] })}\n\n`,
+                  `data: ${JSON.stringify({ choices: [{ delta: { content: "par" } }] })}\n\n`,
+                ],
+                init.signal,
+              )
+            : textStream("whole"),
+        ),
+      );
+    const out = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+      firstTokenDeadlineMs: 60_000,
+      idleTimeoutMs: 50,
+    });
+    expect(out.provider).toBe("openrouter");
+    expect(out.text).toBe("whole");
+    expect(out.attempted[0].outcome).toMatch(/^stalled for/);
+  });
+
+  it("throws CANCELLED when the caller aborts, without trying further providers", async () => {
+    const ctl = new AbortController();
+    const fetchImpl = vi.fn().mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(new Error("aborted")),
+          );
+          setTimeout(() => ctl.abort(), 10);
+        }),
+    );
+    await expect(
+      runTextChain([nvidia, openrouter], {
+        prompt: "x",
+        fetchImpl,
+        signal: ctl.signal,
+      }),
+    ).rejects.toMatchObject({ code: "CANCELLED" });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports ALL_FAILED and NOT_CONFIGURED", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(json(401, { error: "no" }));
+    const err = await runTextChain([nvidia, openrouter], {
+      prompt: "x",
+      fetchImpl,
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(GatewayError);
+    expect(err.code).toBe("ALL_FAILED");
+    expect(err.attempted).toHaveLength(2);
+    await expect(runTextChain([], { prompt: "x" })).rejects.toMatchObject({
+      code: "NOT_CONFIGURED",
+    });
   });
 });

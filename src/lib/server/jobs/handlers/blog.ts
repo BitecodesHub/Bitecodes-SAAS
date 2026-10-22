@@ -1,16 +1,24 @@
 import "server-only";
 
-import { generateBlogDraft, pickTopic } from "@/lib/server/blog/generator";
+import {
+  generateBlogDraft,
+  pickUnusedTopic,
+} from "@/lib/server/blog/generator";
 import {
   createPost,
+  getUsedAiTopics,
   publishDueScheduledPosts,
 } from "@/lib/server/blog/repository";
 import { pingIndexNow } from "@/lib/server/search-ping";
 import { getSiteUrl } from "@/lib/server/env";
-import { isAiConsultantConfigured } from "@/lib/server/ai-provider";
+import {
+  aiDeadlineWithin,
+  getAutomationAiStatus,
+} from "@/lib/server/ai/automation";
 import { siteConfig } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { AUDIT_ACTIONS, recordAudit } from "@/lib/server/audit-log";
+import { JobDeferredError } from "@/lib/server/jobs/queue";
 import type { JobContext } from "@/lib/server/jobs/worker";
 
 /**
@@ -29,19 +37,59 @@ export async function handleBlogGenerate(
   payload: Record<string, unknown>,
   context: JobContext,
 ): Promise<Record<string, unknown>> {
-  if (!isAiConsultantConfigured()) {
-    context.log("AI provider not configured; skipping blog generation.");
-    return { skipped: "ai-not-configured" };
+  const ai = await getAutomationAiStatus();
+  if (!ai.ready) {
+    context.log(
+      ai.enabled
+        ? "No AI provider is configured; skipping blog generation."
+        : "AI for automations is switched off; skipping blog generation.",
+    );
+    for (const warning of ai.warnings) context.log(warning);
+    return { skipped: ai.enabled ? "ai-not-configured" : "ai-disabled" };
   }
 
   const dayOfYear =
     typeof payload.dayOfYear === "number" ? payload.dayOfYear : 0;
-  const topic =
-    typeof payload.topic === "string" ? payload.topic : pickTopic(dayOfYear);
+  const explicitTopic =
+    typeof payload.topic === "string" ? payload.topic : null;
+
+  // An explicit topic from an operator is always honoured. The rotation, on the
+  // other hand, must not publish a second article on a subject that already
+  // exists — near-duplicate pages compete with each other and neither ranks.
+  let topic: string;
+  if (explicitTopic) {
+    topic = explicitTopic;
+  } else {
+    const used = await getUsedAiTopics();
+    const next = pickUnusedTopic(dayOfYear, used);
+    if (!next) {
+      context.log(
+        "Every seed topic already has an article. Add new topics to BLOG_TOPICS to resume automatic publishing.",
+      );
+      return { skipped: "topics-exhausted", topics: used.size };
+    }
+    topic = next;
+  }
+
+  // Leave the run enough time to save, revalidate, and ping afterwards. The
+  // worker only claims this type with 90 seconds left (JOB_MIN_BUDGET_MS), so
+  // this is a backstop: a short run defers the job to the next cron run
+  // without spending one of its attempts.
+  const deadlineMs = aiDeadlineWithin(
+    context.deadline,
+    180_000,
+    Date.now(),
+    15_000,
+  );
+  if (deadlineMs < 30_000) {
+    throw new JobDeferredError(
+      "Not enough time left in this run to draft a post.",
+    );
+  }
 
   let draft;
   try {
-    draft = await generateBlogDraft(topic);
+    draft = await generateBlogDraft(topic, { deadlineMs });
   } catch (error) {
     // A bad generation is retryable — the worker will try again — so surface
     // it as a thrown error rather than a silent skip.
@@ -69,6 +117,7 @@ export async function handleBlogGenerate(
     authorId: null,
     aiAssisted: true,
     aiModel: draft.model,
+    topic,
     scheduledFor: null,
   } as Parameters<typeof createPost>[0]);
 

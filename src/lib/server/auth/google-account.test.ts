@@ -200,6 +200,18 @@ describeWithDatabase("signing in with Google", () => {
     expect(await signIn()).toEqual({ ok: false, reason: "disabled" });
   });
 
+  it("does not let Google bypass two-factor authentication", async () => {
+    await seed({
+      googleSub: "google-sub-1",
+      totpSecret: "JBSWY3DPEHPK3PXP",
+      totpEnabledAt: new Date(),
+    });
+    expect(await signIn()).toEqual({
+      ok: false,
+      reason: "two-factor-required",
+    });
+  });
+
   it("refuses to move an account to a second Google identity", async () => {
     await seed({ googleSub: "google-sub-1" });
     const outcome = await signIn({ subject: "google-sub-2" });

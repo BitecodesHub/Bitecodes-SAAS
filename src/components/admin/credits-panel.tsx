@@ -7,6 +7,7 @@ import {
   createCheckoutAction,
   grantSelfCreditsAction,
 } from "@/lib/server/billing/actions";
+import { trackConversion } from "@/lib/analytics-client";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -121,6 +122,8 @@ export function CreditsPanel({
         });
         return;
       }
+      // Dashboard URLs can carry product/account context; report a stable path.
+      trackConversion("checkout_started", "/app");
       if (result.data.kind === "redirect") {
         window.location.href = result.data.url;
         return;

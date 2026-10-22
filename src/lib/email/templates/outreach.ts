@@ -66,6 +66,21 @@ export const OUTREACH_VARIABLES: Array<{
     example: "https://bitecodes.com/report/…",
   },
   {
+    name: "firstName",
+    description: "The person's first name, or a neutral greeting.",
+    example: "Asha",
+  },
+  {
+    name: "serviceName",
+    description: "The service that best fits their enquiry.",
+    example: "Website development",
+  },
+  {
+    name: "bookingUrl",
+    description: "Public link to book a short call.",
+    example: "https://bitecodes.com/book-a-call",
+  },
+  {
     name: "unsubscribeUrl",
     description: "One-click opt-out. Required in every outreach template.",
     example: "https://bitecodes.com/unsubscribe?t=…",

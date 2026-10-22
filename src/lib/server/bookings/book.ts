@@ -1,5 +1,6 @@
 import "server-only";
 
+import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { isEmbedOriginAllowed } from "@/lib/server/embed-origin";
 import {
@@ -15,6 +16,8 @@ import {
   createBooking,
   takenIntervals,
 } from "@/lib/server/bookings/repository";
+import { adminUsers } from "@/lib/server/db/collections";
+import { captureLead } from "@/lib/server/leads/capture";
 import { notifyBooking } from "@/lib/server/email/notify";
 import type {
   BookingAppearance,
@@ -358,6 +361,47 @@ export async function handleBooking(
     );
   }
 
+  // A booking on a staff-owned calendar is a sales conversation, so it belongs
+  // in the CRM as a lead. A self-serve customer's calendar is that customer's
+  // business, not ours, and must never leak into Bitecodes' own inbox.
+  try {
+    if (await isStaffOwner(config.ownerId)) {
+      await captureLead(
+        {
+          kind: "booking",
+          source: "booking",
+          email: parsed.data.email,
+          name: parsed.data.name,
+          phone: leadPhone(parsed.data.phone),
+          message: `Booked “${config.name}”.`,
+          consent: {
+            contact: true,
+            marketing: false,
+            text: "Requested a booking and agreed to be contacted about it.",
+          },
+          detail: {
+            bookingId: created.bookingId,
+            configId: config.bookingId,
+            configName: config.name,
+            startIso,
+            timezone: input.visitorTimezone?.slice(0, 100) ?? config.timezone,
+            origin: input.origin,
+          },
+          requestId: `booking:${created.bookingId}`,
+        },
+        now,
+      );
+    }
+  } catch (error) {
+    // The visitor has a confirmed booking; failing to copy it into the CRM must
+    // not turn that success into an error at the widget.
+    console.error(
+      "[bookings] lead capture failed for",
+      created.bookingId,
+      error instanceof Error ? `${error.name}: ${error.message}` : error,
+    );
+  }
+
   return {
     kind: "ok",
     bookingId: created.bookingId,
@@ -365,6 +409,30 @@ export async function handleBooking(
     startIso,
     endIso: endAt.toISOString(),
   };
+}
+
+/** True when the account behind a calendar is a member of staff. */
+async function isStaffOwner(ownerId: string): Promise<boolean> {
+  if (!ObjectId.isValid(ownerId)) return false;
+  const users = await adminUsers();
+  const staff = await users.findOne(
+    {
+      _id: new ObjectId(ownerId),
+      role: { $in: ["owner", "admin", "editor", "viewer"] },
+    },
+    { projection: { _id: 1 } },
+  );
+  return Boolean(staff);
+}
+
+/**
+ * `captureLead` validates phone numbers more strictly than the booking form
+ * does. Keep the lead rather than losing it over punctuation: an unusable
+ * phone is null, and the email still identifies the person.
+ */
+function leadPhone(phone: string | null): string | null {
+  if (!phone) return null;
+  return /^\+?[0-9 ()-]{6,32}$/.test(phone) ? phone : null;
 }
 
 /**

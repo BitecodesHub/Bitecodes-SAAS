@@ -36,7 +36,7 @@ export function AutopilotPanel({
       const result = await runAutopilotNowAction();
       setMessage(
         result.ok
-          ? "Autopilot pass started. Due searches are re-running and eligible customers are being contacted — watch the pipeline."
+          ? "Autopilot pass started. Due searches are re-running; eligible customers are contacted only when auto-contact is on."
           : result.error,
       );
     });
@@ -65,22 +65,24 @@ export function AutopilotPanel({
           <p className="text-muted-foreground mt-1 max-w-xl text-sm leading-relaxed">
             {autopilotOn ? (
               <>
-                On. Saved searches below re-run on their own cadence, and
-                qualified customers are contacted automatically within your
-                daily caps. Consent-required regions (UK, EU, Australia, Canada)
-                are prepared and held for your one-click release.
+                Auto-contact on. Saved searches below re-run on their own
+                cadence and qualified customers are contacted automatically
+                within your daily caps. Consent-required regions (UK, EU,
+                Australia, Canada) are prepared and held for your one-click
+                release.
               </>
             ) : (
               <>
-                Off. Turn it on in{" "}
+                Auto-contact off. Saved searches below still re-run on their
+                cadence, so the pipeline fills for review — but nobody is
+                enrolled or emailed without you. Turn contact on in{" "}
                 <Link
                   href="/admin/settings"
                   className="text-primary underline-offset-2 hover:underline"
                 >
                   Settings → Automation
-                </Link>{" "}
-                to let it discover and contact customers without you. You can
-                still run a one-off pass now.
+                </Link>
+                . You can still run a one-off pass now.
               </>
             )}
           </p>
@@ -156,9 +158,9 @@ export function AutopilotPanel({
         </ul>
       ) : (
         <p className="text-muted-foreground mt-4 text-sm">
-          No saved searches yet. Select an area and categories on the map above,
-          then use “Save as autopilot search” to have the system re-run it on a
-          schedule.
+          No saved searches. The next bootstrap restores the default standing
+          searches (Ahmedabad, Bengaluru, Sydney, Melbourne). Pause a search
+          rather than deleting all of them if you want to keep its history.
         </p>
       )}
     </section>

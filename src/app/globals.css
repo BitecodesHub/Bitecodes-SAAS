@@ -19,6 +19,10 @@
 :root {
   --radius: 1.25rem;
 
+  /* Sticky mobile CTA bar height — written by StickyCTABar client component.
+     Initialised to 0 here so SSR-rendered floating buttons start correctly. */
+  --sticky-cta-height: 0px;
+
   /* Light theme — pure white canvas, near-black ink, single indigo accent */
   --background: oklch(1 0 0);
   --foreground: oklch(0.18 0.014 281);

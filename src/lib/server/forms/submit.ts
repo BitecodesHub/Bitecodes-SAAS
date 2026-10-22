@@ -6,6 +6,7 @@ import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { debit } from "@/lib/server/wallet/wallet";
 import { recordSubmission } from "@/lib/server/forms/repository";
 import { queueEmail } from "@/lib/server/email/send";
+import { notify } from "@/lib/server/email/notify";
 import { getSiteUrl } from "@/lib/server/env";
 import { sha256Hex } from "@/lib/server/crypto";
 import type { FormDoc } from "@/lib/server/db/types";
@@ -151,38 +152,39 @@ export async function handleSubmission(
   return { kind: "ok", submissionId, thankYouMessage, redirectUrl };
 }
 
-/** Emails the form's notify list. Failures never fail the submission. */
+/**
+ * Notifies the form's own list and the central notification list.
+ *
+ * A form with no own list still reaches the owner through the central channel
+ * (and, on a fresh install, through the fallback address) — that is what makes
+ * a newly built form start delivering leads without a second setup step.
+ * Failures never fail the submission.
+ */
 async function notifyNewSubmission(
   form: FormDoc,
   data: Record<string, string | number | boolean>,
   remaining: number,
 ): Promise<void> {
-  if (form.notifyEmails.length === 0) return;
-
   const lines = Object.entries(data).map(([key, value]) => `${key}: ${value}`);
   const url = `${getSiteUrl()}/admin/forms/${form.formId}`;
 
   try {
-    await Promise.all(
-      form.notifyEmails.map((to) =>
-        queueEmail({
-          to,
-          subject: `New submission — ${form.name}`,
-          blocks: [
-            { type: "p", text: `A new submission arrived on “${form.name}”.` },
-            { type: "ul", items: lines },
-            { type: "cta", label: "View submissions", url },
-            {
-              type: "p",
-              text: `${remaining} submission credit${remaining === 1 ? "" : "s"} remaining.`,
-            },
-          ],
-          category: "transactional",
-          skipApproval: true,
-          track: false,
-        }),
-      ),
-    );
+    await notify({
+      channel: "formSubmission",
+      subject: `New submission — ${form.name}`,
+      blocks: [
+        { type: "p", text: `A new submission arrived on “${form.name}”.` },
+        { type: "ul", items: lines },
+        { type: "cta", label: "View submissions", url },
+        {
+          type: "p",
+          text: `${remaining} submission credit${remaining === 1 ? "" : "s"} remaining.`,
+        },
+      ],
+      // The form's own list is always honoured; the channel adds to it.
+      extraRecipients: form.notifyEmails,
+      subjectId: form.formId,
+    });
   } catch (error) {
     // Losing a notification must never lose the lead, so this stays non-fatal —
     // but it must not be SILENT. A submission that stores correctly, charges a

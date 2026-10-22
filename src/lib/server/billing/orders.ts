@@ -94,6 +94,40 @@ export async function markOrderPaid(
   return result.modifiedCount === 1;
 }
 
+/**
+ * Records a failed payment attempt. Conditional on `pending`, so a late
+ * failure cannot flip an order that a manual grant or an earlier webhook
+ * already settled.
+ */
+export async function markOrderFailed(
+  orderId: string,
+  now = new Date(),
+): Promise<boolean> {
+  const collection = await billingOrders();
+  const result = await collection.updateOne(
+    { orderId, status: "pending" },
+    { $set: { status: "failed", updatedAt: now } },
+  );
+  return result.modifiedCount === 1;
+}
+
+/**
+ * Atomically claims the right to finish a settlement whose original delivery
+ * died between marking the order paid and crediting the wallet. Exactly one
+ * caller ever wins: the field is null until claimed and never re-claimed.
+ */
+export async function claimOrderSettlementResume(
+  orderId: string,
+  now = new Date(),
+): Promise<boolean> {
+  const collection = await billingOrders();
+  const result = await collection.updateOne(
+    { orderId, status: "paid", settlementResumedAt: null },
+    { $set: { settlementResumedAt: now, updatedAt: now } },
+  );
+  return result.modifiedCount === 1;
+}
+
 export async function setGatewayOrderId(
   orderId: string,
   gatewayOrderId: string,

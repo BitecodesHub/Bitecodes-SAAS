@@ -79,10 +79,10 @@ export const processSteps: ProcessStep[] = [
     title: "Maintenance",
     icon: LifeBuoy,
     description:
-      "After launch we keep the software healthy — patches, improvements, and responsive support backed by SLAs.",
+      "After launch we keep the software healthy — patches, improvements, and responsive support with the commitments published at /guarantees.",
     deliverables: [
       "Proactive patching",
-      "SLA support",
+      "Support response targets",
       "Continuous improvement",
     ],
   },

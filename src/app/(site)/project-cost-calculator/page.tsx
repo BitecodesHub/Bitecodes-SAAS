@@ -2,14 +2,9 @@ import type { Metadata } from "next";
 import { Calculator, PackageCheck, ShieldCheck } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { ProjectCostCalculator } from "@/components/calculators/project-cost-calculator";
+import { FaqDetails } from "@/components/faq/faq-details";
 import { PageHeader } from "@/components/page-header";
 import { Section, SectionHeader } from "@/components/section";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { breadcrumbSchema, createMetadata, faqSchema } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -107,14 +102,7 @@ export default function ProjectCostCalculatorPage() {
             title="What the estimate means"
             description="Clear boundaries make an early estimate useful rather than misleading."
           />
-          <Accordion type="single" collapsible className="mt-10">
-            {calculatorFaqs.map((faq, index) => (
-              <AccordionItem key={faq.question} value={`faq-${index}`}>
-                <AccordionTrigger>{faq.question}</AccordionTrigger>
-                <AccordionContent>{faq.answer}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <FaqDetails faqs={calculatorFaqs} className="mt-10" />
         </div>
       </Section>
     </>

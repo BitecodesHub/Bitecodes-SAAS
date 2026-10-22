@@ -1,59 +1,72 @@
-import { describe, expect, it } from "vitest";
-import { flatten } from "@/lib/server/settings";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  resolveGrowthSettings,
+  resolveSettings,
+  GROWTH_DEFAULTS,
+  GROWTH_TOGGLE_KEYS,
+} from "@/lib/server/settings";
+import { GROWTH_TOGGLES } from "@/lib/growth/toggles";
 
-describe("flatten", () => {
-  it("converts nested objects to dot paths", () => {
-    expect(flatten({ contact: { email: "a@b.com" } })).toEqual({
-      "contact.email": "a@b.com",
-    });
-    expect(flatten({ a: { b: { c: 1 } } })).toEqual({ "a.b.c": 1 });
+describe("growth settings resolution", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
   });
 
-  it("keeps top-level scalars", () => {
-    expect(flatten({ enabled: true, count: 3 })).toEqual({
-      enabled: true,
-      count: 3,
-    });
+  it("resolves to defaults when no stored data", () => {
+    const result = resolveGrowthSettings(undefined);
+    expect(result).toEqual(GROWTH_DEFAULTS);
   });
 
-  it("treats arrays as leaves so $set replaces them wholesale", () => {
-    // Flattening an array into "tags.0" would merge with existing entries and
-    // leave stale items behind.
-    expect(flatten({ tags: ["a", "b"] })).toEqual({ tags: ["a", "b"] });
+  it("preserves stored boolean values", () => {
+    const stored = {
+      aiEnabled: true,
+      leadScoring: false,
+      weeklyReport: true,
+    };
+    const result = resolveGrowthSettings(stored);
+    expect(result.aiEnabled).toBe(true);
+    expect(result.leadScoring).toBe(false);
+    expect(result.weeklyReport).toBe(true);
   });
 
-  it("treats dates as leaves", () => {
-    const date = new Date("2026-01-01T00:00:00.000Z");
-    expect(flatten({ at: date })).toEqual({ at: date });
+  it("ignores non-boolean stored values", () => {
+    const stored = {
+      aiEnabled: "true", // string, not boolean
+      leadScoring: 1, // number, not boolean
+    };
+    const result = resolveGrowthSettings(stored);
+    expect(result.aiEnabled).toBe(true); // default
+    expect(result.leadScoring).toBe(true); // default
   });
 
-  it("preserves null so a field can be cleared", () => {
-    expect(flatten({ outreach: { replyTo: null } })).toEqual({
-      "outreach.replyTo": null,
-    });
+  it("each toggle has a default and a key", () => {
+    for (const key of GROWTH_TOGGLE_KEYS) {
+      expect(key).toBeDefined();
+      const toggle = GROWTH_TOGGLES.find((t) => t.key === key);
+      expect(toggle).toBeDefined();
+    }
   });
 
-  it("drops undefined so an absent field is not overwritten", () => {
-    expect(flatten({ a: undefined, b: 1 })).toEqual({ b: 1 });
-    expect(flatten({ nested: { a: undefined, b: 2 } })).toEqual({
-      "nested.b": 2,
-    });
+  it("all toggle keys are unique", () => {
+    expect(new Set(GROWTH_TOGGLE_KEYS).size).toBe(GROWTH_TOGGLE_KEYS.length);
   });
 
-  it("never emits an _id path", () => {
-    // Mongo rejects an update that tries to $set the immutable _id.
-    expect(flatten({ _id: "site", a: 1 })).toEqual({ a: 1 });
+  it("toggle keys match GROWTH_TOGGLES", () => {
+    const toggleKeys = GROWTH_TOGGLES.map((t) => t.key);
+    expect(GROWTH_TOGGLE_KEYS).toEqual(toggleKeys);
   });
 
-  it("produces paths that patch one field without clobbering siblings", () => {
-    // The point of dot paths: two admins editing different settings sections
-    // must not overwrite each other.
-    const patch = flatten({ automation: { requireApproval: false } });
-    expect(Object.keys(patch)).toEqual(["automation.requireApproval"]);
-    expect(patch).not.toHaveProperty("automation");
+  it("resolveSettings includes growth block", () => {
+    const result = resolveSettings(null);
+    expect(result.growth).toBeDefined();
+    expect(Object.keys(result.growth).length).toBe(GROWTH_TOGGLE_KEYS.length);
   });
 
-  it("handles an empty object", () => {
-    expect(flatten({})).toEqual({});
+  it("growth toggle default values are consistent", () => {
+    const defaults = GROWTH_DEFAULTS;
+    for (const key of GROWTH_TOGGLE_KEYS) {
+      const toggle = GROWTH_TOGGLES.find((t) => t.key === key);
+      expect(defaults[key]).toBe(toggle?.defaultValue ?? false);
+    }
   });
 });

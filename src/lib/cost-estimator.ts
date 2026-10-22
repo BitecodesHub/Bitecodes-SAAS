@@ -1,37 +1,66 @@
 import { z } from "zod";
+import { convertPrice, getPricing } from "@/lib/pricing";
 
+/**
+ * Project types, each mapped to the service whose published floor it must
+ * never undercut.
+ *
+ * The estimator used to be free-floating: a business website at the lowest
+ * complexity produced "₹20,000–₹20,000" while /pricing publishes ₹41,500 for
+ * the same service, and a web application floor of roughly ₹80,000 sat below
+ * the published ₹1,32,800. A visitor comparing the two pages saw a contradiction.
+ * The mapping below makes `src/lib/pricing.ts` the single source of truth for
+ * the floor, and `calculateProjectEstimate` clamps to it.
+ */
 export const projectTypes = [
   {
     value: "business-website",
     label: "Business website",
     base: 18_000,
     weeks: 5,
+    floorServiceSlug: "website-development",
   },
-  { value: "ecommerce", label: "eCommerce store", base: 45_000, weeks: 8 },
+  {
+    value: "ecommerce",
+    label: "eCommerce store",
+    base: 45_000,
+    weeks: 8,
+    floorServiceSlug: "website-development",
+  },
   {
     value: "web-app",
     label: "Custom web application",
     base: 90_000,
     weeks: 12,
+    floorServiceSlug: "web-applications",
   },
-  { value: "saas-mvp", label: "SaaS or startup MVP", base: 140_000, weeks: 16 },
+  {
+    value: "saas-mvp",
+    label: "SaaS or startup MVP",
+    base: 140_000,
+    weeks: 16,
+    floorServiceSlug: "saas-development",
+  },
   {
     value: "mobile-app",
     label: "Mobile application",
     base: 130_000,
     weeks: 16,
+    floorServiceSlug: "mobile-app-development",
   },
   {
     value: "enterprise",
     label: "Enterprise software",
     base: 300_000,
     weeks: 24,
+    floorServiceSlug: "enterprise-software",
   },
   {
     value: "ai-automation",
     label: "AI integration or automation",
     base: 80_000,
     weeks: 10,
+    floorServiceSlug: "ai-integration",
   },
 ] as const;
 
@@ -108,8 +137,30 @@ export interface ProjectEstimate {
 
 const supportCosts = { launch: 0, quarter: 90_000, annual: 300_000 } as const;
 
-function roundToTenThousand(value: number) {
-  return Math.round(value / 10_000) * 10_000;
+/**
+ * The published INR floor for a project type, derived from SERVICE_PRICING.
+ *
+ * Exported so the page and the tests can show exactly which published figure
+ * the estimator is honouring.
+ */
+export function publishedFloorInr(
+  projectType: (typeof projectTypes)[number]["value"],
+): number {
+  const project = projectTypes.find((item) => item.value === projectType);
+  if (!project) return 0;
+  const pricing = getPricing(project.floorServiceSlug);
+  return pricing ? convertPrice(pricing.startingFromUSD, "INR") : 0;
+}
+
+/**
+ * Rounds a raw estimate to a readable planning step.
+ *
+ * Five thousand rather than ten thousand: at the old step a low estimate and
+ * its maximum collapsed to the same number, which is not a range and reads as
+ * a false fixed quote.
+ */
+function roundToFiveThousand(value: number) {
+  return Math.round(value / 5_000) * 5_000;
 }
 
 export function calculateProjectEstimate(
@@ -141,8 +192,19 @@ export function calculateProjectEstimate(
       platformMultiplier *
       urgencyMultiplier +
     supportCosts[input.support];
-  const minimum = roundToTenThousand(subtotal * 0.9);
-  const maximum = roundToTenThousand(subtotal * 1.18);
+
+  // Clamp the minimum to the published service floor. When the clamp lifts the
+  // minimum, scale the maximum by the same ratio so the range keeps the width
+  // the configuration implies rather than becoming an artificially tight
+  // band just above the floor.
+  const floor = publishedFloorInr(input.projectType);
+  const rawMinimum = subtotal * 0.9;
+  const rawMaximum = subtotal * 1.18;
+  const minimum = Math.max(floor, roundToFiveThousand(rawMinimum));
+  const scaledMaximum =
+    rawMinimum > 0 ? rawMaximum * (minimum / rawMinimum) : rawMaximum;
+  const maximum = Math.max(minimum + 5_000, roundToFiveThousand(scaledMaximum));
+
   const baseWeeks = (project.weeks + featureWeeks * 0.55) * complexity.timeline;
   const urgencyTimeline = input.urgency === "priority" ? 0.82 : 1;
   const timelineMinWeeks = Math.max(

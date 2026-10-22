@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { createStructuredCompletion } from "@/lib/server/ai-provider";
+import { completeJson } from "@/lib/server/ai/automation";
 import { services } from "@/data/services";
 import { siteConfig } from "@/lib/site";
 import { slugExists } from "@/lib/server/blog/repository";
@@ -37,19 +37,28 @@ function allowedRoutes(): { path: string; label: string }[] {
     { path: "/contact", label: "Contact" },
     { path: "/about", label: "About" },
     { path: "/process", label: "How we work" },
+    { path: "/industries", label: "Industries" },
+    { path: "/resources", label: "Resources" },
+    { path: "/blog", label: "Blog" },
     { path: "/ai-project-consultant", label: "AI project consultant" },
     { path: "/website-audit", label: "Free website audit" },
+    { path: "/book-a-call", label: "Book a call" },
     ...serviceRoutes,
   ];
 }
 
 /**
- * Seed topics, chosen for GEO/AEO: the phrasings people actually type into an
- * AI assistant. Honest, comparison-and-guide framing — never fabricated
- * rankings. One is picked per run by rotating on the day of the year (passed
- * in, since `Date.now()` is unavailable in some execution contexts).
+ * Seed topics, chosen for search and GEO/AEO: the phrasings people actually
+ * type into a search engine or an AI assistant, with commercial intent where
+ * it is honest to have it. Comparison-and-guide framing — never fabricated
+ * rankings or client stories.
+ *
+ * The library is intentionally larger than a year of twice-weekly publishing
+ * so the rotation does not repeat a subject and publish a near-duplicate.
+ * `pickUnusedTopic` is the selection rule; see `getUsedAiTopics`.
  */
 export const BLOG_TOPICS: string[] = [
+  // Foundational buying guides.
   "How to choose a software development company for a SaaS product in 2026",
   "What does it cost to build a custom web application? A transparent breakdown",
   "AI integration for small businesses: where it pays off and where it does not",
@@ -64,10 +73,60 @@ export const BLOG_TOPICS: string[] = [
   "REST API design mistakes that cost you later, and how to avoid them",
   "When to build an MVP versus a full product: a founder's decision guide",
   "Cloud hosting choices for a growing SaaS: cost, control, and lock-in",
+  // Service- and industry-specific intent.
+  "Custom software vs off-the-shelf: how to decide for a growing business",
+  "How long does it take to build a SaaS MVP? A realistic timeline",
+  "SaaS architecture for startups: what to build first and what to postpone",
+  "How much does AI integration cost, and what changes the price",
+  "What is an AI project consultant, and when do you need one?",
+  "AI chatbots for customer support: a realistic cost and quality guide",
+  "MCP vs traditional API integration: which fits your product",
+  "How to modernise a legacy web application without a rewrite",
+  "Website performance audits: what they check and what actually moves rankings",
+  "Core Web Vitals for business websites: a practical fix list",
+  "Why your SaaS is slow: the six bottlenecks we find most often",
+  "Cloud cost optimisation for small engineering teams",
+  "DevOps for a small team: the minimum viable pipeline",
+  "How to hire a Next.js developer: questions that reveal real experience",
+  "In-house team vs software agency: total cost and trade-offs",
+  "Fixed-price vs retainer software development: which is safer",
+  "How to write a software statement of work that prevents scope disputes",
+  "Web application security checklist for a launch",
+  "Accessibility for business websites: what WCAG 2.2 actually requires",
+  "Headless CMS vs custom admin panel for a content-driven site",
+  "How to migrate a WordPress site to Next.js without losing SEO",
+  "Structured data for local service businesses: what is worth implementing",
+  "Answer engine optimisation: how to become the source AI assistants cite",
+  "Digital transformation for clinics and professional practices",
+  "Custom software for recruitment agencies: build vs buy",
+  "Software for manufacturing operations: where custom pays back",
+  "What a maintenance and support contract should cover",
+  "How to reduce customer support tickets with better product design",
 ];
 
 export function pickTopic(dayOfYear: number): string {
   return BLOG_TOPICS[dayOfYear % BLOG_TOPICS.length];
+}
+
+/**
+ * The first topic in rotation that has not already been written, or null when
+ * the whole library is covered.
+ *
+ * Starting at `dayOfYear % length` keeps the rotation predictable while
+ * skipping used topics: a subject is never published twice, and a day whose
+ * default topic already exists falls through to the next unused one instead of
+ * producing a duplicate article with a suffixed slug.
+ */
+export function pickUnusedTopic(
+  dayOfYear: number,
+  used: ReadonlySet<string>,
+): string | null {
+  const start = dayOfYear % BLOG_TOPICS.length;
+  for (let offset = 0; offset < BLOG_TOPICS.length; offset += 1) {
+    const topic = BLOG_TOPICS[(start + offset) % BLOG_TOPICS.length];
+    if (!used.has(topic)) return topic;
+  }
+  return null;
 }
 
 const blockSchema = z.discriminatedUnion("type", [
@@ -108,57 +167,6 @@ const draftSchema = z.object({
   internalLinkPaths: z.array(z.string()).max(8),
 });
 
-/** JSON Schema mirror for the provider's structured-output constraint. */
-const draftJsonSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: [
-    "title",
-    "slug",
-    "excerpt",
-    "category",
-    "tags",
-    "metaDescription",
-    "body",
-    "faq",
-    "internalLinkPaths",
-  ],
-  properties: {
-    title: { type: "string" },
-    slug: { type: "string" },
-    excerpt: { type: "string" },
-    category: { type: "string" },
-    tags: { type: "array", items: { type: "string" } },
-    metaDescription: { type: "string" },
-    body: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["type"],
-        properties: {
-          type: { type: "string", enum: ["h2", "h3", "p", "ul", "ol"] },
-          text: { type: "string" },
-          items: { type: "array", items: { type: "string" } },
-        },
-      },
-    },
-    faq: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["question", "answer"],
-        properties: {
-          question: { type: "string" },
-          answer: { type: "string" },
-        },
-      },
-    },
-    internalLinkPaths: { type: "array", items: { type: "string" } },
-  },
-} as const;
-
 export interface GeneratedDraft {
   title: string;
   slug: string;
@@ -186,7 +194,7 @@ STRUCTURE: open with a short problem framing, use h2/h3 sections, keep paragraph
 INTERNAL LINKS: choose 2–5 relevant paths ONLY from this list; do not invent paths:
 ${routes}
 
-OUTPUT: strictly the required JSON schema. The slug must be lowercase, hyphenated, and derived from the title.`;
+OUTPUT: one JSON object matching the required schema. The slug must be lowercase, hyphenated, and derived from the title.`;
 }
 
 function estimateReadingMinutes(body: BlogBlock[]): number {
@@ -203,28 +211,34 @@ function estimateReadingMinutes(body: BlogBlock[]): number {
   return Math.max(1, Math.round(words / 200));
 }
 
+/** Overall budget for one draft across every provider in the chain. */
+const DRAFT_DEADLINE_MS = 120_000;
+
 /**
  * Generates one validated draft for a topic. Guarantees a unique slug and
- * only real internal links. Throws on a missing provider or an
- * unparsable/invalid response — the caller decides whether to retry.
+ * only real internal links.
+ *
+ * Runs on the operator provider chain through the automation client, so a
+ * provider that times out or returns JSON that fails `draftSchema` is skipped
+ * and the next one is tried. Throws `AutomationAiError` when AI is switched
+ * off or unconfigured, or when no provider produced a valid draft; the caller
+ * decides whether to retry.
  */
 export async function generateBlogDraft(
   topic: string,
+  options: { deadlineMs?: number; signal?: AbortSignal } = {},
 ): Promise<GeneratedDraft> {
-  const { json, model } = await createStructuredCompletion({
+  const { data: draft, model } = await completeJson({
+    purpose: "blog",
     system: systemPrompt(),
     user: `Write a complete article on this topic: "${topic}".`,
-    schema: draftJsonSchema,
-    schemaName: "bitecodes_blog_post",
-    maxTokens: 4000,
+    schema: draftSchema,
+    // Reasoning models spend part of this budget thinking before they write.
+    maxTokens: 6000,
     temperature: 0.7,
+    deadlineMs: options.deadlineMs ?? DRAFT_DEADLINE_MS,
+    signal: options.signal,
   });
-
-  const parsed = draftSchema.safeParse(json);
-  if (!parsed.success) {
-    throw new Error("INVALID_DRAFT");
-  }
-  const draft = parsed.data;
 
   // Keep only links to real routes, mapped to their canonical labels.
   const routes = allowedRoutes();
@@ -234,12 +248,17 @@ export async function generateBlogDraft(
     // Dedupe while preserving order.
     .filter((r, i, all) => all.findIndex((x) => x.path === r.path) === i);
 
-  // Guarantee a unique slug even if the model reuses an existing one.
+  // Guarantee a unique slug. A deterministic numeric suffix rather than a
+  // timestamp: the same collision must resolve to the same URL on a retry, and
+  // a timestamp made the duplicate obvious in the sitemap.
   let slug = draft.slug;
   if (await slugExists(slug)) {
-    slug = `${slug}-${Math.floor(Date.now() / 1000)
-      .toString(36)
-      .slice(-4)}`;
+    const base = slug.slice(0, 70);
+    let counter = 2;
+    while (counter < 100 && (await slugExists(`${base}-${counter}`))) {
+      counter += 1;
+    }
+    slug = `${base}-${counter}`;
   }
 
   const body = draft.body as BlogBlock[];

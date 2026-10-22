@@ -3,6 +3,13 @@ import "server-only";
 import { unstable_cache, revalidateTag } from "next/cache";
 import { siteSettings } from "@/lib/server/db/collections";
 import type { SiteSettingsDoc } from "@/lib/server/db/types";
+import {
+  GROWTH_DEFAULTS,
+  GROWTH_TOGGLE_KEYS,
+  type GrowthSettings,
+} from "@/lib/growth/toggles";
+
+export { GROWTH_DEFAULTS, GROWTH_TOGGLE_KEYS, type GrowthSettings };
 import { siteConfig } from "@/lib/site";
 
 /**
@@ -51,6 +58,13 @@ export const SETTINGS_DEFAULTS = {
     tileUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     tileAttribution: "© OpenStreetMap contributors",
   },
+  /**
+   * Growth automation switches. Declared once in `src/lib/growth/toggles.ts`
+   * (labels, descriptions, defaults) so the admin page and this resolver
+   * cannot disagree. Anything that emails a prospect or customer is off,
+   * except booking reminders, which the recipient asked for by booking.
+   */
+  growth: GROWTH_DEFAULTS,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -67,10 +81,12 @@ export const SETTINGS_DEFAULTS = {
  */
 export const NOTIFICATION_CHANNELS = [
   "formSubmission",
+  "newLead",
   "chatConversation",
   "booking",
   "lowBalance",
   "failedJob",
+  "ownerReports",
 ] as const;
 
 export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
@@ -109,10 +125,15 @@ export const NOTIFICATION_DEFAULTS: NotificationSettings = {
   defaultRecipients: [],
   channels: {
     formSubmission: { enabled: true, recipients: [] },
+    // Lead magnets, audit requests, consultant briefs, and callbacks. Separate
+    // from `formSubmission` because these arrive while the visitor is still on
+    // the site, which makes a fast reply worth more than a routine form inbox.
+    newLead: { enabled: true, recipients: [] },
     chatConversation: { enabled: true, recipients: [] },
     booking: { enabled: true, recipients: [] },
     lowBalance: { enabled: true, recipients: [] },
     failedJob: { enabled: true, recipients: [] },
+    ownerReports: { enabled: true, recipients: [] },
   },
   chat: { everyConversation: false, maxAlertsPerBotPerHour: 6 },
   lowBalance: { threshold: 50 },
@@ -202,14 +223,19 @@ export function recipientsForChannel(
   extra: string[] = [],
 ): string[] {
   const prefs = settings.notifications.channels[channel];
-  if (!prefs.enabled) return [];
+  const ownList = cleanRecipients(extra);
+
+  // Switching a channel off silences the *central* lists, not a recipient list
+  // that a form or booking page owns. That list is the product's own "tell
+  // these people" answer and the central switch is not allowed to override it.
+  if (!prefs.enabled) return ownList;
 
   // The default list applies *in addition to* a channel's own list, so one
   // global "copy me on everything" address does not have to be repeated in
   // five places — and so clearing a channel's list never means "nobody".
   return cleanRecipients([
     ...prefs.recipients,
-    ...extra,
+    ...ownList,
     ...settings.notifications.defaultRecipients,
   ]);
 }
@@ -249,6 +275,32 @@ export interface ResolvedSettings {
     replyTo: string | null;
   };
   notifications: NotificationSettings;
+  growth: GrowthSettings;
+}
+
+/**
+ * Resolves the growth block: every known switch, always a boolean. Unknown
+ * keys and non-boolean values in the stored document are ignored, so a
+ * hand-edited or stale document cannot switch an email automation on by
+ * accident (a stored string "false" is truthy).
+ */
+export function resolveGrowthSettings(
+  stored: Partial<Record<string, unknown>> | undefined | null,
+): GrowthSettings {
+  const growth: GrowthSettings = { ...SETTINGS_DEFAULTS.growth };
+  if (!stored) return growth;
+  for (const key of GROWTH_TOGGLE_KEYS) {
+    const value = stored[key];
+    if (typeof value === "boolean") growth[key] = value;
+  }
+  return growth;
+}
+
+/** Exported for tests; production code reads through `getSettingsFresh`. */
+export function resolveSettings(
+  stored: StoredSiteSettings | null,
+): ResolvedSettings {
+  return resolve(stored);
 }
 
 function resolve(stored: StoredSiteSettings | null): ResolvedSettings {
@@ -291,6 +343,7 @@ function resolve(stored: StoredSiteSettings | null): ResolvedSettings {
         null,
     },
     notifications: resolveNotifications(stored?.notifications),
+    growth: resolveGrowthSettings(stored?.growth),
   };
 }
 

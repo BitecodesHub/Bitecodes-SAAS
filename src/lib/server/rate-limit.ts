@@ -165,6 +165,14 @@ export const RATE_LIMITS = {
   passwordReset: { max: 5, windowMs: HOUR_MS },
   /** Magic links are credentials; requesting them is capped like resets. */
   loginLink: { max: 5, windowMs: HOUR_MS },
+  /**
+   * Per recipient address, independent of the requester's IP. Without it a
+   * distributed sender can use our domain to bomb one inbox, which costs our
+   * sending reputation rather than theirs.
+   */
+  recoveryAddress: { max: 5, windowMs: HOUR_MS },
+  signupAddress: { max: 3, windowMs: HOUR_MS },
+  verifyResendAddress: { max: 4, windowMs: HOUR_MS },
   /** Embedded form submissions, per form + visitor IP. */
   formSubmit: { max: 20, windowMs: HOUR_MS },
   /** Whole-form ceiling, so one popular embed cannot drain a credit pack. */
@@ -193,6 +201,13 @@ export const RATE_LIMITS = {
   verifyResend: { max: 4, windowMs: HOUR_MS },
   newsletter: { max: 5, windowMs: HOUR_MS },
   unsubscribe: { max: 30, windowMs: HOUR_MS },
+  /**
+   * The public site assistant calls a paid model per message, so its ceiling is
+   * per visitor per hour rather than per page view. Ten is enough to understand
+   * a service and ask a follow-up; more than that should be a conversation with
+   * a person anyway.
+   */
+  siteAssistant: { max: 10, windowMs: HOUR_MS },
   analytics: { max: 200, windowMs: HOUR_MS },
 } as const;
 

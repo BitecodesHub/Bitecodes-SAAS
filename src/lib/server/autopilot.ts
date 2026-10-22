@@ -9,10 +9,7 @@ import {
 import type { AutopilotPresetDoc } from "@/lib/server/db/types";
 import { getSettingsFresh } from "@/lib/server/settings";
 import { enqueueJob, JOB_TYPES } from "@/lib/server/jobs/queue";
-import {
-  createProspectSearch,
-  setProspectStatus,
-} from "@/lib/server/prospecting/repository";
+import { createProspectSearch } from "@/lib/server/prospecting/repository";
 import { enrollProspect } from "@/lib/server/email/sequences";
 import { RESULT_LIMITS } from "@/lib/prospecting/overpass-query";
 
@@ -20,21 +17,26 @@ import { RESULT_LIMITS } from "@/lib/prospecting/overpass-query";
  * The autopilot: the piece that turns the discover → audit → outreach chain
  * into a standing employee rather than a set of buttons.
  *
- * One tick, two duties:
+ * One tick, two duties, with different gates:
  *
- * 1. **Feed the pipeline.** Re-run saved discovery presets whose cadence has
- *    elapsed. At most one preset per tick, deliberately: Overpass is a
- *    donated public service, and a tick that fired five area queries at once
- *    would be indistinguishable from abuse.
- * 2. **Work the pipeline.** Enrol qualified, scored, contactable prospects
- *    into the default outreach sequence, newest-best first, under a daily
- *    ceiling. Every message still passes the send-time compliance gate —
- *    the autopilot decides *who to write to*, never *whether a send is
+ * 1. **Feed the pipeline — always on.** Re-run saved discovery presets whose
+ *    cadence has elapsed. Discovery reads a public map service and writes
+ *    internal prospect rows; it contacts nobody, so the autonomous-first-boot
+ *    contract expects it to run without a setup wizard. At most one preset per
+ *    tick, deliberately: Overpass is a donated public service, and a tick that
+ *    fired five area queries at once would be indistinguishable from abuse.
+ * 2. **Work the pipeline — gated.** Enrol qualified, scored, contactable
+ *    prospects into the default outreach sequence, newest-best first, under a
+ *    daily ceiling. This half is what `automation.autopilot` switches on, and
+ *    it is off by default. Every message still passes the send-time compliance
+ *    gate — the autopilot decides *who to write to*, never *whether a send is
  *    lawful*.
  *
- * Everything here is idempotent per tick: presets advance `lastRunAt` before
- * the discovery job is enqueued, and `enrollProspect` refuses duplicates, so
- * an overlapping tick cannot double-contact anyone.
+ * Everything here is idempotent per tick: presets advance `lastRunAt` while
+ * claimed, but the claim is reverted if the discovery run cannot be created, so
+ * a transient failure costs one tick rather than a whole cadence.
+ * `enrollProspect` refuses duplicates, so an overlapping tick cannot
+ * double-contact anyone.
  */
 
 export interface AutopilotPresetSummary {
@@ -124,10 +126,17 @@ export async function deleteAutopilotPreset(
 }
 
 /**
- * Claims the single most-overdue preset, atomically advancing `lastRunAt` so
- * a concurrent tick cannot claim the same one.
+ * Claims the single most-overdue preset and starts its discovery run.
+ *
+ * `lastRunAt` is advanced atomically so a concurrent tick cannot claim the same
+ * preset. The advance is rolled back when starting the run fails: otherwise a
+ * momentary database or enqueue error would suppress that search for the whole
+ * cadence (a week, by default), which is why this is one operation rather than
+ * "claim here, start there".
  */
-async function claimDuePreset(now: Date): Promise<AutopilotPresetDoc | null> {
+async function claimAndStartDuePreset(
+  now: Date,
+): Promise<{ preset: AutopilotPresetDoc; searchId: string } | null> {
   const collection = await autopilotPresets();
   const candidates = await collection
     .find({ enabled: true })
@@ -146,7 +155,29 @@ async function claimDuePreset(now: Date): Promise<AutopilotPresetDoc | null> {
       { presetId: preset.presetId, lastRunAt: preset.lastRunAt },
       { $set: { lastRunAt: now, updatedAt: now } },
     );
-    if (claimed) return { ...claimed, lastRunAt: now };
+    if (!claimed) continue;
+
+    try {
+      const searchId = await startPresetDiscovery(preset, now);
+      return { preset, searchId };
+    } catch (error) {
+      console.error(
+        `[autopilot] Could not start discovery for "${preset.label}"; the preset will be retried:`,
+        error instanceof Error ? error.message : error,
+      );
+      try {
+        await collection.updateOne(
+          { presetId: preset.presetId, lastRunAt: now },
+          { $set: { lastRunAt: preset.lastRunAt, updatedAt: new Date() } },
+        );
+      } catch (revertError) {
+        console.error(
+          `[autopilot] Could not revert the claim on "${preset.label}":`,
+          revertError instanceof Error ? revertError.message : revertError,
+        );
+      }
+      return null;
+    }
   }
   return null;
 }
@@ -199,15 +230,26 @@ export async function startPresetDiscovery(
   return searchId;
 }
 
-/** Enrolments the autopilot has already made since midnight UTC. */
-async function countAutoEnrollmentsToday(now: Date): Promise<number> {
+/**
+ * Cold-outreach enrolments since midnight UTC, whoever made them.
+ *
+ * Lead sequences are excluded: they are opted-in nurture mail subject to their
+ * own consent rules, and counting them would silently spend the cold-outreach
+ * budget. Manual prospect enrolments are included on purpose — the ceiling is
+ * about the sending domain's daily volume, not about who clicked the button.
+ */
+async function countOutreachEnrollmentsToday(now: Date): Promise<number> {
   const dayStart = new Date(now);
   dayStart.setUTCHours(0, 0, 0, 0);
   const enrollments = await sequenceEnrollments();
-  return enrollments.countDocuments({ createdAt: { $gte: dayStart } });
+  return enrollments.countDocuments({
+    createdAt: { $gte: dayStart },
+    prospectId: { $ne: null },
+  });
 }
 
 export interface AutopilotTickSummary {
+  /** True when auto-enrolment is on. Discovery runs regardless. */
   enabled: boolean;
   presetRun: string | null;
   candidates: number;
@@ -222,27 +264,30 @@ export async function runAutopilotTick(
   now = new Date(),
 ): Promise<AutopilotTickSummary> {
   const settings = await getSettingsFresh();
+
+  // Duty one: feed the pipeline. This is intentionally independent of the
+  // auto-enrolment switch: prospecting is read-only external work plus
+  // internal records, and an operator who has not opted into automatic
+  // contact should still get a populated pipeline to review.
+  let presetRun: string | null = null;
+  const started = await claimAndStartDuePreset(now);
+  if (started) {
+    presetRun = started.preset.label;
+  }
+
   if (!settings.automation.autopilot) {
     return {
       enabled: false,
-      presetRun: null,
+      presetRun,
       candidates: 0,
       enrolled: 0,
       skipped: [],
     };
   }
 
-  // Duty one: feed the pipeline.
-  let presetRun: string | null = null;
-  const preset = await claimDuePreset(now);
-  if (preset) {
-    await startPresetDiscovery(preset, now);
-    presetRun = preset.label;
-  }
-
   // Duty two: work the pipeline.
   const cap = settings.automation.autopilotDailyEnrollCap;
-  const alreadyToday = await countAutoEnrollmentsToday(now);
+  const alreadyToday = await countOutreachEnrollmentsToday(now);
   const budget = Math.max(0, cap - alreadyToday);
 
   const collection = await prospects();
@@ -269,8 +314,9 @@ export async function runAutopilotTick(
 
     const result = await enrollProspect(id, "outreach.default", now);
     if (result.ok) {
+      // The send advances the prospect to `contacted`; setting `queued` here
+      // would drag the pipeline backwards after the first email went out.
       enrolled += 1;
-      await setProspectStatus([id], "queued");
     } else {
       skipCounts.set(result.reason, (skipCounts.get(result.reason) ?? 0) + 1);
     }

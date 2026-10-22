@@ -27,14 +27,24 @@ vi.mock("@/lib/server/ai-provider", () => ({
 /** A provider that yields two deltas and reports usage. */
 function stubProvider(reply = "Refunds are available within 30 days.") {
   streamMock.mockImplementation(
-    async (input: { system: string; model?: string; maxTokens?: number }) => {
+    async (input: {
+      system: string;
+      model?: string;
+      maxTokens?: number;
+      signal?: AbortSignal;
+    }) => {
       capturedSystem = input.system;
       capturedModel = input.model;
       capturedMaxTokens = input.maxTokens;
+      capturedSignal = input.signal;
       return {
         model: input.model ?? "stub",
         stream: (async function* () {
           yield reply.slice(0, 10);
+          // A well-behaved provider stops when the caller aborts.
+          if (input.signal?.aborted) {
+            throw new DOMException("The visitor disconnected.", "AbortError");
+          }
           yield reply.slice(10);
         })(),
         usage: () => ({ inputTokens: 120, outputTokens: 30 }),
@@ -46,6 +56,7 @@ function stubProvider(reply = "Refunds are available within 30 days.") {
 let capturedSystem = "";
 let capturedModel: string | undefined;
 let capturedMaxTokens: number | undefined;
+let capturedSignal: AbortSignal | undefined;
 
 async function drain(stream: AsyncGenerator<string, void, unknown>) {
   let text = "";
@@ -93,6 +104,7 @@ describeWithDatabase("chat gateway", () => {
 
     capturedSystem = "";
     capturedModel = undefined;
+    capturedSignal = undefined;
     stubProvider();
   });
 
@@ -144,6 +156,78 @@ describeWithDatabase("chat gateway", () => {
     const text = await drain(outcome.stream);
     expect(text).toContain("Refunds");
 
+    const usage = await outcome.settle();
+    expect(usage.inputTokens + usage.outputTokens).toBe(150);
+    expect(await getBalance(ownerId)).toBe(850);
+  });
+
+  it("bills a turn exactly once when settle runs twice", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    const { getBalance } = await import("@/lib/server/tokens-ledger/ledger");
+    await fund(1_000);
+
+    const outcome = await handleChat(baseRequest());
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    await drain(outcome.stream);
+
+    // The route's error path calls settle a second time; the debit must not
+    // repeat. This was a live double-charge before settle was memoized.
+    await outcome.settle();
+    await outcome.settle();
+
+    expect(await getBalance(ownerId)).toBe(850);
+  });
+
+  it("clamps the spend at a short balance instead of delivering free answers", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    const { getBalance } = await import("@/lib/server/tokens-ledger/ledger");
+    // Above the pre-flight floor (50) but below the 150 this reply costs.
+    await fund(60);
+
+    const outcome = await handleChat(baseRequest());
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    await drain(outcome.stream);
+
+    const usage = await outcome.settle();
+    expect(usage.inputTokens + usage.outputTokens).toBe(150);
+    // The visitor got the answer, so it costs every remaining token — the
+    // balance zeroes rather than funding one free reply per request forever.
+    expect(await getBalance(ownerId)).toBe(0);
+
+    // And the next visitor is refused honestly rather than served for free.
+    const next = await handleChat(baseRequest());
+    expect(next.kind).toBe("out-of-tokens");
+  });
+
+  it("aborts the provider when the visitor disconnects, and still settles once", async () => {
+    const { handleChat } = await import("@/lib/server/chat/gateway");
+    const { getBalance } = await import("@/lib/server/tokens-ledger/ledger");
+    await fund(1_000);
+    await addKnowledge("Refunds are available within 30 days of purchase.");
+
+    const controller = new AbortController();
+    const outcome = await handleChat({
+      ...baseRequest(),
+      signal: controller.signal,
+    });
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+
+    // The disconnect must reach the paid provider call.
+    expect(capturedSignal).toBe(controller.signal);
+
+    const iterator = outcome.stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    expect(typeof first.value).toBe("string");
+
+    controller.abort();
+    await expect(iterator.next()).rejects.toThrow();
+
+    // Tokens generated before the disconnect were still produced and are
+    // still billed — exactly once, even though the route settles from both
+    // its error path and its cancel path.
     const usage = await outcome.settle();
     expect(usage.inputTokens + usage.outputTokens).toBe(150);
     expect(await getBalance(ownerId)).toBe(850);

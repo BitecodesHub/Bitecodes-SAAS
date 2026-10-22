@@ -12,7 +12,7 @@ import {
   XIcon,
 } from "@/components/social-icons";
 import { JsonLd } from "@/components/json-ld";
-import { createMetadata, breadcrumbSchema } from "@/lib/seo";
+import { createMetadata, breadcrumbSchema, webPageSchema } from "@/lib/seo";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = createMetadata({
@@ -31,7 +31,7 @@ const socials = [
     href: siteConfig.social.instagram,
     icon: InstagramIcon,
   },
-];
+].filter((link): link is typeof link & { href: string } => link.href !== null);
 
 export default function ContactPage() {
   return (
@@ -41,6 +41,15 @@ export default function ContactPage() {
           { name: "Home", path: "/" },
           { name: "Contact", path: "/contact" },
         ])}
+      />
+      <JsonLd
+        data={webPageSchema({
+          path: "/contact",
+          name: "Contact Bitecodes",
+          description:
+            "Contact Bitecodes about a website, web application, SaaS product, API, or AI automation project. Office hours are Monday to Friday, 10:00 to 18:00 IST.",
+          speakableSelectors: ["h1", "main p:first-of-type"],
+        })}
       />
       <PageHeader
         eyebrow="Contact"

@@ -1,8 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { NextRequest } from "next/server";
-import { contactSchema, type ContactResponse } from "@/lib/contact";
+import {
+  contactSchema,
+  CONTACT_CONSENT_TEXT,
+  MARKETING_CONSENT_TEXT,
+  type ContactResponse,
+} from "@/lib/contact";
+import { contactEnquiries } from "@/lib/server/db/collections";
 import { sendContactEmails } from "@/lib/server/email";
-import { getDatabase } from "@/lib/server/mongodb";
+import { captureLead } from "@/lib/server/leads/capture";
 import { consumeContactRateLimit } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
@@ -81,29 +87,32 @@ export async function POST(request: NextRequest) {
   }
 
   const requestId = randomUUID();
-  const reference = `BC-${requestId.slice(0, 8).toUpperCase()}`;
 
   try {
-    const database = await getDatabase();
-    await database.collection("contact_enquiries").insertOne({
+    const captured = await captureLead({
       requestId,
-      reference,
+      kind: "form",
+      source: "website-contact",
       name: enquiry.name,
       email: enquiry.email,
       company: enquiry.company || null,
       budget: enquiry.budget || null,
       message: enquiry.message,
+      timeline: enquiry.timeline || null,
+      country: enquiry.country || null,
       role: enquiry.role || null,
-      source: "website-contact",
-      status: "new",
-      emailStatus: "pending",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      consent: {
+        contact: true,
+        marketing: enquiry.followUp === true,
+        text: enquiry.followUp ? MARKETING_CONSENT_TEXT : CONTACT_CONSENT_TEXT,
+      },
+      attribution: enquiry.attribution,
     });
 
+    const collection = await contactEnquiries();
     try {
-      await sendContactEmails(enquiry, reference);
-      await database.collection("contact_enquiries").updateOne(
+      await sendContactEmails(enquiry, captured.reference);
+      await collection.updateOne(
         { requestId },
         {
           $set: {
@@ -114,7 +123,7 @@ export async function POST(request: NextRequest) {
         },
       );
     } catch {
-      await database.collection("contact_enquiries").updateOne(
+      await collection.updateOne(
         { requestId },
         {
           $set: {
@@ -125,7 +134,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return json({ ok: true, reference }, 201);
+    // Only a genuinely new lead gets a new sequence. A retried request must
+    // not produce a second enrolment.
+    if (captured.created && enquiry.followUp) {
+      try {
+        const { enrollLead } = await import("@/lib/server/email/sequences");
+        await enrollLead({
+          leadKind: "enquiry",
+          leadId: captured.id,
+          email: enquiry.email,
+          name: enquiry.name,
+          consentAt: new Date(),
+        });
+      } catch {
+        // The enquiry is safely stored; a sequence failure is recoverable from
+        // the admin panel and must not turn a successful submission into a 503.
+      }
+    }
+
+    return json({ ok: true, reference: captured.reference }, 201);
   } catch {
     return json(
       {

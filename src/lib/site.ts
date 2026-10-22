@@ -20,6 +20,14 @@ export const siteConfig = {
   founded: 2021,
   founder: "Ismail",
 
+  /**
+   * Countries the studio actively sells into, in the order used by the site's
+   * copy and structured data. Kept here so Organization, Service, and
+   * ContactPoint JSON-LD cannot drift from each other.
+   */
+  markets: ["United States", "United Kingdom", "Australia", "India"],
+  marketCodes: ["US", "GB", "AU", "IN"],
+
   contact: {
     email: "bitecodes.global@gmail.com",
     salesEmail: "bitecodes.global@gmail.com",
@@ -36,11 +44,15 @@ export const siteConfig = {
     },
   },
 
+  // Only profiles that have been verified to exist are published. LinkedIn, X
+  // and Instagram were unverified placeholder handles that returned 404, so
+  // they are null until a real profile is created: set the URL here and every
+  // consumer (footer icons, contact page, Organization `sameAs`) picks it up.
   social: {
-    github: "https://github.com/bitecodes",
-    linkedin: "https://www.linkedin.com/company/bitecodes",
-    x: "https://x.com/bitecodes",
-    instagram: "https://instagram.com/bitecodes",
+    github: "https://github.com/BitecodesHub",
+    linkedin: null as string | null,
+    x: null as string | null,
+    instagram: null as string | null,
   },
 
   // Default Open Graph image (generated at /opengraph-image).

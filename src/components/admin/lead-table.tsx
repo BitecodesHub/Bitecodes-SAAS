@@ -20,17 +20,17 @@ import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import {
   LEAD_KIND_LABELS,
-  LEAD_STATUSES,
-  LEAD_STATUS_LABELS,
+  LEAD_STAGES,
+  LEAD_STAGE_LABELS,
   type LeadKind,
   type LeadQuery,
+  type LeadStage,
   type LeadSummary,
 } from "@/lib/leads/display";
 import {
   exportLeadsAction,
-  setLeadStatusAction,
+  setLeadStageAction,
 } from "@/lib/server/leads/actions";
-import type { LeadStatus } from "@/lib/server/db/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -50,16 +50,16 @@ interface LeadTableProps {
   canEmail: boolean;
 }
 
-const STATUS_TONE: Record<
-  LeadStatus,
+const STAGE_TONE: Record<
+  LeadStage,
   "default" | "secondary" | "outline" | "muted"
 > = {
   new: "default",
+  contacted: "outline",
   qualified: "default",
   proposal: "secondary",
   won: "secondary",
   lost: "muted",
-  spam: "muted",
 };
 
 export function LeadTable({
@@ -105,15 +105,30 @@ export function LeadTable({
     return [...kinds];
   }, [rows, selected]);
 
-  const runBulkStatus = useCallback(
-    (status: string) => {
-      if (!status || selected.size === 0) return;
+  const selectedRows = useMemo(
+    () => rows.filter((row) => selected.has(row.id)),
+    [rows, selected],
+  );
+  const selectedReadOnly = selectedRows.some((row) => row.readOnly);
+
+  const runBulkStage = useCallback(
+    (stage: string) => {
+      if (!stage || selected.size === 0) return;
 
       if (selectedKinds.length > 1) {
         toast({
           title: "Select one source at a time",
           description:
-            "Contact form, AI consultant, and website audit leads are stored separately, so a mixed selection cannot be updated in one go.",
+            "Enquiries, AI consultant briefs, and website audits are stored separately, so a mixed selection cannot be updated in one go.",
+          variant: "warning",
+        });
+        return;
+      }
+      if (selectedReadOnly) {
+        toast({
+          title: "Those records are read-only",
+          description:
+            "Form submissions and bookings are managed by the product that owns them.",
           variant: "warning",
         });
         return;
@@ -121,12 +136,10 @@ export function LeadTable({
 
       const kind = selectedKinds[0];
       if (!kind) return;
-      const ids = rows
-        .filter((row) => selected.has(row.id) && row.kind === kind)
-        .map((row) => row.id);
+      const ids = selectedRows.map((row) => row.id);
 
       startTransition(async () => {
-        const result = await setLeadStatusAction(kind, ids, status);
+        const result = await setLeadStageAction(kind, ids, stage);
         if (!result.ok) {
           toast({
             title: "Could not update",
@@ -137,14 +150,14 @@ export function LeadTable({
         }
         toast({
           title: `${result.data.changed} lead${result.data.changed === 1 ? "" : "s"} moved`,
-          description: `Now marked "${LEAD_STATUS_LABELS[status as LeadStatus]}".`,
+          description: `Now marked "${LEAD_STAGE_LABELS[stage as LeadStage]}".`,
           variant: "success",
         });
         setSelected(new Set());
         router.refresh();
       });
     },
-    [rows, selected, selectedKinds, router, toast],
+    [selectedRows, selectedReadOnly, selected, selectedKinds, router, toast],
   );
 
   const runExport = useCallback(() => {
@@ -203,14 +216,14 @@ export function LeadTable({
               defaultValue=""
               disabled={pending || selected.size === 0}
               onChange={(event) => {
-                runBulkStatus(event.target.value);
+                runBulkStage(event.target.value);
                 event.currentTarget.value = "";
               }}
             >
               <option value="">Move to stage…</option>
-              {LEAD_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {LEAD_STATUS_LABELS[status]}
+              {LEAD_STAGES.map((stage) => (
+                <option key={stage} value={stage}>
+                  {LEAD_STAGE_LABELS[stage]}
                 </option>
               ))}
             </Select>
@@ -249,14 +262,17 @@ export function LeadTable({
               <TableHead>What they want</TableHead>
               <TableHead className="w-32">Source</TableHead>
               <TableHead className="w-28">Stage</TableHead>
+              <TableHead className="w-24">Score</TableHead>
+              <TableHead className="w-40">Next action</TableHead>
               <TableHead className="w-32">Received</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
-              <TableEmpty colSpan={6}>
+              <TableEmpty colSpan={8}>
                 No leads match these filters yet. Enquiries, AI consultant
-                briefs, and website audit runs all appear here.
+                briefs, website audit runs, form submissions, and bookings all
+                appear here.
               </TableEmpty>
             ) : (
               rows.map((row) => (
@@ -297,14 +313,14 @@ export function LeadTable({
                     <p className="text-muted-foreground line-clamp-2 max-w-sm text-sm">
                       {row.summary || "—"}
                     </p>
-                    {(row.budget || typeof row.score === "number") && (
+                    {(row.budget || typeof row.auditScore === "number") && (
                       <p className="text-muted-foreground mt-0.5 text-xs">
                         {row.budget}
-                        {row.budget && typeof row.score === "number"
+                        {row.budget && typeof row.auditScore === "number"
                           ? " · "
                           : ""}
-                        {typeof row.score === "number"
-                          ? `audit score ${row.score}`
+                        {typeof row.auditScore === "number"
+                          ? `audit score ${row.auditScore}`
                           : ""}
                       </p>
                     )}
@@ -317,9 +333,48 @@ export function LeadTable({
                   </TableCell>
 
                   <TableCell>
-                    <Badge variant={STATUS_TONE[row.status]}>
-                      {LEAD_STATUS_LABELS[row.status]}
+                    <Badge variant={STAGE_TONE[row.stage]}>
+                      {LEAD_STAGE_LABELS[row.stage]}
                     </Badge>
+                    {row.readOnly && (
+                      <p className="text-muted-foreground mt-1 text-[11px]">
+                        read-only
+                      </p>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {typeof row.score === "number" ? (
+                      <span className="inline-flex items-baseline gap-1.5">
+                        <span className="text-sm font-semibold tabular-nums">
+                          {row.score}
+                        </span>
+                        <span className="text-muted-foreground text-xs">
+                          {row.grade}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">
+                        Unscored
+                      </span>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+                      {row.nextAction ?? "—"}
+                    </p>
+                    {row.nextActionAt && (
+                      <time
+                        dateTime={row.nextActionAt.toISOString()}
+                        className="text-muted-foreground mt-0.5 block text-[11px]"
+                      >
+                        {row.nextActionAt.toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </time>
+                    )}
                   </TableCell>
 
                   <TableCell>

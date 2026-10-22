@@ -4,6 +4,10 @@ import "./globals.css";
 import { siteConfig } from "@/lib/site";
 import { FEED_ALTERNATE_TYPES } from "@/lib/seo";
 import { ThemeProvider } from "@/components/theme-provider";
+import {
+  getBingSiteVerification,
+  getGoogleSiteVerification,
+} from "@/lib/server/env";
 
 /**
  * The root layout.
@@ -35,8 +39,24 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// Search-engine ownership tokens are deploy-time secrets, not content, so they
+// are read from the environment. An unset token is omitted entirely rather
+// than emitted as an empty meta tag, which fails verification.
+const googleVerification = getGoogleSiteVerification();
+const bingVerification = getBingSiteVerification();
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
+  ...(googleVerification || bingVerification
+    ? {
+        verification: {
+          ...(googleVerification ? { google: googleVerification } : {}),
+          ...(bingVerification
+            ? { other: { "msvalidate.01": bingVerification } }
+            : {}),
+        },
+      }
+    : {}),
   title: {
     default: `${siteConfig.name} — ${siteConfig.tagline}`,
     template: `%s — ${siteConfig.name}`,

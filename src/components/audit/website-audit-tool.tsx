@@ -11,9 +11,13 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+import { AuditEmailForm } from "@/components/audit/audit-email-form";
+import { AuditSummary } from "@/components/audit/audit-summary";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { buildFallbackAuditSummary } from "@/lib/audit-summary";
+import { toAuditEmailFindings } from "@/lib/audit-email";
 import {
   categoryLabel,
   type AuditCategory,
@@ -90,6 +94,7 @@ export function WebsiteAuditTool() {
             size="lg"
             disabled={pending}
             className="shrink-0"
+            data-track="website-audit-submit"
           >
             {pending ? (
               <>
@@ -134,6 +139,18 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
     .map((finding) => finding.title)
     .join(", ")}.`;
   const contactHref = `/contact?estimate=${encodeURIComponent(`${summary} I would like Bitecodes to review and fix these issues.`)}`;
+  const summaryInput = {
+    url: result.finalUrl,
+    score: result.overallScore,
+    context: "audit" as const,
+    findings: result.findings.map((finding) => ({
+      status: finding.status,
+      title: finding.title,
+      detail: finding.detail,
+      recommendation: finding.recommendation,
+    })),
+  };
+  const fallbackSummary = buildFallbackAuditSummary(summaryInput);
 
   return (
     <section className="mt-10" aria-labelledby="audit-results-heading">
@@ -155,7 +172,7 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
             </p>
           </div>
           <Button asChild>
-            <Link href={contactHref}>
+            <Link href={contactHref} data-track="website-audit-quote-click">
               Get a remediation quote
               <ArrowRight className="size-4" />
             </Link>
@@ -191,6 +208,32 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
             </div>
           </article>
         ))}
+      </div>
+
+      <AuditSummary input={summaryInput} />
+
+      <AuditEmailForm
+        source="website-audit"
+        url={result.finalUrl}
+        score={result.overallScore}
+        summary={fallbackSummary}
+        findings={toAuditEmailFindings(result.findings)}
+      />
+
+      <div className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
+        <h3 className="text-lg font-semibold">
+          Book a free 30-minute review call
+        </h3>
+        <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          Walk through the findings with a developer, decide what matters first,
+          and leave with a clear next step. No obligation and no sales script.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/book-a-call" data-track="website-audit-book-call">
+            Book a free review call
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
     </section>
   );

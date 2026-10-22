@@ -21,6 +21,15 @@ export const FX_RATES: Record<Exclude<CurrencyCode, "USD">, number> = {
   GBP: 0.79, // 1 USD ≈ 0.79 GBP (2026)
 };
 
+/**
+ * The date the static rates above were last reviewed.
+ *
+ * Shown on /pricing so a visitor can judge how current the converted figures
+ * are. Update this together with `FX_RATES`; leaving it behind would present an
+ * old rate as a fresh one.
+ */
+export const FX_RATES_AS_OF = "2026-10-01";
+
 export interface CurrencyMeta {
   code: CurrencyCode;
   label: string;
@@ -164,7 +173,12 @@ export const SERVICE_PRICING: ServicePricing[] = [
     slug: "technical-consulting",
     model: "Hourly",
     unit: "hour",
-    startingFromUSD: 18,
+    /**
+     * Senior engineering time. The old $18/hour figure undercut the studio's
+     * own positioning and was below the effective rate implied by every
+     * project floor; $60/hour is the published advisory rate.
+     */
+    startingFromUSD: 60,
   },
 ];
 
@@ -198,7 +212,17 @@ export function convertPrice(usd: number, currency: CurrencyCode): number {
  * (e.g. ₹4,15,000), en-AU and en-US use thousands grouping.
  */
 export function formatPrice(usd: number, currency: CurrencyCode): string {
-  const amount = convertPrice(usd, currency);
+  return formatAmount(convertPrice(usd, currency), currency);
+}
+
+/**
+ * Formats an amount that is already denominated in `currency`.
+ *
+ * `formatPrice` takes a USD source amount and converts it; proposal line items
+ * are stored after conversion, so passing them through `formatPrice` would
+ * convert a second time. This is the formatter for stored amounts.
+ */
+export function formatAmount(amount: number, currency: CurrencyCode): string {
   const meta = CURRENCIES.find((c) => c.code === currency)!;
   const formatted = new Intl.NumberFormat(meta.locale, {
     style: "currency",

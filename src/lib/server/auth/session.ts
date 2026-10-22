@@ -46,7 +46,15 @@ export interface AdminSessionInfo {
 
 export interface IssuedSession {
   token: string;
+  /** When the server-side idle timeout currently ends. Slides with activity. */
   expiresAt: Date;
+  /**
+   * When the browser should drop the cookie. Deliberately the absolute cap, not
+   * the idle timeout: the database is authoritative for idleness, and render
+   * code cannot rewrite a cookie. Tying the cookie to the initial 7-day window
+   * logged active operators out while their session was still valid.
+   */
+  cookieExpiresAt: Date;
 }
 
 /**
@@ -97,6 +105,7 @@ export async function issueAdminSession({
   const token = randomToken(32);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_MS);
+  const cookieExpiresAt = new Date(now.getTime() + SESSION_ABSOLUTE_MAX_MS);
 
   const collection = await adminSessions();
   await collection.insertOne({
@@ -113,7 +122,7 @@ export async function issueAdminSession({
     revokedAt: null,
   });
 
-  return { token, expiresAt };
+  return { token, expiresAt, cookieExpiresAt };
 }
 
 /** Issues a session and sets the cookie. For Server Actions. */
@@ -124,9 +133,9 @@ export async function createAdminSession(input: {
   ip: string | null;
   userAgent: string | null;
 }): Promise<void> {
-  const { token, expiresAt } = await issueAdminSession(input);
+  const { token, cookieExpiresAt } = await issueAdminSession(input);
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions(expiresAt));
+  cookieStore.set(SESSION_COOKIE, token, sessionCookieOptions(cookieExpiresAt));
 }
 
 /**

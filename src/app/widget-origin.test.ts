@@ -96,6 +96,45 @@ describe.each(["widget.js", "form-widget.js"] as const)("%s", (route) => {
     // Values must be escaped — a token or id is attacker-influenced input.
     expect(js).toContain("encodeURIComponent");
   });
+
+  it("emits the appearance compatibility paths", async () => {
+    if (route !== "widget.js") return;
+    const js = await widgetSource(route);
+    expect(js).toContain("suggestedQuestions");
+    expect(js).toContain("starterPrompts");
+    expect(js).toContain("launcherLabel");
+    expect(js).toContain("displayMode");
+    expect(js).toContain("fullscreen");
+    expect(js).toContain("embedded");
+    expect(js).toContain("secondaryColor");
+    expect(js).toContain("textContent");
+  });
+
+  it("supports the documented embed overrides and accessible modes", async () => {
+    if (route !== "widget.js") return;
+    const js = await widgetSource(route);
+    // data-mode/data-container/data-label are the public embed API.
+    expect(js).toContain('"data-mode"');
+    expect(js).toContain('"data-container"');
+    expect(js).toContain('"data-label"');
+    // Keyboard operation and screen-reader semantics.
+    expect(js).toContain("aria-expanded");
+    expect(js).toContain("aria-modal");
+    expect(js).toContain('"Escape"');
+    expect(js).toContain('"dialog"');
+    // Additive versioning for cached embeds.
+    expect(js).toContain("BitecodesChat");
+    expect(js).toContain("WIDGET_VERSION");
+  });
+
+  it("identifies the widget build in headers", async () => {
+    if (route !== "widget.js") return;
+    const mod = await import("@/app/widget.js/route");
+    const response = mod.GET();
+    expect(response.headers.get("x-bitecodes-widget-version")).toMatch(
+      /^\d+\.\d+\.\d+$/,
+    );
+  });
 });
 
 describe("getSiteUrl", () => {

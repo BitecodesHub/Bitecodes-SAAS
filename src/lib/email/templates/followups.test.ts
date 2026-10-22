@@ -140,10 +140,12 @@ describe("follow-up copy rules", () => {
 });
 
 describe("default sequence shape", () => {
-  const sequence = SEQUENCE_SEEDS[0]!;
+  const sequence = SEQUENCE_SEEDS.find(
+    (seed) => seed.key === "outreach.default",
+  )!;
 
   it("is three steps: first contact, a nudge, then a final note", () => {
-    expect(SEQUENCE_SEEDS).toHaveLength(1);
+    expect(SEQUENCE_SEEDS).toHaveLength(2);
     expect(sequence.steps).toHaveLength(3);
     // Step one is resolved per recipient from their classification tag.
     expect(sequence.steps[0]!.templateKey).toBeNull();

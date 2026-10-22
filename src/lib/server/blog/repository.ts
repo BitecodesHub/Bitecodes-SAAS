@@ -107,6 +107,38 @@ export async function slugExists(slug: string): Promise<boolean> {
   );
 }
 
+/**
+ * Seed topics that already have an AI-authored article, published or waiting
+ * for review, so the rotation can skip them instead of publishing a second
+ * near-identical post on the same subject.
+ */
+export async function getUsedAiTopics(): Promise<Set<string>> {
+  const collection = await blogPostDocs();
+  const rows = await collection
+    .find(
+      { aiAssisted: true, topic: { $type: "string" } },
+      { projection: { topic: 1 } },
+    )
+    .toArray();
+  return new Set(
+    rows.map((row) => row.topic).filter((topic): topic is string => !!topic),
+  );
+}
+
+/** The most recent published date, for the content-freshness health check. */
+export async function latestPublishedAt(): Promise<Date | null> {
+  const collection = await blogPostDocs();
+  const row = await collection
+    .find(
+      { status: "published", publishedAt: { $ne: null } },
+      { projection: { publishedAt: 1 } },
+    )
+    .sort({ publishedAt: -1 })
+    .limit(1)
+    .next();
+  return row?.publishedAt ?? null;
+}
+
 // --- Admin-side reads and writes -------------------------------------------
 
 export interface BlogPostSummary {
@@ -166,6 +198,8 @@ export interface CreatePostInput {
   authorId: string | null;
   aiAssisted: boolean;
   aiModel: string | null;
+  /** Seed topic for an AI article; see `getPublishedAiTopics`. */
+  topic?: string | null;
   scheduledFor: Date | null;
   /** ISO date (YYYY-MM-DD). Defaults to today when omitted. */
   date?: string;
@@ -198,6 +232,7 @@ export async function createPost(
     authorId: input.authorId,
     aiAssisted: input.aiAssisted,
     aiModel: input.aiModel,
+    topic: input.topic ?? null,
     revision: 1,
     createdAt: now,
     updatedAt: now,

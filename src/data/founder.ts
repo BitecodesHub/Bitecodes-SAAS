@@ -1,47 +1,41 @@
+import { services } from "@/data/services";
+import { siteConfig } from "@/lib/site";
+
 /*
- * Founder profile.
- * TODO(client): This profile was synthesized from the founder's stated areas of
- * expertise. Review the wording and add any specific credentials, years, or
- * employers you wish to publish.
+ * OWNER MUST REVIEW: every claim below is limited to facts held in this
+ * repository. Confirm the role wording, location, focus areas, and mission
+ * statement before publication, and add nothing that cannot be evidenced.
  */
+
+const MISSION =
+  "I started Bitecodes to build software that is fast, reliable, and easy to maintain. My aim is simple: do careful work, explain it plainly, and remain accountable after launch.";
+
+const focusSlugs = [
+  "web-applications",
+  "ai-integration",
+  "mcp-servers",
+  "cloud-solutions",
+  "technical-consulting",
+];
+
 export const founder = {
-  name: "Ismail",
-  title: "Founder & Principal Engineer",
-  location: "India · Working with clients worldwide",
-  short:
-    "Full-stack engineer and software architect who founded Bitecodes to build dependable, high-performance software for teams that care about the details.",
-  bio: [
-    "Ismail is a full-stack engineer and software architect with a deep focus on building products that are fast, maintainable, and genuinely useful. He founded Bitecodes to bring senior-level engineering to startups and businesses that want a partner, not just a vendor.",
-    "His work spans the full stack — crafting refined frontends with Next.js, React, and TypeScript, and engineering resilient backends and APIs with Spring Boot, Node.js, and well-modeled data. On the infrastructure side he designs cloud-native systems on AWS and Azure, with containerized deployments and pragmatic DevOps.",
-    "More recently, Ismail has concentrated on applied AI — embedding agentic AI and large language models into real products, and building Model Context Protocol (MCP) servers that connect business systems to AI assistants safely and auditably. He cares most about software that holds up under real use and ages gracefully.",
-  ],
-  expertise: [
-    "Full-Stack Development",
-    "Next.js & React",
-    "Spring Boot & Java",
-    "Software Architecture",
-    "Cloud Computing (AWS & Azure)",
-    "AI Automation",
-    "Agentic AI",
-    "MCP Servers",
-  ],
-  principles: [
-    {
-      title: "Engineering with intent",
-      description:
-        "Every decision — from architecture to a single component — is made deliberately, with the long term in mind.",
-    },
-    {
-      title: "Performance is a feature",
-      description:
-        "Speed and reliability are not afterthoughts. They are designed in from the first commit.",
-    },
-    {
-      title: "Clarity over cleverness",
-      description:
-        "Code and communication should both be clear. Maintainable software beats clever software.",
-    },
-  ],
-  quote:
-    "Great software is quiet. It does exactly what it should, stays fast under pressure, and never makes you think about it.",
+  name: siteConfig.founder,
+  founded: siteConfig.founded,
+  title: "Founder",
+  location: siteConfig.contact.address.full,
+  mission: MISSION,
+  /** Used by structured data and the AI-crawler summaries. */
+  short: MISSION,
+  /** Service titles the founder works on, kept in step with src/data/services.ts. */
+  expertise: services
+    .filter((service) => focusSlugs.includes(service.slug))
+    .map((service) => service.title),
+  /*
+   * Compatibility fields for src/app/llms-full.txt, which is owned by another
+   * package. They contain no additional biography: the same mission statement,
+   * no principles, and the same statement as the quote.
+   */
+  bio: [MISSION],
+  principles: [] as { title: string; description: string }[],
+  quote: MISSION,
 } as const;

@@ -45,7 +45,18 @@ const INCLUDED: { product: string; body: string }[] = [
   },
 ];
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const rawReferral = Array.isArray(params.ref) ? params.ref[0] : params.ref;
+  const defaultReferralCode =
+    typeof rawReferral === "string"
+      ? rawReferral.trim().toUpperCase().slice(0, 32)
+      : undefined;
+
   return (
     <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
       <h1 className="text-xl font-semibold tracking-tight">
@@ -72,7 +83,7 @@ export default function SignupPage() {
       </ul>
 
       <div className="mt-6">
-        <SignupForm />
+        <SignupForm defaultReferralCode={defaultReferralCode} />
       </div>
 
       {/* Below the form, for the same reason as on the sign-in page. */}

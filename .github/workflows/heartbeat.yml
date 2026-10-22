@@ -9,17 +9,21 @@ name: Heartbeat
 #    pool alive.
 #
 # 2. RUN QUEUED JOBS. /api/cron/run is the job runner, and it is driven by an
-#    external scheduler by design. It currently returns 503 in production because
-#    CRON_SECRET is unset, so no automation has been running at all.
+#    external scheduler by design. Every recurring automation — discovery,
+#    enrichment, drafts, reports, pings — is enqueued from this tick.
 #
 # Why GitHub Actions rather than Vercel Cron: Vercel's Hobby plan limits cron to
-# once per day, which is useless for warming. This runs on any plan, costs
-# nothing, and the job runner was written for exactly this ("Vercel Cron, GitHub
-# Actions, or any cron that can make an authenticated request").
+# once per day, which is useless for warming and leaves daily automations hours
+# late. This runs on any plan and costs nothing.
 #
 # GitHub does not guarantee punctual scheduling and drops runs when the runner
-# fleet is busy, which is fine for both jobs: warming is best-effort, and the job
-# runner is idempotent per time bucket.
+# fleet is busy, which is fine: warming is best-effort, and the job runner is
+# idempotent per time bucket. The server records every tick, and /api/health
+# reports a stalled scheduler instead of silently showing green.
+#
+# A missing CRON_SECRET is a hard failure on purpose. A warning-only branch made
+# "automation is off" look like a passing workflow, which is how a deployment
+# can go weeks without processing a single job.
 
 on:
   schedule:
@@ -38,46 +42,72 @@ permissions:
 jobs:
   heartbeat:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # The job runner's own budget is 270s and a follow-up pass shares the
+    # function's 300s maxDuration; 10 minutes leaves room for curl, retries and
+    # a slow cold start without the workflow killing a legitimate run.
+    timeout-minutes: 10
     steps:
       - name: Warm the deployment and its database connection
+        env:
+          SITE_URL: ${{ vars.SITE_URL || 'https://www.bitecodes.com' }}
         run: |
           code=$(curl -sS -o /tmp/warm.json -w '%{http_code}' \
-            --max-time 30 --retry 2 --retry-delay 5 \
-            https://www.bitecodes.com/api/warm) || true
+            --max-time 45 --retry 2 --retry-delay 5 \
+            "$SITE_URL/api/warm") || true
           echo "status=$code"
-          cat /tmp/warm.json || true
-          echo
-          # Warming is best effort. A blip here must not turn the repository red.
+          # Never print the body: it may name internal capability states.
+          # Warming is best effort, and a blip here must not turn the repository
+          # red. The authenticated job-runner step below is the real check.
           if [ "$code" != "200" ]; then
             echo "::warning::warm-up returned $code"
           fi
 
       - name: Run due jobs
-        # Skipped automatically until CRON_SECRET exists, so the workflow is not
-        # permanently red while that is outstanding. The secret is read through
-        # `env` rather than referenced directly in `if:` — the `secrets` context
-        # is not dependably available in step conditions.
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        if: ${{ env.CRON_SECRET != '' }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://www.bitecodes.com' }}
         run: |
+          set -euo pipefail
+
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET is not set. Automation cannot run without it."
+            echo "Set the repository secret CRON_SECRET to the same value as the deployment's CRON_SECRET."
+            exit 1
+          fi
+
           code=$(curl -sS -o /tmp/cron.json -w '%{http_code}' \
-            --max-time 120 \
+            --max-time 290 \
             -X POST \
             -H "Authorization: Bearer $CRON_SECRET" \
-            https://www.bitecodes.com/api/cron/run) || true
+            "$SITE_URL/api/cron/run") || true
           echo "status=$code"
-          # Never print the body unfiltered: it summarises job activity and this
-          # log is readable by anyone who can read the repository.
-          python3 -c "
-          import json,sys
+
+          # The body is summarised, never printed raw: it names job activity and
+          # this log is readable by anyone who can read the repository.
+          python3 - <<'PY'
+          import json
+          import sys
+
           try:
-              d=json.load(open('/tmp/cron.json'))
-              print('ok:', d.get('ok'), '| ran:', d.get('ran'), '| failed:', d.get('failed'))
+              with open("/tmp/cron.json", encoding="utf-8") as fh:
+                  data = json.load(fh)
           except Exception:
-              print('(no parseable response)')
-          " || true
+              print("::error::job runner returned an unparseable response")
+              sys.exit(1)
+
+          queue = data.get("queue") or {}
+          print(
+              "ok:", data.get("ok"),
+              "| ran:", data.get("ran", data.get("claimed")),
+              "| failed:", data.get("failed"),
+              "| deferred:", data.get("deferred"),
+              "| queued:", queue.get("queued"),
+          )
+          if data.get("ok") is not True:
+              print("::error::job runner reported ok=false")
+              sys.exit(1)
+          PY
+
           if [ "$code" != "200" ]; then
             echo "::error::job runner returned $code"
             exit 1

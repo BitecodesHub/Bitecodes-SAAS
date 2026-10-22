@@ -68,15 +68,15 @@ jobs:
         run: pnpm format:check
 
       - name: Test
-        run: pnpm test
-
-      - name: Assert database suites actually ran
-        # A silent regression in the harness would turn every database test
-        # into a skip and CI would still be green. Fail loudly instead.
+        # Run once. The assertion greps the positive marker the global setup
+        # prints when a test database is configured, so a silent harness
+        # regression (every database suite becoming a skip) fails the build
+        # instead of leaving it green. Grepping for the *absence* warning was
+        # vacuous because CI always sets TEST_MONGODB_URI.
         run: |
           pnpm test 2>&1 | tee /tmp/test-output.txt
-          if grep -q "TEST_MONGODB_URI is not set" /tmp/test-output.txt; then
-            echo "::error::Database integration suites were skipped in CI."
+          if ! grep -q "database integration suites will run" /tmp/test-output.txt; then
+            echo "::error::Database integration suites did not run in CI."
             exit 1
           fi
 

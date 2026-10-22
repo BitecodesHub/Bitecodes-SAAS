@@ -1,7 +1,7 @@
 import { services } from "@/data/services";
-import { blogPosts } from "@/data/blog";
 import { projects } from "@/data/projects";
-import { loc, xmlResponse, nowIso } from "@/lib/sitemap-xml";
+import { getPublishedPosts } from "@/lib/server/blog/repository";
+import { loc, xmlResponse } from "@/lib/sitemap-xml";
 
 // Image sitemap. Only references OG image routes that actually resolve in
 // this repo: /opengraph-image (home), /services/[slug]/opengraph-image,
@@ -9,12 +9,23 @@ import { loc, xmlResponse, nowIso } from "@/lib/sitemap-xml";
 // NO hub OG images for /services, /portfolio, /industries, /technologies,
 // or /blog — do not invent them. The logo (/icon.svg) and apple-touch icon
 // are attached to the home page entry.
-export const dynamic = "force-static";
+//
+// Dynamic because published posts now come from the merged database + static
+// set; a build-time copy silently omitted every AI-published article.
+export const dynamic = "force-dynamic";
 
-type ImgEntry = { page: string; images: string[] };
+type ImgEntry = { page: string; lastModified?: string; images: string[] };
 
-export function GET(): Response {
-  const lastmod = nowIso();
+function lastModified(post: {
+  date: string;
+  updatedAt?: string;
+}): string | undefined {
+  const parsed = new Date(post.updatedAt ?? post.date);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
+export async function GET(): Promise<Response> {
+  const blogPosts = await getPublishedPosts();
   const entries: ImgEntry[] = [
     {
       page: "/",
@@ -30,6 +41,7 @@ export function GET(): Response {
     })),
     ...blogPosts.map((p) => ({
       page: `/blog/${p.slug}`,
+      lastModified: lastModified(p),
       images: [loc(`/blog/${p.slug}/opengraph-image`)],
     })),
     ...projects.map((p) => ({
@@ -44,7 +56,9 @@ export function GET(): Response {
 ${entries
   .map(
     (e) =>
-      `  <url>\n    <loc>${loc(e.page)}</loc>\n    <lastmod>${lastmod}</lastmod>\n${e.images
+      `  <url>\n    <loc>${loc(e.page)}</loc>${
+        e.lastModified ? `\n    <lastmod>${e.lastModified}</lastmod>` : ""
+      }\n${e.images
         .map(
           (i) =>
             `    <image:image>\n      <image:loc>${i}</image:loc>\n    </image:image>`,

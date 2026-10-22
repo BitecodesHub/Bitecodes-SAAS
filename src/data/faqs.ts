@@ -29,7 +29,7 @@ export const faqs: Faq[] = [
   {
     question: "Do you provide support after launch?",
     answer:
-      "Absolutely. We offer ongoing maintenance and SLA-backed support — security patching, dependency updates, monitoring, and continuous improvements — so your software stays healthy long after release.",
+      "Yes. We offer ongoing maintenance covering security patching, dependency updates, monitoring, and continuous improvements, with support response targets published on our guarantees page. The support agreement states the included hours, named contacts, and any exclusions before it starts.",
   },
   {
     question: "Which technologies do you specialize in?",

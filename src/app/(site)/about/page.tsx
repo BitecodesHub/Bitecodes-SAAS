@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
-import { Compass, Eye, Heart, Target } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Compass,
+  Eye,
+  Heart,
+  ShieldCheck,
+  Target,
+  Workflow,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section, SectionHeader } from "@/components/section";
 import { Reveal, StaggerGroup, StaggerItem } from "@/components/motion/reveal";
@@ -13,7 +22,7 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = createMetadata({
   title: "About",
   description:
-    "The story, mission, and values behind Bitecodes — a remote-first software studio building dependable products for clients worldwide.",
+    "The story, mission, and values behind Bitecodes, a remote-first software studio building dependable products for clients worldwide.",
   path: "/about",
 });
 
@@ -26,9 +35,9 @@ const values = [
   },
   {
     icon: Heart,
-    title: "Craft we're proud of",
+    title: "Craft we are proud of",
     description:
-      "Every detail matters — because the details are what your users actually feel.",
+      "Every detail matters, because the details are what your users actually feel.",
   },
   {
     icon: Compass,
@@ -44,36 +53,22 @@ const values = [
   },
 ];
 
-const journey = [
+const howWeWork = [
   {
-    year: "2021",
-    title: "Bitecodes begins",
+    icon: Workflow,
+    title: "Our process",
     description:
-      "Founded to bring senior-level engineering to teams that wanted a partner, not a vendor.",
+      "See the stages a project moves through, what happens at each one, and what you receive.",
+    href: "/process",
+    cta: "Read the process",
   },
   {
-    year: "2022",
-    title: "First enterprise platforms",
+    icon: ShieldCheck,
+    title: "Our guarantees",
     description:
-      "Delivered operations and management systems built on Java, Spring Boot, and React.",
-  },
-  {
-    year: "2023",
-    title: "Going international",
-    description:
-      "Began partnering with clients across borders, including aged-care operators in Australia.",
-  },
-  {
-    year: "2024",
-    title: "Product & platform work",
-    description:
-      "Shipped learning platforms, media portfolios, and recruitment products end to end.",
-  },
-  {
-    year: "2025",
-    title: "Applied AI & MCP",
-    description:
-      "Launched AI-driven products like PRISM and built MCP servers connecting systems to AI.",
+      "Read the commitments we are prepared to make, stated plainly with their limits.",
+    href: "/guarantees",
+    cta: "Read the guarantees",
   },
 ];
 
@@ -90,7 +85,7 @@ export default function AboutPage() {
       <PageHeader
         eyebrow="About us"
         title="A studio built on craft and accountability"
-        description={`${siteConfig.name} is a remote-first software studio. We design, build, and maintain dependable software for startups and enterprises — at home and around the world.`}
+        description={`${siteConfig.name} is a remote-first software studio. We design, build, and maintain dependable software for startups and enterprises at home and around the world.`}
         breadcrumbs={[
           { name: "Home", href: "/" },
           { name: "About", href: "/about" },
@@ -108,19 +103,18 @@ export default function AboutPage() {
               <p>
                 Bitecodes started with a simple frustration: too much software
                 is shipped slow, bloated, and impossible to maintain. We
-                believed small teams of senior engineers could do better — and
-                our clients agreed.
+                believed a small team of senior engineers could do better.
               </p>
               <p>
-                Today we work as an embedded partner to companies across
-                healthcare, education, recruitment, media, and technology,
-                delivering everything from marketing sites to enterprise
-                platforms and applied AI.
+                Today we work with organisations in healthcare, education,
+                recruitment, media, and technology. The work ranges from
+                marketing sites to care-operations automation, learning
+                platforms, and AI products.
               </p>
               <p>
-                We stay deliberately lean and senior-heavy. That means fewer
-                hand-offs, clearer communication, and software we are genuinely
-                proud to put our name on.
+                We publish how we work, what we charge, and the commitments we
+                are prepared to make. The portfolio also states which work is
+                client work, related-party work, or our own internal product.
               </p>
             </div>
           </Reveal>
@@ -133,7 +127,7 @@ export default function AboutPage() {
                 <h3 className="mt-4 font-semibold">Our mission</h3>
                 <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                   To build software that is fast, reliable, and a genuine
-                  pleasure to use — and to make the process feel effortless.
+                  pleasure to use, and to make the process feel effortless.
                 </p>
               </div>
               <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:mt-8">
@@ -178,30 +172,33 @@ export default function AboutPage() {
         </div>
       </Section>
 
-      {/* Journey */}
+      {/* Process and guarantees */}
       <Section>
         <div className="container-page">
-          <SectionHeader eyebrow="Journey" title="How we got here" />
-          <div className="mx-auto mt-12 max-w-3xl">
-            {journey.map((item, i) => (
-              <Reveal key={item.year} delay={i * 0.05}>
-                <div className="flex gap-6 pb-8 last:pb-0">
-                  <div className="flex flex-col items-center">
-                    <span className="border-border bg-card text-primary flex size-12 shrink-0 items-center justify-center rounded-full border text-sm font-semibold shadow-[var(--shadow-soft)]">
-                      {item.year}
-                    </span>
-                    {i < journey.length - 1 && (
-                      <span className="bg-border mt-2 w-px flex-1" />
-                    )}
-                  </div>
-                  <div className="pt-2.5 pb-2">
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-                      {item.description}
-                    </p>
-                  </div>
-                </div>
-              </Reveal>
+          <SectionHeader
+            eyebrow="How we work"
+            title="Read the commitments before you commit"
+            description="The process and the guarantees are public, so you can judge how we work before a conversation."
+          />
+          <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
+            {howWeWork.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group border-border bg-card focus-visible:ring-ring focus-visible:ring-offset-background hover:bg-accent/40 rounded-2xl border p-7 shadow-[var(--shadow-soft)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                  <item.icon className="size-5" />
+                </span>
+                <h3 className="mt-4 font-semibold">{item.title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  {item.description}
+                </p>
+                <span className="text-primary mt-5 inline-flex items-center gap-2 text-sm font-medium">
+                  {item.cta}
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </Link>
             ))}
           </div>
         </div>

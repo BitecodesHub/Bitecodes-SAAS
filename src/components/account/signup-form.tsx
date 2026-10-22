@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Loader2, MailCheck } from "lucide-react";
@@ -8,6 +8,7 @@ import {
   signupAction,
   type SignupState,
 } from "@/lib/server/auth/signup-actions";
+import { trackConversion } from "@/lib/analytics-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,11 +25,22 @@ import { Label } from "@/components/ui/label";
  * `signup.ts`. Wording it as "we have sent you a link" rather than "your account
  * is ready" keeps it true in both cases.
  */
-export function SignupForm() {
+export function SignupForm({
+  defaultReferralCode,
+}: {
+  defaultReferralCode?: string;
+}) {
   const [state, action] = useActionState<SignupState, FormData>(
     signupAction,
     undefined,
   );
+
+  // `/signup` is outside the marketing shell, so the page-view beacon is not
+  // mounted here. The confirmation request is still the signup funnel's key
+  // step; send it directly, with a token-free path.
+  useEffect(() => {
+    if (state?.sent) trackConversion("signup_verification_sent", "/signup");
+  }, [state?.sent]);
 
   if (state?.sent) {
     return (
@@ -66,7 +78,12 @@ export function SignupForm() {
   const values = state?.values;
 
   return (
-    <form action={action} className="space-y-5" noValidate>
+    <form
+      action={action}
+      className="space-y-5"
+      noValidate
+      onSubmit={() => trackConversion("signup_submit", "/signup")}
+    >
       {state?.error && (
         <div
           role="alert"
@@ -111,6 +128,21 @@ export function SignupForm() {
           name="company"
           autoComplete="organization"
           defaultValue={values?.company ?? ""}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="referralCode">
+          Referral code{" "}
+          <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+        <Input
+          id="referralCode"
+          name="referralCode"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="BC-XXXXXX"
+          defaultValue={values?.referralCode ?? defaultReferralCode ?? ""}
         />
       </div>
 

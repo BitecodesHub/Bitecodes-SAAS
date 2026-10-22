@@ -1,8 +1,10 @@
 import "server-only";
 
 import type { EmailBlock } from "@/lib/email/template";
+import { renderEmail } from "@/lib/email/template";
 import { isDeliverableEmail, normalizeEmail } from "@/lib/email/address";
 import { queueEmail } from "@/lib/server/email/send";
+import { getTransporter } from "@/lib/server/email/transport";
 import { consumeRateLimit } from "@/lib/server/rate-limit";
 import {
   getSettingsFresh,
@@ -342,9 +344,13 @@ export async function notifyLowBalance(input: {
 /**
  * Reports a background job that exhausted its retries.
  *
- * Throttled per job *type* rather than per job: when a queue breaks, it breaks
- * for every job of that type at once, and one email per failure would arrive by
- * the hundred while telling the operator exactly one thing.
+ * Sent **outside the job queue**, directly over SMTP. Every other notification
+ * is queued, which is right for product mail but wrong for this one: the alert
+ * exists to report that a background job is broken, and if the queue itself
+ * (or the `email.send` handler) is what broke, a queued alert would fail for
+ * exactly the same reason and the operator would hear nothing. The direct path
+ * is throttled per job type, because when a queue breaks it breaks for every
+ * job of that type at once.
  */
 export async function notifyFailedJob(input: {
   jobType: string;
@@ -360,25 +366,65 @@ export async function notifyFailedJob(input: {
   });
   if (!throttle.allowed) return { sent: [], skipped: "disabled" };
 
-  return notify({
-    channel: "failedJob",
-    subject: `Background job failed — ${input.jobType}`,
-    blocks: [
-      {
-        type: "p",
-        text: `A “${input.jobType}” job gave up after ${input.attempts} attempt${input.attempts === 1 ? "" : "s"}.`,
-      },
-      {
-        type: "ul",
-        items: [`Job: ${input.jobId}`, `Error: ${excerpt(input.error)}`],
-      },
-      {
-        type: "p",
-        text: "Further failures of this job type are suppressed for the next hour, so check the job queue rather than waiting for more email.",
-      },
-    ],
-    subjectId: input.jobId,
-  });
+  const blocks: EmailBlock[] = [
+    {
+      type: "p",
+      text: `A “${input.jobType}” job gave up after ${input.attempts} attempt${input.attempts === 1 ? "" : "s"}.`,
+    },
+    {
+      type: "ul",
+      items: [`Job: ${input.jobId}`, `Error: ${excerpt(input.error)}`],
+    },
+    {
+      type: "p",
+      text: "Further failures of this job type are suppressed for the next hour, so check the job queue rather than waiting for more email.",
+    },
+  ];
+  const subject = `Background job failed — ${input.jobType}`;
+
+  let recipients: string[] = [];
+  try {
+    const settings = await getSettingsFresh();
+    const configured = recipientsForChannel(settings, "failedJob", []);
+    recipients =
+      configured.length === 0 &&
+      settings.notifications.channels.failedJob.enabled
+        ? fallbackNotificationRecipients()
+        : configured;
+  } catch {
+    // Settings unreadable (the database itself may be what broke): the env
+    // fallback is still a better recipient list than none.
+    recipients = fallbackNotificationRecipients();
+  }
+
+  const deliverable = recipients
+    .map(normalizeEmail)
+    .filter(isDeliverableEmail)
+    .slice(0, MAX_RECIPIENTS);
+  if (deliverable.length === 0) return { sent: [], skipped: "no-recipients" };
+
+  try {
+    const env = getServerEnv();
+    const rendered = renderEmail({ subject, blocks, variables: {} });
+    await Promise.all(
+      deliverable.map((to) =>
+        getTransporter().sendMail({
+          from: env.SMTP_FROM,
+          to,
+          subject: rendered.subject,
+          text: rendered.text,
+          html: rendered.html,
+        }),
+      ),
+    );
+    return { sent: deliverable, skipped: null };
+  } catch (error) {
+    console.error(
+      "[notify] Dead-letter alert could not be sent directly:",
+      error instanceof Error ? `${error.name}: ${error.message}` : error,
+    );
+    return { sent: [], skipped: "failed" };
+  }
 }
 
 /**
@@ -463,6 +509,67 @@ export async function notifyBooking(input: {
     ],
     subjectId: input.bookingId,
     extraRecipients: input.extraRecipients,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Inbound lead alerts
+// ---------------------------------------------------------------------------
+
+export interface NewLeadAlertInput {
+  leadId: string;
+  reference: string;
+  /** Human-readable where it came from: "resources/ai-readiness-checklist". */
+  source: string;
+  /** "Checklist", "audit report", "consultant brief", "callback". */
+  kindLabel: string;
+  name?: string | null;
+  email?: string | null;
+  company?: string | null;
+  message?: string | null;
+  score?: number | null;
+  grade?: string | null;
+}
+
+/**
+ * Tells the owner a lead just arrived, while that person is still on the site.
+ *
+ * The daily digest guarantees nothing is forgotten; this is what makes a reply
+ * possible within minutes rather than the next morning. One message per lead,
+ * no throttling beyond that, because each one is a different person.
+ */
+export async function notifyNewLead(
+  input: NewLeadAlertInput,
+): Promise<NotifyResult> {
+  const lines = [
+    input.name ? `Name: ${input.name}` : null,
+    input.email ? `Email: ${input.email}` : null,
+    input.company ? `Company: ${input.company}` : null,
+    input.score != null
+      ? `Score: ${input.score}${input.grade ? ` (${input.grade})` : ""}`
+      : null,
+    `Reference: ${input.reference}`,
+  ].filter((line): line is string => line !== null);
+
+  const blocks: EmailBlock[] = [
+    {
+      type: "p",
+      text: `A new ${input.kindLabel} arrived from ${input.source}.`,
+    },
+    { type: "ul", items: lines },
+    ...(input.message ? [{ type: "p" as const, text: input.message }] : []),
+    {
+      type: "cta",
+      label: "Open the lead",
+      url: `${getSiteUrl()}/admin/leads/enquiry/${input.leadId}`,
+    },
+  ];
+
+  return notify({
+    channel: "newLead",
+    subject: `New lead — ${input.reference}`,
+    blocks,
+    subjectId: input.leadId,
   });
 }
 

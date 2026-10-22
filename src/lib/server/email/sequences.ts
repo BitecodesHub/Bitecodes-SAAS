@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import {
+  bookings,
   emailMessages,
   emailSequences,
   emailTemplates,
@@ -9,12 +10,24 @@ import {
 } from "@/lib/server/db/collections";
 import { extractVariables } from "@/lib/email/template";
 import {
-  FOLLOWUP_TEMPLATE_SEEDS,
+  ALL_FOLLOWUP_TEMPLATE_SEEDS,
   SEQUENCE_SEEDS,
 } from "@/lib/email/templates/followups";
+import { getIcpSegment } from "@/data/icp";
+import { services } from "@/data/services";
+import {
+  getLead,
+  isWritableLeadKind,
+  legacyStatusToStage,
+  recordLeadActivity,
+  recordLeadContacted,
+  type LeadDetail,
+  type LeadKind,
+} from "@/lib/server/leads/repository";
+import { getSiteUrl } from "@/lib/server/env";
 import { blockText } from "@/lib/server/email/templates";
 import { getTemplate, getTemplateForTag } from "@/lib/server/email/templates";
-import { queueEmail } from "@/lib/server/email/send";
+import { queueEmail, type QueueEmailResult } from "@/lib/server/email/send";
 import { isSuppressed } from "@/lib/server/email/suppression";
 import {
   buildOutreachVariables,
@@ -22,8 +35,10 @@ import {
   buildUnsubscribeUrl,
 } from "@/lib/server/email/outreach";
 import {
+  claimProspectFirstContact,
   getProspect,
   recordProspectContacted,
+  releaseProspectFirstContact,
 } from "@/lib/server/prospecting/repository";
 import { getSettingsFresh } from "@/lib/server/settings";
 import type {
@@ -61,9 +76,14 @@ export type StopReason =
   | "clicked"
   | "replied"
   | "prospect-advanced"
+  | "lead-advanced"
+  | "consent-withdrawn"
+  | "consent-missing"
+  | "booked"
   | "sequence-disabled"
   | "no-template"
   | "send-refused"
+  | "already-contacted"
   | "manual";
 
 /** Pipeline stages that mean a human has taken over. */
@@ -87,7 +107,7 @@ export async function ensureSeededSequences(
   const sequenceCollection = await emailSequences();
 
   let templates = 0;
-  for (const seed of FOLLOWUP_TEMPLATE_SEEDS) {
+  for (const seed of ALL_FOLLOWUP_TEMPLATE_SEEDS) {
     const existing = await templateCollection.findOne({ key: seed.key });
     if (existing) continue;
 
@@ -98,7 +118,7 @@ export async function ensureSeededSequences(
       subject: seed.subject,
       blocks: seed.blocks,
       variables: extractVariables(seed.subject, ...blockText(seed.blocks)),
-      category: "outreach",
+      category: seed.category ?? "outreach",
       // Follow-ups are not tag-specific; the first email carried the finding.
       prospectTag: null,
       enabled: true,
@@ -128,6 +148,7 @@ export async function ensureSeededSequences(
         delayHours: step.delayHours,
       })),
       stopOnClick: seed.stopOnClick,
+      audience: seed.audience ?? "prospect",
       createdAt: now,
       updatedAt: now,
     } as EmailSequenceDoc);
@@ -242,6 +263,18 @@ export async function enrollProspect(
     };
   }
 
+  // Step one is a first contact, so a sequence must never be the second one.
+  // The atomic re-check happens at send time; this is the fast, explanatory
+  // refusal for the common case.
+  if (prospect.contactCount > 0) {
+    return {
+      ok: false,
+      reason: "already-contacted",
+      detail:
+        "This customer has already received a first-contact email. Follow up manually instead of starting a new sequence.",
+    };
+  }
+
   const enrollmentId = randomUUID();
   await enrollments.insertOne({
     enrollmentId,
@@ -260,6 +293,143 @@ export async function enrollProspect(
 
   // Step one goes out through the same path as every later step, so there is
   // one implementation of "send a sequence step" rather than two that can drift.
+  const advanced = await advanceEnrollment(enrollmentId, now);
+  if (!advanced.sent) {
+    return {
+      ok: false,
+      reason: advanced.stoppedReason ?? "send-refused",
+      detail: advanced.detail ?? "The first email was not queued.",
+    };
+  }
+
+  return { ok: true, enrollmentId };
+}
+
+export interface EnrollLeadInput {
+  leadKind: LeadKind;
+  leadId: string;
+  email: string;
+  name?: string | null;
+  sequenceKey?: string;
+  /** The time marketing consent was given. Required for a lead sequence. */
+  consentAt?: Date | null;
+}
+
+/**
+ * Enrols an opted-in lead in the inbound follow-up sequence.
+ *
+ * Separate from `enrollProspect` because the consent model is different. A cold
+ * prospect is lawful only in opt-out jurisdictions; a lead who ticked the
+ * marketing box gave express consent, so the send path may pass the region gate.
+ * Requiring `consentAt` here makes that claim explicit and auditable rather than
+ * something one caller can silently get wrong.
+ */
+export async function enrollLead(
+  input: EnrollLeadInput,
+  now = new Date(),
+): Promise<EnrollResult> {
+  const sequenceKey = input.sequenceKey ?? "inbound.followup";
+  await ensureSeededSequences(now);
+
+  const sequence = await getSequence(sequenceKey);
+  if (!sequence) {
+    return { ok: false, reason: "no-sequence", detail: "Unknown sequence." };
+  }
+  if (!sequence.enabled) {
+    return {
+      ok: false,
+      reason: "sequence-disabled",
+      detail: "That sequence is switched off.",
+    };
+  }
+  if (sequence.audience !== "lead") {
+    return {
+      ok: false,
+      reason: "wrong-audience",
+      detail: "That sequence is for cold prospects, not inbound leads.",
+    };
+  }
+  if (!isWritableLeadKind(input.leadKind)) {
+    return {
+      ok: false,
+      reason: "read-only",
+      detail: "Form and booking leads are read-only.",
+    };
+  }
+
+  const lead = await getLead(input.leadKind, input.leadId);
+  if (!lead) {
+    return { ok: false, reason: "missing", detail: "Lead not found." };
+  }
+  if (lead.kind === "form" || lead.kind === "booking") {
+    return {
+      ok: false,
+      reason: "read-only",
+      detail: "Form and booking leads are read-only.",
+    };
+  }
+
+  const email = input.email.trim().toLowerCase();
+  if (!email) {
+    return { ok: false, reason: "no-email", detail: "No email address." };
+  }
+  if (await isSuppressed(email)) {
+    return {
+      ok: false,
+      reason: "unsubscribed",
+      detail: "This address is on the never-contact list.",
+    };
+  }
+
+  const stage = lead.doc.stage ?? legacyStatusToStage(lead.doc.status ?? "new");
+  if (stage === "won" || stage === "lost" || stage === "proposal") {
+    return {
+      ok: false,
+      reason: "closed",
+      detail: "This lead is already closed or has a proposal.",
+    };
+  }
+
+  const consent = "consent" in lead.doc ? lead.doc.consent : null;
+  const consentAt = input.consentAt ?? consent?.at ?? null;
+  if (!consentAt || consent?.marketing !== true) {
+    return {
+      ok: false,
+      reason: "no-consent",
+      detail: "The person did not opt in to follow-up email.",
+    };
+  }
+
+  const enrollments = await sequenceEnrollments();
+  const active = await enrollments.findOne({
+    status: "active",
+    $or: [{ leadId: input.leadId }, { email }],
+  });
+  if (active) {
+    return {
+      ok: false,
+      reason: "already-enrolled",
+      detail: "This lead is already part of a running sequence.",
+    };
+  }
+
+  const enrollmentId = randomUUID();
+  await enrollments.insertOne({
+    enrollmentId,
+    sequenceKey,
+    prospectId: null,
+    leadId: input.leadId,
+    leadKind: input.leadKind,
+    consentAt,
+    email,
+    status: "active",
+    stoppedReason: null,
+    currentStep: 0,
+    nextRunAt: now,
+    createdAt: now,
+    updatedAt: now,
+  } as SequenceEnrollmentDoc);
+
   const advanced = await advanceEnrollment(enrollmentId, now);
   if (!advanced.sent) {
     return {
@@ -369,6 +539,74 @@ export async function advanceEnrollment(
     );
   }
 
+  const lead =
+    claimed.leadId && claimed.leadKind
+      ? await getLead(claimed.leadKind as LeadKind, claimed.leadId)
+      : null;
+
+  if (claimed.leadId && !lead) {
+    await stopEnrollment(enrollmentId, "manual", now);
+    return outcome(false, false, "manual", "Lead deleted.", stepNumber);
+  }
+
+  if (lead) {
+    const stage = "stage" in lead.doc ? (lead.doc.stage ?? "new") : "new";
+
+    if (
+      stage === "qualified" ||
+      stage === "proposal" ||
+      stage === "won" ||
+      stage === "lost"
+    ) {
+      await stopEnrollment(enrollmentId, "lead-advanced", now);
+      return outcome(
+        false,
+        false,
+        "lead-advanced",
+        `A person is handling this lead (${stage}).`,
+        stepNumber,
+      );
+    }
+
+    // Re-check consent at every step. An opt-in recorded at capture is not a
+    // permanent licence: a later unsubscribe or a different contact record must
+    // stop the next message, not merely remove the link from it.
+    const consent = "consent" in lead.doc ? lead.doc.consent : null;
+    if (!claimed.consentAt) {
+      await stopEnrollment(enrollmentId, "consent-missing", now);
+      return outcome(
+        false,
+        false,
+        "consent-missing",
+        "No recorded marketing consent.",
+        stepNumber,
+      );
+    }
+    // Require a live opt-in, not merely the absence of a "no". A contact
+    // record whose consent was cleared is not permission to keep sending.
+    if (!consent || consent.marketing !== true) {
+      await stopEnrollment(enrollmentId, "consent-withdrawn", now);
+      return outcome(
+        false,
+        false,
+        "consent-withdrawn",
+        "The person withdrew marketing consent.",
+        stepNumber,
+      );
+    }
+
+    if (await hasConfirmedBooking(claimed.email)) {
+      await stopEnrollment(enrollmentId, "booked", now);
+      return outcome(
+        false,
+        false,
+        "booked",
+        "They already booked a call, so automation should stop.",
+        stepNumber,
+      );
+    }
+  }
+
   if (sequence.stopOnClick && (await hasClicked(enrollmentId))) {
     await stopEnrollment(enrollmentId, "clicked", now);
     return outcome(
@@ -403,6 +641,7 @@ export async function advanceEnrollment(
   // ---- Send ----
 
   const settings = await getSettingsFresh();
+  const isLeadSequence = Boolean(lead);
   const variables = prospect
     ? buildOutreachVariables(prospect, {
         reportUrl: buildReportUrl(claimed.prospectId!),
@@ -410,30 +649,78 @@ export async function advanceEnrollment(
         senderName: settings.outreach.senderName,
         companyName: "Bitecodes",
       })
-    : {};
+    : lead
+      ? buildLeadVariables(lead, claimed.email, {
+          senderName: settings.outreach.senderName,
+          companyName: "Bitecodes",
+        })
+      : {};
 
-  const result = await queueEmail({
-    to: claimed.email,
-    toName: prospect?.name ?? null,
-    subject: template.subject,
-    blocks: template.blocks,
-    variables,
-    category: "outreach",
-    templateKey: template.key,
-    prospectId: claimed.prospectId,
-    enrollmentId,
-    sequenceStep: stepNumber,
-    countryCode: prospect?.countryCode ?? null,
-    unsubscribeUrl: String(variables.unsubscribeUrl ?? ""),
-    footerNote:
-      "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
-    track: true,
-  });
+  // Step one of a prospect sequence is that prospect's first contact. Claim
+  // it atomically here, immediately before the render and enqueue, so an
+  // operator "Send email" batch racing the autopilot cannot produce two first
+  // contacts. Later steps are follow-ups and are counted after queueing.
+  const claimsFirstContact = stepNumber === 1 && claimed.prospectId !== null;
+  if (claimsFirstContact) {
+    const claimedFirst = await claimProspectFirstContact(claimed.prospectId!);
+    if (!claimedFirst) {
+      await stopEnrollment(enrollmentId, "already-contacted", now);
+      return outcome(
+        false,
+        false,
+        "already-contacted",
+        "Another first-contact email was already queued for this customer.",
+        stepNumber,
+      );
+    }
+  }
+
+  let result: QueueEmailResult;
+  try {
+    result = await queueEmail({
+      to: claimed.email,
+      toName: prospect?.name ?? leadName(lead) ?? null,
+      subject: template.subject,
+      blocks: template.blocks,
+      variables,
+      category: isLeadSequence ? "nurture" : "outreach",
+      templateKey: template.key,
+      prospectId: claimed.prospectId,
+      leadId: claimed.leadId,
+      enrollmentId,
+      sequenceStep: stepNumber,
+      countryCode:
+        prospect?.countryCode ??
+        (lead && "country" in lead.doc ? lead.doc.country : null) ??
+        null,
+      unsubscribeUrl: String(variables.unsubscribeUrl ?? ""),
+      // Only a lead sequence carries express consent. Cold outreach never does.
+      consented: isLeadSequence && Boolean(claimed.consentAt),
+      footerNote: isLeadSequence
+        ? "You are receiving this because you opted in when you contacted us. One click above removes you permanently."
+        : "You are receiving this because your business is publicly listed and we found something worth flagging. One click above removes you permanently.",
+      track: true,
+    });
+  } catch (error) {
+    // The queue may or may not have persisted the message before throwing, so
+    // retrying could duplicate it. Stop the enrolment explicitly instead of
+    // leaving it stranded with no next run. The first-contact claim is kept:
+    // a throw cannot prove nothing was written, and a duplicate first contact
+    // is worse than an operator having to re-check one prospect by hand.
+    await stopEnrollment(enrollmentId, "send-refused", now);
+    throw error;
+  }
 
   if (result.status === "skipped") {
     // A cap or a region guard is not the recipient's decision, so the enrolment
     // is stopped rather than retried — silently deferring would leave it in a
-    // state nobody is watching.
+    // state nobody is watching. Nothing was queued, so a first-contact claim is
+    // returned rather than burning the prospect's only slot.
+    if (claimsFirstContact) {
+      await releaseProspectFirstContact(claimed.prospectId!).catch(
+        () => undefined,
+      );
+    }
     await stopEnrollment(enrollmentId, "send-refused", now);
     return outcome(
       false,
@@ -444,7 +731,24 @@ export async function advanceEnrollment(
     );
   }
 
-  if (claimed.prospectId) await recordProspectContacted(claimed.prospectId);
+  // A first contact was counted by the claim above; follow-ups increment here.
+  if (claimed.prospectId && !claimsFirstContact) {
+    await recordProspectContacted(claimed.prospectId);
+  }
+  if (claimed.leadId) {
+    await recordLeadContacted(claimed.leadKind as LeadKind, claimed.leadId);
+    await recordLeadActivity(
+      {
+        leadKind: claimed.leadKind as LeadKind,
+        leadId: claimed.leadId,
+        email: claimed.email,
+        type: "email-sent",
+        summary: `Follow-up step ${stepNumber} queued.`,
+        detail: { templateKey: template.key, enrollmentId },
+      },
+      now,
+    ).catch(() => undefined);
+  }
 
   // Schedule the next step, or finish.
   const nextStep = sequence.steps[stepIndex + 1];
@@ -474,6 +778,56 @@ function outcome(
   step: number | null,
 ): AdvanceOutcome {
   return { sent, completed, stoppedReason, detail, step };
+}
+
+/** True when this address already has a confirmed booking. */
+async function hasConfirmedBooking(email: string): Promise<boolean> {
+  const collection = await bookings();
+  const escaped = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (
+    (await collection.countDocuments({
+      status: "confirmed",
+      customerEmail: { $regex: new RegExp(`^${escaped}$`, "i") },
+    })) > 0
+  );
+}
+
+function leadName(lead: LeadDetail | null): string | null {
+  if (!lead) return null;
+  if (lead.kind === "consultant") {
+    return typeof lead.doc.input.name === "string" ? lead.doc.input.name : null;
+  }
+  if (lead.kind === "enquiry") return lead.doc.name;
+  return null;
+}
+
+function buildLeadVariables(
+  lead: LeadDetail,
+  email: string,
+  options: { senderName: string; companyName: string },
+): Record<string, string> {
+  const doc = lead.doc;
+  const name = leadName(lead) ?? email.split("@")[0] ?? "there";
+  const firstName = name.trim().split(/\s+/)[0] || "there";
+  const segmentId =
+    "scoreSegmentId" in doc && typeof doc.scoreSegmentId === "string"
+      ? doc.scoreSegmentId
+      : null;
+  const segment = segmentId ? getIcpSegment(segmentId) : undefined;
+  const serviceSlug = segment?.recommendedServices[0];
+  const serviceName =
+    services.find((service) => service.slug === serviceSlug)?.title ??
+    "website and automation work";
+
+  return {
+    firstName,
+    businessName: "company" in doc && doc.company ? doc.company : firstName,
+    serviceName,
+    bookingUrl: `${getSiteUrl()}/book-a-call`,
+    unsubscribeUrl: buildUnsubscribeUrl(email, "lead"),
+    senderName: options.senderName,
+    companyName: options.companyName,
+  };
 }
 
 /** True when any message sent for this enrolment has recorded a click. */

@@ -95,6 +95,17 @@ export const AUDIT_ACTIONS = {
   billingWebhookProcessed: "billing.webhook.processed",
   billingCreditsGranted: "billing.credits.granted",
   chatResolved: "chat.resolved",
+
+  // Growth engine.
+  growthSettingsUpdated: "growth.settings.updated",
+  automationRunNow: "growth.automation.run_now",
+  bootstrapReconciled: "growth.bootstrap.reconciled",
+  leadStageChanged: "lead.stage.changed",
+  proposalCreated: "proposal.created",
+  proposalSent: "proposal.sent",
+  callRequested: "call.requested",
+  feedbackReceived: "feedback.received",
+  testimonialApproved: "testimonial.approved",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

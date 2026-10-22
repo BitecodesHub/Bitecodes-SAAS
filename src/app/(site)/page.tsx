@@ -1,42 +1,55 @@
 import { Hero } from "@/components/sections/hero";
-import { ServicesSection } from "@/components/sections/services-section";
-import { ToolsSection } from "@/components/sections/tools-section";
-import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
-import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
-import { ProcessSection } from "@/components/sections/process-section";
 import { StatsSection } from "@/components/sections/stats-section";
+import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
+import { ServicesSection } from "@/components/sections/services-section";
+import { ProcessSection } from "@/components/sections/process-section";
+import { TestimonialsStrip } from "@/components/proof/testimonials-strip";
+import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
 import { createMetadata, faqSchema } from "@/lib/seo";
 import { faqs } from "@/data/faqs";
 
-export const metadata = createMetadata({
-  description:
-    "Bitecodes is a software outsourcing studio building fast, reliable websites, web and enterprise apps, SaaS, REST APIs, and AI automation for growing businesses.",
+const HOME_TITLE = "Bitecodes | Web, App and AI Development Studio in India";
+const HOME_DESCRIPTION =
+  "Bitecodes is an India-based software studio building fast websites, web apps, SaaS platforms, APIs, and AI automation for startups and enterprises worldwide.";
+
+const homeMetadata = createMetadata({
+  description: HOME_DESCRIPTION,
   path: "/",
 });
+
+export const metadata = {
+  ...homeMetadata,
+  // Absolute rather than templated: the keyword-led title must stay under 60
+  // characters, and the layout template would append " — Bitecodes" a second
+  // time on the homepage.
+  title: { absolute: HOME_TITLE },
+  openGraph: {
+    ...homeMetadata.openGraph,
+    title: HOME_TITLE,
+  },
+};
 
 export default function HomePage() {
   return (
     <>
       {/*
-        Deliberately lean: promise → services → proof →
-        numbers → process → tools → pricing → FAQ → close. Industries, the
-        tech stack, the blog, and the founder each have a dedicated page;
-        repeating them here only made the homepage longer, not more
-        convincing.
+        Conversion order: promise → proof-numbers → featured work → services
+        → process → social proof → pricing → FAQ → close.
       */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
-      <ServicesSection />
-      <FeaturedWorkSection />
       <StatsSection />
+      <FeaturedWorkSection />
+      <ServicesSection />
       <ProcessSection />
-      <ToolsSection />
+      {/* Renders nothing when no approved testimonials exist */}
+      <TestimonialsStrip />
       <PricingPreviewSection />
       <FaqSection limit={6} />
-      <CtaSection />
+      <CtaSection variant="audit" />
     </>
   );
 }

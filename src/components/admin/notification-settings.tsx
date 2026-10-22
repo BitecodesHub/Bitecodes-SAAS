@@ -23,10 +23,12 @@ import { useToast } from "@/components/ui/toast";
 
 export type NotificationChannelKey =
   | "formSubmission"
+  | "newLead"
   | "chatConversation"
   | "booking"
   | "lowBalance"
-  | "failedJob";
+  | "failedJob"
+  | "ownerReports";
 
 export interface NotificationSettingsValue {
   defaultRecipients: string[];
@@ -62,9 +64,18 @@ const CHANNELS: ChannelCopy[] = [
     key: "formSubmission",
     title: "Form submissions",
     trigger: "Somebody completes one of your forms.",
-    wired: false,
+    wired: true,
     relationship:
-      "Each form carries its own “Notify emails” list, and that list is what sends today — it is the answer to “who owns this form”, so nothing on this page overrides it. Addresses added here are additional recipients, applied on top of a form's own list rather than in place of it.",
+      "Each form carries its own “Notify emails” list, and that list is always honoured — it is the answer to “who owns this form”. Addresses added here are additional recipients, applied on top of a form's own list rather than in place of it, and switching this channel off does not silence that list.",
+  },
+  {
+    key: "newLead",
+    title: "New inbound leads",
+    trigger:
+      "Somebody requests a checklist, asks for a website audit, gets an AI project recommendation, or requests a callback.",
+    wired: true,
+    relationship:
+      "One email per lead, sent immediately — these visitors are still on the site, so a reply within minutes is worth more than the daily digest. A lead who opted in to follow-up is also enrolled in the inbound email sequence automatically.",
   },
   {
     key: "chatConversation",
@@ -79,9 +90,9 @@ const CHANNELS: ChannelCopy[] = [
     key: "booking",
     title: "Bookings",
     trigger: "Somebody books or cancels a slot.",
-    wired: false,
+    wired: true,
     relationship:
-      "Like forms, a booking page has its own notify list, and that list is added to these addresses rather than replaced by them.",
+      "Like forms, a booking page has its own notify list, and that list is always honoured. These addresses are added to it, and switching this channel off does not silence the page's own list.",
   },
   {
     key: "lowBalance",
@@ -94,12 +105,21 @@ const CHANNELS: ChannelCopy[] = [
   },
   {
     key: "failedJob",
-    title: "Failed background jobs",
+    title: "Operational failures",
     trigger:
-      "A queued job gives up after its retries — an email that never sent, an import that never finished.",
-    wired: false,
+      "A queued job gives up after its retries, a payment webhook cannot be recorded, or a delivered chat answer cannot be billed. Each is an event that needs a person, not another retry.",
+    wired: true,
     relationship:
-      "Throttled by job type: when a queue breaks it breaks for every job at once, and one email per failure would tell you the same thing two hundred times.",
+      "Throttled by failure type: when a queue breaks it breaks for every job at once, and one email per failure would tell you the same thing two hundred times.",
+  },
+  {
+    key: "ownerReports",
+    title: "Owner reports",
+    trigger:
+      "The daily digest and the weekly growth report. Monthly customer reports go to each customer, not here.",
+    wired: true,
+    relationship:
+      "One digest and one weekly report per scheduled run. Report periods are stated in UTC so a figure can always be reconciled with the database.",
   },
 ];
 

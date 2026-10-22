@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { LoginLinkForm } from "@/components/account/login-link-form";
-import { peekToken } from "@/lib/server/auth/recovery";
+import { inspectLoginLink } from "@/lib/server/auth/recovery";
 
 export const metadata: Metadata = {
   title: "Complete sign-in",
@@ -20,7 +20,7 @@ export default async function LoginLinkPage({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const valid = token ? await peekToken(token, "login-link") : false;
+  const inspection = await inspectLoginLink(token);
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
@@ -30,7 +30,7 @@ export default async function LoginLinkPage({
         </div>
 
         <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-          {valid && token ? (
+          {inspection.valid && token ? (
             <>
               <h1 className="text-xl font-semibold tracking-tight">
                 Almost there
@@ -39,7 +39,10 @@ export default async function LoginLinkPage({
                 Press the button to finish signing in to the admin panel.
               </p>
               <div className="mt-6">
-                <LoginLinkForm token={token} />
+                <LoginLinkForm
+                  token={token}
+                  requiresTwoFactor={inspection.requiresTwoFactor}
+                />
               </div>
             </>
           ) : (

@@ -3,14 +3,9 @@ import { notFound } from "next/navigation";
 import { Calculator, PackageCheck, ShieldCheck } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
 import { ProjectCostCalculator } from "@/components/calculators/project-cost-calculator";
+import { FaqDetails } from "@/components/faq/faq-details";
 import { PageHeader } from "@/components/page-header";
 import { Section, SectionHeader } from "@/components/section";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { calculatorPages, getCalculatorPage } from "@/data/calculator-pages";
 import { breadcrumbSchema, createMetadata, faqSchema } from "@/lib/seo";
 
@@ -124,14 +119,7 @@ export default async function CalculatorPage({
             title={`Questions about ${config.title.toLowerCase()}`}
             description="Understand what drives the range before requesting a detailed scope."
           />
-          <Accordion type="single" collapsible className="mt-10">
-            {config.faqs.map((faq, index) => (
-              <AccordionItem key={faq.question} value={`faq-${index}`}>
-                <AccordionTrigger>{faq.question}</AccordionTrigger>
-                <AccordionContent>{faq.answer}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <FaqDetails faqs={config.faqs} className="mt-10" />
         </div>
       </Section>
     </>

@@ -14,6 +14,7 @@ import {
   updatePost,
 } from "@/lib/server/blog/repository";
 import { generateBlogDraft } from "@/lib/server/blog/generator";
+import { AutomationAiError } from "@/lib/server/ai/automation";
 import { pingIndexNow } from "@/lib/server/search-ping";
 import { siteConfig } from "@/lib/site";
 
@@ -243,9 +244,11 @@ export async function generateDraftAction(
     draft = await generateBlogDraft(cleaned);
   } catch (error) {
     return failure(
-      error instanceof Error && error.message === "NOT_CONFIGURED"
-        ? "The AI provider is not configured. Set AI_API_KEY or OPENROUTER_API_KEY."
-        : "The draft could not be generated. Try again in a moment.",
+      error instanceof AutomationAiError && error.code === "NOT_CONFIGURED"
+        ? "No AI provider is configured. Add one under Desktop app, or set AI_API_KEY."
+        : error instanceof AutomationAiError && error.code === "DISABLED"
+          ? "AI for automations is switched off in growth settings."
+          : "The draft could not be generated. Try again in a moment.",
     );
   }
 

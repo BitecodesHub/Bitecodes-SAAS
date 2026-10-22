@@ -107,6 +107,85 @@ describeWithDatabase("credit wallet", () => {
     if (!result.ok) expect(result.reason).toBe("invalid-amount");
   });
 
+  it("drains a short balance to zero instead of refusing delivered work", async () => {
+    const { credit, debitUpTo, getBalance } =
+      await import("@/lib/server/wallet/wallet");
+    await credit({
+      ownerId: OWNER,
+      product: "chatbot",
+      amount: 60,
+      kind: "purchase",
+    });
+
+    const result = await debitUpTo({
+      ownerId: OWNER,
+      product: "chatbot",
+      amount: 150,
+      refId: "turn-1",
+    });
+    expect(result).toEqual({ charged: 60, shortfall: 90, balanceAfter: 0 });
+    expect(await getBalance(OWNER, "chatbot")).toBe(0);
+
+    // The ledger records only what was actually taken.
+    const { recentLedger } = await import("@/lib/server/wallet/wallet");
+    const rows = await recentLedger(OWNER, "chatbot", 5);
+    const deductRow = rows.find((r) => r.kind === "deduct");
+    expect(deductRow?.delta).toBe(-60);
+    expect(deductRow?.refId).toBe("turn-1");
+  });
+
+  it("charges in full when the balance covers it", async () => {
+    const { credit, debitUpTo } = await import("@/lib/server/wallet/wallet");
+    await credit({
+      ownerId: OWNER,
+      product: "chatbot",
+      amount: 500,
+      kind: "purchase",
+    });
+    const result = await debitUpTo({
+      ownerId: OWNER,
+      product: "chatbot",
+      amount: 150,
+    });
+    expect(result).toEqual({ charged: 150, shortfall: 0, balanceAfter: 350 });
+  });
+
+  it("takes nothing from a wallet that was never credited", async () => {
+    const { debitUpTo } = await import("@/lib/server/wallet/wallet");
+    const result = await debitUpTo({
+      ownerId: "never-credited",
+      product: "chatbot",
+      amount: 150,
+    });
+    expect(result).toEqual({
+      charged: 0,
+      shortfall: 150,
+      balanceAfter: 0,
+    });
+  });
+
+  it("never lets concurrent drains overshoot the balance", async () => {
+    const { credit, debitUpTo, getBalance } =
+      await import("@/lib/server/wallet/wallet");
+    // 60 credits, twenty concurrent drains of 60: exactly 60 may be taken.
+    await credit({
+      ownerId: OWNER,
+      product: "chatbot",
+      amount: 60,
+      kind: "purchase",
+    });
+
+    const results = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        debitUpTo({ ownerId: OWNER, product: "chatbot", amount: 60 }),
+      ),
+    );
+
+    const charged = results.reduce((sum, r) => sum + r.charged, 0);
+    expect(charged).toBe(60);
+    expect(await getBalance(OWNER, "chatbot")).toBe(0);
+  });
+
   it("never lets concurrent debits overspend", async () => {
     const { credit, debit, getBalance } =
       await import("@/lib/server/wallet/wallet");

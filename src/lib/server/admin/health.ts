@@ -2,16 +2,17 @@ import "server-only";
 
 import { getAiProviderConfig } from "@/lib/server/ai-provider";
 import { pingDatabase } from "@/lib/server/db/collections";
+import { latestPublishedAt } from "@/lib/server/blog/repository";
 import { verifyTransport } from "@/lib/server/email/transport";
+import { getOverpassEndpoint } from "@/lib/server/env";
+import { getSettingsFresh } from "@/lib/server/settings";
+import { GROWTH_TOGGLE_KEYS, getGrowthToggle } from "@/lib/growth/toggles";
+import { autonomySnapshot } from "@/lib/server/bootstrap";
 import {
-  getCronSecret,
-  getOverpassEndpoint,
-  hasSigningSecret,
-} from "@/lib/server/env";
-import {
-  getSettingsFresh,
-  hasPlaceholderContactDetails,
-} from "@/lib/server/settings";
+  HEARTBEAT_DEAD_MS,
+  HEARTBEAT_WARN_MS,
+} from "@/lib/server/jobs/heartbeat";
+import { smtpConfigured } from "@/lib/server/capabilities";
 
 /**
  * Live system health.
@@ -35,17 +36,357 @@ export interface HealthCheck {
 
 const PROBE_TIMEOUT_MS = 6_000;
 
-export async function runHealthChecks(): Promise<HealthCheck[]> {
-  const [database, smtp, aiProvider, overpass, configuration] =
-    await Promise.all([
-      checkDatabase(),
-      checkSmtp(),
-      checkAiProvider(),
-      checkOverpass(),
-      checkConfiguration(),
-    ]);
+/** The worst status present, for a single summary indicator. */
+export function overallHealth(checks: HealthCheck[]): HealthStatus {
+  if (checks.some((check) => check.status === "fail")) return "fail";
+  if (checks.some((check) => check.status === "warn")) return "warn";
+  if (checks.some((check) => check.status === "not-configured")) {
+    return "not-configured";
+  }
+  return "ok";
+}
 
-  return [database, smtp, aiProvider, overpass, ...configuration];
+/** Growth engine checks: switches, job health, and toggle states. */
+async function checkGrowthEngine(): Promise<HealthCheck[]> {
+  const checks: HealthCheck[] = [];
+  const settings = await getSettingsFresh();
+
+  // Check each growth toggle
+  for (const key of GROWTH_TOGGLE_KEYS) {
+    const toggle = getGrowthToggle(key as (typeof GROWTH_TOGGLE_KEYS)[number]);
+    const isOn = settings.growth[key];
+    if (toggle.sendsExternalEmail && !isOn) {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "warn",
+        detail: "Switched off — no external emails will be sent.",
+        remedy:
+          "Enable the toggle if you want this automation to send emails, or leave off if manual control is preferred.",
+      });
+    } else if (!toggle.sendsExternalEmail && !isOn) {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "ok",
+        detail: "Switched off — no external emails will be sent.",
+      });
+    } else {
+      checks.push({
+        name: `Growth: ${toggle.label}`,
+        status: "ok",
+        detail: "Switched on.",
+      });
+    }
+  }
+
+  // Check weekly report specifically
+  if (settings.growth.weeklyReport) {
+    checks.push({
+      name: "Growth: weekly report",
+      status: "ok",
+      detail: "Weekly report is enabled.",
+    });
+  } else {
+    checks.push({
+      name: "Growth: weekly report",
+      status: "warn",
+      detail: "Weekly report is disabled.",
+      remedy:
+        "Enable under Settings > Growth to receive a written summary every Monday.",
+    });
+  }
+
+  // Check job runner
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret || cronSecret.length < 16) {
+    checks.push({
+      name: "Growth: job runner",
+      status: "fail",
+      detail: "CRON_SECRET is missing or too short.",
+      remedy:
+        "Generate one with: openssl rand -hex 16. The job runner refuses to run without it.",
+    });
+  } else {
+    checks.push({
+      name: "Growth: job runner",
+      status: "ok",
+      detail: "CRON_SECRET is set.",
+    });
+  }
+
+  return checks;
+}
+
+/**
+ * First-boot and self-healing checks.
+ *
+ * These answer questions the provider probes cannot: has this database ever
+ * been reconciled, is the code-defined schedule still matched by handlers, does
+ * the pipeline have a standing search, and what is holding commercial email.
+ * Every finding names the exact remediation, because "degraded" without a next
+ * step is just noise.
+ */
+async function checkAutonomy(): Promise<HealthCheck[]> {
+  const snapshot = await autonomySnapshot();
+  if (!snapshot) {
+    return [
+      {
+        name: "Bootstrap",
+        status: "fail",
+        detail: "Autonomy state could not be read from the database.",
+        remedy:
+          "Check the MongoDB connection. Once it is reachable, POST /api/health/bootstrap with CRON_SECRET or restart the server.",
+      },
+    ];
+  }
+
+  const checks: HealthCheck[] = [];
+
+  if (!snapshot.settingsPresent || snapshot.bootstrap.version === null) {
+    checks.push({
+      name: "Bootstrap",
+      status: "fail",
+      detail: "The settings document has never been created by the bootstrap.",
+      remedy:
+        "POST /api/health/bootstrap with CRON_SECRET (dryRun:false), or restart the server so instrumentation runs.",
+    });
+  } else if (snapshot.bootstrap.stale) {
+    checks.push({
+      name: "Bootstrap",
+      status: "warn",
+      detail: `Last reconciled ${snapshot.bootstrap.lastReconciledAt ?? "never"} (version ${snapshot.bootstrap.version}).`,
+      remedy:
+        "The heartbeat reconciles at most daily. Check that /api/cron/run is being called with CRON_SECRET.",
+    });
+  } else {
+    checks.push({
+      name: "Bootstrap",
+      status: "ok",
+      detail: `Version ${snapshot.bootstrap.version}, reconciled ${snapshot.bootstrap.lastReconciledAt}.`,
+    });
+  }
+
+  checks.push(
+    snapshot.schedules.ok
+      ? {
+          name: "Automation schedule",
+          status: "ok",
+          detail: `${snapshot.schedules.total} recurring automation(s), all with registered handlers.`,
+        }
+      : {
+          name: "Automation schedule",
+          status: "fail",
+          detail: `Missing handlers: ${snapshot.schedules.missingHandlers.join(", ") || "none"}; duplicate ids: ${snapshot.schedules.duplicateIds.join(", ") || "none"}.`,
+          remedy:
+            "Register a handler in src/lib/server/jobs/handlers.ts or remove the schedule entry. Unhandled jobs are dead-lettered on first run.",
+        },
+  );
+
+  /*
+    Scheduler liveness. Configuration alone proves nothing: a deployment with a
+    valid CRON_SECRET and a scheduler that stopped calling looks identical to a
+    quiet healthy one until a report fails to arrive. GitHub also disables
+    scheduled workflows after 60 days of repository inactivity, which is exactly
+    the failure this check exists to surface.
+  */
+  const heartbeat = snapshot.heartbeat;
+  if (!heartbeat) {
+    checks.push({
+      name: "Scheduler heartbeat",
+      status: "warn",
+      detail:
+        "No authenticated cron tick has been recorded. Automation has never run on this database.",
+      remedy:
+        "Check that CRON_SECRET is set in the deployment and in the scheduler's secret store, then run the Heartbeat workflow once from the Actions tab. A new deployment records its first tick within five minutes.",
+    });
+  } else {
+    const ageMs = heartbeat.ageMs ?? 0;
+    const age = formatAge(ageMs);
+    if (ageMs >= HEARTBEAT_DEAD_MS) {
+      checks.push({
+        name: "Scheduler heartbeat",
+        status: "fail",
+        detail: `The scheduler has been silent for ${age}. No automation is advancing.`,
+        remedy:
+          "Fix the scheduler now: run the Heartbeat workflow manually, check CRON_SECRET, and re-enable scheduled workflows if GitHub disabled them for inactivity.",
+      });
+    } else if (ageMs >= HEARTBEAT_WARN_MS) {
+      checks.push({
+        name: "Scheduler heartbeat",
+        status: "warn",
+        detail: `Last tick ${age} ago (expected every five minutes).`,
+        remedy:
+          "GitHub Actions can delay a run, but not by this much. Check the Heartbeat workflow's recent runs before assuming the next tick will arrive.",
+      });
+    } else if (heartbeat.lastTickOk === false) {
+      checks.push({
+        name: "Scheduler heartbeat",
+        status: "warn",
+        detail: `The last tick ${age} ago reported a failed drain.`,
+        remedy:
+          "Open /admin/jobs to see the error. The queue retries automatically with backoff; a repeated failure across ticks needs a fix.",
+      });
+    } else {
+      checks.push({
+        name: "Scheduler heartbeat",
+        status: "ok",
+        detail: `Last tick ${age} ago; ${heartbeat.ticks} tick(s) recorded.`,
+      });
+    }
+  }
+
+  if (snapshot.presets.total === 0) {
+    checks.push({
+      name: "Discovery presets",
+      status: "fail",
+      detail: "No standing searches exist, so nothing will be discovered.",
+      remedy:
+        "Restart the server or POST /api/health/bootstrap to restore the defaults, or save a search from /admin/customers/discover.",
+    });
+  } else if (snapshot.presets.enabled === 0) {
+    checks.push({
+      name: "Discovery presets",
+      status: "warn",
+      detail: `${snapshot.presets.total} standing search(es) exist but all are paused.`,
+      remedy: "Resume at least one under /admin/customers/discover.",
+    });
+  } else {
+    checks.push({
+      name: "Discovery presets",
+      status: "ok",
+      detail: `${snapshot.presets.enabled}/${snapshot.presets.total} enabled; ${snapshot.presets.due} due now.`,
+    });
+  }
+
+  const gate = snapshot.outboundGate;
+  if (gate.state === "open") {
+    checks.push({
+      name: "Outbound gate",
+      status: "warn",
+      detail:
+        "Open: commercial email can send without human approval where a toggle is on and the recipient passes compliance.",
+      remedy:
+        "Turn on automation.requireApproval under Settings → Automation if you want every message reviewed.",
+    });
+  } else if (gate.state === "manual") {
+    checks.push({
+      name: "Outbound gate",
+      status: "ok",
+      detail:
+        "Manual: infrastructure and footer requirements are satisfied; every commercial message waits for approval.",
+    });
+  } else {
+    checks.push({
+      name: "Outbound gate",
+      status: smtpConfigured() ? "warn" : "not-configured",
+      detail: `Closed: ${gate.reasons.join(" ")}`,
+      remedy: gate.remedies.join(" "),
+    });
+  }
+
+  if (snapshot.queue.failed > 0) {
+    checks.push({
+      name: "Job queue",
+      status: "warn",
+      detail: `${snapshot.queue.failed} failed job(s) are dead-lettered.`,
+      remedy:
+        "Inspect /admin/jobs and retry or discard them; a failed job does not stop later runs.",
+    });
+  }
+
+  if (snapshot.lastAutopilotRun?.status === "failed") {
+    checks.push({
+      name: "Autopilot last run",
+      status: "warn",
+      detail: `The most recent autopilot tick failed${snapshot.lastAutopilotRun.finishedAt ? ` at ${snapshot.lastAutopilotRun.finishedAt}` : ""}.`,
+      remedy:
+        "Open /admin/jobs, read the error, and retry once the cause is fixed. Other automations continue independently.",
+    });
+  }
+
+  return checks;
+}
+
+export async function runHealthChecks(): Promise<HealthCheck[]> {
+  const [
+    database,
+    smtp,
+    aiProvider,
+    overpass,
+    growthEngine,
+    autonomy,
+    content,
+  ] = await Promise.all([
+    checkDatabase(),
+    checkSmtp(),
+    checkAiProvider(),
+    checkOverpass(),
+    checkGrowthEngine(),
+    checkAutonomy(),
+    checkContentFreshness(),
+  ]);
+
+  return [
+    database,
+    smtp,
+    aiProvider,
+    overpass,
+    ...growthEngine,
+    ...autonomy,
+    content,
+  ];
+}
+
+/**
+ * Organic acquisition depends on new material. The generator deliberately
+ * skips instead of failing when no AI provider is configured, so without this
+ * check a blog silently stops for months while everything else looks healthy.
+ */
+async function checkContentFreshness(): Promise<HealthCheck> {
+  try {
+    const latest = await latestPublishedAt();
+    if (!latest) {
+      return {
+        name: "Content freshness",
+        status: "warn",
+        detail: "No automatically generated article has been published yet.",
+        remedy:
+          "Configure an AI provider under /admin/desktop, then run the blog.generate job from /admin/jobs. The weekly schedule drafts on Tuesdays and Fridays.",
+      };
+    }
+    const ageDays = Math.floor((Date.now() - latest.getTime()) / 86_400_000);
+    return ageDays > 30
+      ? {
+          name: "Content freshness",
+          status: "warn",
+          detail: `The newest generated article is ${ageDays} days old.`,
+          remedy:
+            "Check that the blog.generate job is enabled and that AI drafting is configured; organic visibility decays when publishing stops.",
+        }
+      : {
+          name: "Content freshness",
+          status: "ok",
+          detail: `Newest generated article is ${ageDays} day${ageDays === 1 ? "" : "s"} old.`,
+        };
+  } catch (error) {
+    return {
+      name: "Content freshness",
+      status: "warn",
+      detail: "Could not read published articles.",
+      remedy:
+        error instanceof Error ? error.message : "Check the blog collection.",
+    };
+  }
+}
+
+/** Human-readable age for the scheduler check, e.g. "4 minutes", "2 hours". */
+function formatAge(ms: number): string {
+  const minutes = Math.max(0, Math.round(ms / 60_000));
+  if (minutes < 1) return "less than a minute";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"}`;
 }
 
 async function checkDatabase(): Promise<HealthCheck> {
@@ -250,94 +591,4 @@ async function checkOverpass(): Promise<HealthCheck> {
       remedy: "Map discovery will not run until this is reachable.",
     };
   }
-}
-
-/**
- * Configuration checks: things that are wrong on paper rather than at runtime,
- * and would otherwise only surface when a feature silently refuses to work.
- */
-async function checkConfiguration(): Promise<HealthCheck[]> {
-  const checks: HealthCheck[] = [];
-
-  checks.push(
-    hasSigningSecret()
-      ? { name: "Signing secret", status: "ok", detail: "AUTH_SECRET is set." }
-      : {
-          name: "Signing secret",
-          status: "fail",
-          detail: "AUTH_SECRET is missing or shorter than 32 characters.",
-          remedy:
-            "Unsubscribe links, report links, and portal links cannot be issued. Generate one with: openssl rand -base64 32",
-        },
-  );
-
-  checks.push(
-    getCronSecret()
-      ? { name: "Job runner", status: "ok", detail: "CRON_SECRET is set." }
-      : {
-          name: "Job runner",
-          status: "fail",
-          detail: "CRON_SECRET is missing.",
-          remedy:
-            "The job runner refuses to run without it, so no automation will execute. Generate one with: openssl rand -hex 16",
-        },
-  );
-
-  try {
-    const settings = await getSettingsFresh();
-
-    checks.push(
-      settings.contact.address.postal
-        ? {
-            name: "Postal address",
-            status: "ok",
-            detail: "Set, so outreach can include the required footer.",
-          }
-        : {
-            name: "Postal address",
-            status: "warn",
-            detail: "No postal address configured.",
-            remedy:
-              "Commercial email legally requires one, and the send pipeline blocks outreach without it. Add it under Settings.",
-          },
-    );
-
-    if (hasPlaceholderContactDetails(settings)) {
-      checks.push({
-        name: "Contact details",
-        status: "warn",
-        detail: "Placeholder contact details are still in use.",
-        remedy:
-          "These are published in Organization structured data, llms.txt, and every outbound email. Replace them under Settings.",
-      });
-    }
-
-    if (!settings.automation.requireApproval) {
-      checks.push({
-        name: "Outreach approval",
-        status: "warn",
-        detail: "Outreach sends without human approval.",
-        remedy:
-          "Fully automated cold email is deliberately off by default. Confirm this is intended.",
-      });
-    }
-  } catch {
-    checks.push({
-      name: "Settings",
-      status: "fail",
-      detail: "Could not read settings from the database.",
-    });
-  }
-
-  return checks;
-}
-
-/** The worst status present, for a single summary indicator. */
-export function overallHealth(checks: HealthCheck[]): HealthStatus {
-  if (checks.some((check) => check.status === "fail")) return "fail";
-  if (checks.some((check) => check.status === "warn")) return "warn";
-  if (checks.some((check) => check.status === "not-configured")) {
-    return "not-configured";
-  }
-  return "ok";
 }

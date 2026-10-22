@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { handleChat, type ChatDenial } from "@/lib/server/chat/gateway";
 import { getChatbotForWidget } from "@/lib/server/chatbot/repository";
+import { notifyFailedJob } from "@/lib/server/email/notify";
 import { isOriginAllowed } from "@/lib/chatbot/domains";
 
 /**
@@ -198,6 +199,14 @@ export async function POST(request: NextRequest) {
   const bot = await getChatbotForWidget(chatbotId, publicToken);
   const allowedDomains = bot?.allowedDomains ?? null;
 
+  // A disconnect (closed tab, navigated away, network drop) must stop the
+  // provider stream — tokens nobody will read are money burned — and the
+  // tokens generated up to that point are still billed, because the model
+  // did generate them.
+  const upstream = new AbortController();
+  const abortUpstream = () => upstream.abort();
+  request.signal.addEventListener("abort", abortUpstream, { once: true });
+
   let outcome;
   try {
     outcome = await handleChat({
@@ -211,15 +220,28 @@ export async function POST(request: NextRequest) {
         request.headers.get("x-real-ip") ||
         null,
       history,
+      signal: upstream.signal,
       // Already fetched above for the CORS headers; reuse it rather than
       // paying for the same query twice on every message.
       resolvedBot: bot,
     });
   } catch (error) {
-    console.error(
-      "[chat] gateway failed:",
-      error instanceof Error ? error.message : error,
-    );
+    request.signal.removeEventListener("abort", abortUpstream);
+    if (request.signal.aborted) {
+      // The visitor left before the first token arrived.
+      return new Response(null, { status: 499 });
+    }
+    const message =
+      error instanceof Error ? error.message : String(error ?? "unknown");
+    console.error("[chat] gateway failed:", message);
+    // A provider that is failing for every visitor is an outage the operator
+    // must hear about. Throttled per failure type by the notifier.
+    await notifyFailedJob({
+      jobType: "chat.provider",
+      jobId: chatbotId,
+      error: message,
+      attempts: 1,
+    }).catch(() => undefined);
     return jsonResponse(
       {
         ok: false,
@@ -233,16 +255,27 @@ export async function POST(request: NextRequest) {
   }
 
   if (outcome.kind !== "ok") {
+    request.signal.removeEventListener("abort", abortUpstream);
     return denialResponse(outcome, origin, allowedDomains);
   }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      // Flipped on cancel and after close, because writing to a cancelled or
+      // closed controller throws and the visitor is gone anyway.
+      let writable = true;
       const send = (event: string, data: unknown) => {
-        controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-        );
+        if (!writable) return;
+        try {
+          controller.enqueue(
+            encoder.encode(
+              `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+            ),
+          );
+        } catch {
+          writable = false;
+        }
       };
 
       try {
@@ -256,18 +289,37 @@ export async function POST(request: NextRequest) {
           usage,
         });
       } catch (error) {
-        console.error(
-          "[chat] stream failed:",
-          error instanceof Error ? error.message : error,
-        );
-        // Still settle, so a partial answer that consumed tokens is billed.
+        // Still settle, so a partial answer that consumed tokens is billed
+        // exactly once (settle is memoized per turn).
         await outcome.settle().catch(() => undefined);
-        send("error", {
-          message: "The answer was cut short. Please try again.",
-        });
+        if (!request.signal.aborted) {
+          const message =
+            error instanceof Error ? error.message : String(error ?? "unknown");
+          console.error("[chat] stream failed:", message);
+          await notifyFailedJob({
+            jobType: "chat.provider",
+            jobId: outcome.conversationId,
+            error: message,
+            attempts: 1,
+          }).catch(() => undefined);
+          send("error", {
+            message: "The answer was cut short. Please try again.",
+          });
+        }
       } finally {
-        controller.close();
+        writable = false;
+        try {
+          controller.close();
+        } catch {
+          // Already cancelled by a disconnect.
+        }
       }
+    },
+    async cancel() {
+      // The client went away mid-stream: stop paying the provider and bill
+      // whatever was generated so far.
+      upstream.abort();
+      await outcome.settle().catch(() => undefined);
     },
   });
 

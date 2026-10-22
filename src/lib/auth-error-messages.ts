@@ -28,6 +28,8 @@ const MESSAGES: Record<string, string> = {
   disabled: "That account has been disabled. Contact us if that is unexpected.",
   "already-linked":
     "That email address is already linked to a different Google account. Sign in with your password instead.",
+  "two-factor-required":
+    "This account uses two-factor authentication. Sign in with your email, password, and authentication code instead of Google.",
 };
 
 const FALLBACK = "That sign-in did not work. Please try again.";

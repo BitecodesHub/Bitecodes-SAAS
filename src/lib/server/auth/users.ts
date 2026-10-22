@@ -150,7 +150,8 @@ export async function resetAdminPassword(
     return { ok: false, error: "That account no longer exists." };
   }
 
-  await revokeAllSessions(userId);
+  const { revokeUnusedTokens } = await import("@/lib/server/auth/recovery");
+  await Promise.all([revokeAllSessions(userId), revokeUnusedTokens(userId)]);
   return { ok: true, password };
 }
 
@@ -217,7 +218,10 @@ export async function setAdminStatus(
     { $set: { status, updatedAt: new Date() } },
   );
 
-  if (status === "disabled") await revokeAllSessions(userId);
+  if (status === "disabled") {
+    const { revokeUnusedTokens } = await import("@/lib/server/auth/recovery");
+    await Promise.all([revokeAllSessions(userId), revokeUnusedTokens(userId)]);
+  }
   return { ok: true };
 }
 

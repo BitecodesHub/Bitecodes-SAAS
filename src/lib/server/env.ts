@@ -205,3 +205,23 @@ export function getImapConfig() {
     port: Number(process.env.IMAP_PORT ?? 993),
   };
 }
+
+/**
+ * Search-engine ownership verification tokens, emitted as
+ * `<meta name="google-site-verification">` and `<meta name="msvalidate.01">`.
+ * Only the token (the meta tag's `content` value) belongs in the variable,
+ * never the whole tag. Anything that does not look like a token is ignored,
+ * so a pasted tag cannot inject markup into every page.
+ */
+function verificationToken(value: string | undefined): string | null {
+  const token = value?.trim();
+  return token && /^[A-Za-z0-9_-]{8,128}$/.test(token) ? token : null;
+}
+
+export function getGoogleSiteVerification(): string | null {
+  return verificationToken(process.env.GOOGLE_SITE_VERIFICATION);
+}
+
+export function getBingSiteVerification(): string | null {
+  return verificationToken(process.env.BING_SITE_VERIFICATION);
+}

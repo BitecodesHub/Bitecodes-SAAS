@@ -59,11 +59,21 @@ export class GatewayError extends Error {
 interface CallInput {
   provider: ResolvedProvider;
   model: string;
+  /** Optional system prompt (automations). The desktop app never sends one. */
+  system?: string;
   prompt: string;
   images: string[];
   maxTokens: number;
   temperature: number;
   onToken?: (delta: string) => void;
+  /**
+   * Fires on every streamed delta that carries text, reasoning included
+   * (reasoning is never returned). A role-only or empty chunk does not count:
+   * a provider that sends one and then stalls is still silent. Only the
+   * automation runner uses it, as proof of life for its first-token and idle
+   * timers; the desktop path leaves it unset.
+   */
+  onActivity?: () => void;
   signal: AbortSignal;
   fetchImpl: FetchLike;
 }
@@ -131,7 +141,12 @@ async function callOpenAICompatible(input: CallInput): Promise<CallResult> {
       },
       body: JSON.stringify({
         model: input.model,
-        messages: [{ role: "user", content }],
+        messages: input.system
+          ? [
+              { role: "system", content: input.system },
+              { role: "user", content },
+            ]
+          : [{ role: "user", content }],
         temperature: input.temperature,
         max_tokens: input.maxTokens,
         stream: true,
@@ -168,7 +183,13 @@ async function callOpenAICompatible(input: CallInput): Promise<CallResult> {
         let parsed: {
           error?: { message?: string };
           usage?: { prompt_tokens?: number; completion_tokens?: number };
-          choices?: { delta?: { content?: string | null } }[];
+          choices?: {
+            delta?: {
+              content?: string | null;
+              reasoning?: string | null;
+              reasoning_content?: string | null;
+            };
+          }[];
         };
         try {
           parsed = JSON.parse(payload);
@@ -183,7 +204,15 @@ async function callOpenAICompatible(input: CallInput): Promise<CallResult> {
           promptTokens = parsed.usage.prompt_tokens ?? promptTokens;
           completionTokens = parsed.usage.completion_tokens ?? completionTokens;
         }
-        const delta = parsed?.choices?.[0]?.delta?.content;
+        const streamed = parsed?.choices?.[0]?.delta;
+        if (
+          streamed?.content ||
+          streamed?.reasoning ||
+          streamed?.reasoning_content
+        ) {
+          input.onActivity?.();
+        }
+        const delta = streamed?.content;
         if (typeof delta === "string" && delta) {
           text += delta;
           input.onToken?.(delta);
@@ -219,6 +248,7 @@ async function callBedrock(input: CallInput): Promise<CallResult> {
       },
       body: JSON.stringify({
         messages: [{ role: "user", content }],
+        ...(input.system ? { system: [{ text: input.system }] } : {}),
         inferenceConfig: {
           maxTokens: input.maxTokens,
           temperature: Math.min(Math.max(input.temperature, 0), 1),
@@ -460,5 +490,160 @@ SCREENSHOT>>>`;
     (p) => p.visionModel,
     { ...opts, images, stream: true },
     attempted,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Whole-answer chain runner (server automations)
+//
+// The transport still streams (NVIDIA needs SSE, and deltas prove a provider
+// is alive), but nothing is forwarded: the caller receives one whole answer.
+// ---------------------------------------------------------------------------
+
+export interface TextChainOptions {
+  /** Optional system prompt: a system message, or Bedrock's `system` field. */
+  system?: string;
+  prompt: string;
+  maxTokens?: number;
+  temperature?: number;
+  signal?: AbortSignal;
+  fetchImpl?: FetchLike;
+  /**
+   * How long a provider may stay silent before the next one is tried. Any
+   * streamed text counts as life, reasoning included: nobody watches these
+   * answers arrive, so a model that is thinking is not a model that is stuck.
+   * Applied only while another provider remains.
+   */
+  firstTokenDeadlineMs?: number;
+  /**
+   * How long a provider that has started may then go quiet before the next
+   * one is tried. Defaults to 90 seconds. Like the first-token deadline it
+   * applies only while another provider remains; the last provider keeps the
+   * default and is bounded by the caller's signal.
+   */
+  idleTimeoutMs?: number;
+  /**
+   * Output gate. Return false, or throw (the message becomes the recorded
+   * outcome), to reject an answer and try the next provider. The automation
+   * client uses it to fall through on invalid JSON.
+   */
+  accept?: (text: string) => boolean;
+}
+
+/**
+ * Walks the chain for a background job, where no one is watching a stream.
+ *
+ * Unlike the desktop path there is no "answer was cut short" case: a text is
+ * only returned whole, so any failure — HTTP error, silence past the deadline,
+ * a broken stream, an empty or reasoning-only answer, or an answer rejected by
+ * `accept` — falls through to the next provider. It never throws
+ * STREAM_BROKEN; it throws CANCELLED when the caller's signal aborts,
+ * NOT_CONFIGURED for an empty chain, and ALL_FAILED otherwise.
+ */
+export async function runTextChain(
+  chain: ResolvedProvider[],
+  opts: TextChainOptions,
+): Promise<DesktopCompletion> {
+  const attempted: Attempt[] = [];
+  if (chain.length === 0) {
+    throw new GatewayError(
+      "No AI provider is configured.",
+      attempted,
+      "NOT_CONFIGURED",
+    );
+  }
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const deadlineMs = opts.firstTokenDeadlineMs ?? FIRST_TOKEN_DEADLINE_MS;
+  const candidates = chain.filter((p) => p.model);
+
+  for (let i = 0; i < candidates.length; i++) {
+    const provider = candidates[i];
+    const model = provider.model;
+    if (opts.signal?.aborted)
+      throw new GatewayError("Request cancelled.", attempted, "CANCELLED");
+
+    const ctl = new AbortController();
+    const onAbort = () => ctl.abort();
+    opts.signal?.addEventListener("abort", onAbort, { once: true });
+    let alive = false;
+    let deadlineHit = false;
+    let idleHit = false;
+    const hasNext = i < candidates.length - 1;
+    const deadline = hasNext
+      ? setTimeout(() => {
+          if (!alive) {
+            deadlineHit = true;
+            ctl.abort();
+          }
+        }, deadlineMs)
+      : undefined;
+    const idleMs = hasNext
+      ? (opts.idleTimeoutMs ?? IDLE_TIMEOUT_MS)
+      : IDLE_TIMEOUT_MS;
+    const onIdle = () => {
+      idleHit = true;
+      ctl.abort();
+    };
+    let idle = setTimeout(onIdle, idleMs);
+    const markAlive = () => {
+      alive = true;
+      if (deadline) clearTimeout(deadline);
+      clearTimeout(idle);
+      idle = setTimeout(onIdle, idleMs);
+    };
+
+    try {
+      const result = await callProvider({
+        provider,
+        model,
+        system: opts.system,
+        prompt: opts.prompt,
+        images: [],
+        maxTokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,
+        temperature: opts.temperature ?? 0.2,
+        signal: ctl.signal,
+        fetchImpl,
+        onToken: markAlive,
+        onActivity: markAlive,
+      });
+      if (opts.accept && !opts.accept(result.text)) {
+        throw new Error("output rejected");
+      }
+      attempted.push({ provider: provider.id, model, outcome: "ok" });
+      return {
+        text: result.text,
+        provider: provider.id,
+        model,
+        attempted,
+        usage: {
+          promptTokens: result.promptTokens,
+          completionTokens: result.completionTokens,
+        },
+      };
+    } catch (err) {
+      if (opts.signal?.aborted)
+        throw new GatewayError("Request cancelled.", attempted, "CANCELLED");
+      const message = deadlineHit
+        ? `no response within ${Math.round(deadlineMs / 1000)}s`
+        : idleHit
+          ? `stalled for ${Math.round(idleMs / 1000)}s`
+          : err instanceof Error
+            ? err.message
+            : String(err);
+      attempted.push({
+        provider: provider.id,
+        model,
+        outcome: message.slice(0, 300),
+      });
+    } finally {
+      if (deadline) clearTimeout(deadline);
+      clearTimeout(idle);
+      opts.signal?.removeEventListener("abort", onAbort);
+    }
+  }
+  throw new GatewayError(
+    "All configured providers failed.",
+    attempted,
+    "ALL_FAILED",
   );
 }

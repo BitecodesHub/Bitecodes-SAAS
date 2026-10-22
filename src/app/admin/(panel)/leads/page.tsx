@@ -6,16 +6,17 @@ import {
   listLeads,
   LEAD_KIND_LABELS,
   LEAD_PAGE_SIZE,
-  LEAD_STATUSES,
-  LEAD_STATUS_LABELS,
+  LEAD_STAGES,
+  LEAD_STAGE_LABELS,
+  parseLeadStage,
   type LeadKind,
   type LeadQuery,
 } from "@/lib/server/leads/repository";
+import { PipelineBoardLink } from "@/components/admin/pipeline-board";
 import { LeadTable } from "@/components/admin/lead-table";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { StatTile } from "@/components/ui/chart";
-import type { LeadStatus } from "@/lib/server/db/types";
 
 export const metadata: Metadata = { title: "Leads" };
 
@@ -39,9 +40,16 @@ export default async function LeadsPage({ searchParams }: PageProps) {
   await requireCapability("manage_leads");
   const params = await searchParams;
 
+  const stageParam =
+    readParam(params, "stage") ?? readParam(params, "status") ?? null;
+  const stage = stageParam === "all" ? null : parseLeadStage(stageParam);
+
   const query: LeadQuery = {
     search: readParam(params, "q"),
-    status: readParam(params, "status") as LeadStatus | "all" | undefined,
+    stage: stage ?? undefined,
+    // Legacy `?status=spam` links still land on the mapped stage instead of
+    // silently showing every lead.
+    status: stage ?? undefined,
     kind: readParam(params, "kind") as LeadKind | "all" | undefined,
     page: Number(readParam(params, "page") ?? "1") || 1,
     pageSize: LEAD_PAGE_SIZE,
@@ -57,7 +65,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
     const next = new URLSearchParams();
     const current: Record<string, string | undefined> = {
       q: query.search,
-      status: query.status === "all" ? undefined : query.status,
+      stage: stage ?? undefined,
       kind: query.kind === "all" ? undefined : query.kind,
       ...changes,
     };
@@ -73,22 +81,28 @@ export default async function LeadsPage({ searchParams }: PageProps) {
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
         <p className="text-muted-foreground max-w-2xl text-sm leading-relaxed">
-          Everyone who came to you. Contact form enquiries, AI consultant
-          briefs, and free website audit runs, in one list.
+          Everyone who came to you — contact form enquiries, AI consultant
+          briefs, website audit runs, staff-form submissions, and bookings — in
+          one inbox, scored and ranked by what needs attention.
         </p>
+        <PipelineBoardLink />
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile hero label="Total leads" value={stats.total} />
         <StatTile
           label="New"
-          value={stats.byStatus.new ?? 0}
+          value={stats.byStage.new ?? 0}
           hint="Not yet triaged."
         />
-        <StatTile label="Qualified" value={stats.byStatus.qualified ?? 0} />
+        <StatTile
+          label="Qualified"
+          value={stats.byStage.qualified ?? 0}
+          hint="Fit confirmed, proposal next."
+        />
         <StatTile
           label="Won"
-          value={stats.byStatus.won ?? 0}
+          value={stats.byStage.won ?? 0}
           hint="Closed business from inbound."
         />
       </div>
@@ -109,9 +123,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
             aria-label="Search leads"
             className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-11 min-w-56 flex-1 rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm"
           />
-          {query.status && query.status !== "all" && (
-            <input type="hidden" name="status" value={query.status} />
-          )}
+          {stage && <input type="hidden" name="stage" value={stage} />}
           {query.kind && query.kind !== "all" && (
             <input type="hidden" name="kind" value={query.kind} />
           )}
@@ -125,25 +137,23 @@ export default async function LeadsPage({ searchParams }: PageProps) {
 
         <FilterRow label="Stage">
           <FilterChip
-            href={buildHref({ status: undefined, page: undefined })}
-            active={!query.status || query.status === "all"}
+            href={buildHref({ stage: undefined, page: undefined })}
+            active={!stage}
           >
             All
           </FilterChip>
-          {LEAD_STATUSES.filter((status) => stats.byStatus[status]).map(
-            (status) => (
-              <FilterChip
-                key={status}
-                href={buildHref({ status, page: undefined })}
-                active={query.status === status}
-              >
-                {LEAD_STATUS_LABELS[status]}
-                <Badge variant="muted" className="ml-1 px-1.5 py-0">
-                  {stats.byStatus[status]}
-                </Badge>
-              </FilterChip>
-            ),
-          )}
+          {LEAD_STAGES.map((entry) => (
+            <FilterChip
+              key={entry}
+              href={buildHref({ stage: entry, page: undefined })}
+              active={stage === entry}
+            >
+              {LEAD_STAGE_LABELS[entry]}
+              <Badge variant="muted" className="ml-1 px-1.5 py-0">
+                {stats.byStage[entry] ?? 0}
+              </Badge>
+            </FilterChip>
+          ))}
         </FilterRow>
 
         <FilterRow label="Source">
@@ -153,7 +163,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
           >
             All
           </FilterChip>
-          {(["enquiry", "consultant", "audit"] as LeadKind[])
+          {(["enquiry", "consultant", "audit", "form", "booking"] as LeadKind[])
             .filter((kind) => stats.byKind[kind])
             .map((kind) => (
               <FilterChip
@@ -174,7 +184,7 @@ export default async function LeadsPage({ searchParams }: PageProps) {
         rows={result.items}
         query={{
           search: query.search,
-          status: query.status,
+          stage: query.stage,
           kind: query.kind,
         }}
         canManage

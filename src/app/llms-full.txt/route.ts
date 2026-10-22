@@ -9,6 +9,7 @@ import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { faqs } from "@/data/faqs";
 import { processSteps } from "@/data/process";
 import { getPricing, formatStartingPrice } from "@/lib/pricing";
+import { formatPackPrice, packsFor } from "@/lib/server/billing/packs";
 
 // Expanded, citation-ready LLM document (https://llmstxt.org).
 // Information-dense companion to /llms.txt. Dynamic so AI-published blog posts
@@ -27,6 +28,12 @@ export async function GET() {
 
   const L: string[] = [];
   const push = (s = "") => L.push(s);
+  const priceFrom = (product: "chatbot" | "forms" | "bookings") => {
+    const packs = packsFor(product);
+    return packs.length > 0
+      ? formatPackPrice(packs[0])
+      : "see the product page";
+  };
 
   push(`# ${name}`);
   push("");
@@ -88,13 +95,30 @@ export async function GET() {
   );
   push("");
 
+  // --- Products ---
+  push("## Products");
+  push(
+    `Prepaid credit packs, no subscription and no automatic renewal. Unused credits do not expire.`,
+  );
+  push(
+    `- AI Chatbot (${url}/ai-chatbot): token packs from ${priceFrom("chatbot")}. One credit is one token; a typical grounded answer costs roughly 500 tokens.`,
+  );
+  push(
+    `- Forms (${url}/forms): submission packs from ${priceFrom("forms")}. One credit is one accepted submission; spam-filtered submissions are not billed.`,
+  );
+  push(
+    `- Booking (${url}/booking): confirmed-booking packs from ${priceFrom("bookings")}. One credit is spent when a slot is reserved.`,
+  );
+  push(`- Notes (${url}/notes): free desktop AI app for macOS and Windows.`);
+  push("");
+
   // --- Industries ---
   push("## Industries");
   push(`${industries.length} industries served.`);
   push("");
   for (const i of industries) {
     push(`### ${i.name}`);
-    push(`URL: ${url}/industries`);
+    push(`URL: ${url}/industries/${i.slug}`);
     push(`Description: ${i.description}`);
     push(`Highlights: ${i.highlights.join(", ")}.`);
     push("");
@@ -130,6 +154,7 @@ export async function GET() {
     push(`Solution: ${p.solution}`);
     push(`Features: ${p.features.join("; ")}.`);
     push(`Stack: ${stackNames(p.technologies)}.`);
+    if (p.outcomes?.length) push(`Outcomes: ${p.outcomes.join("; ")}.`);
     push("");
   }
 
@@ -197,6 +222,7 @@ export async function GET() {
   push(`- Industries: ${url}/industries`);
   push(`- Technologies: ${url}/technologies`);
   push(`- Process: ${url}/process`);
+  push(`- Guarantees: ${url}/guarantees`);
   push(`- About: ${url}/about`);
   push(`- Blog: ${url}/blog`);
   push(`- Careers: ${url}/careers`);
@@ -229,14 +255,14 @@ export async function GET() {
   push(
     `- Primary markets: United States, United Kingdom, Australia, India (worldwide remote)`,
   );
-  push(`- GitHub: ${social.github}`);
-  push(`- LinkedIn: ${social.linkedin}`);
-  push(`- X (Twitter): ${social.x} (@${siteConfig.twitterHandle})`);
-  push(`- Instagram: ${social.instagram}`);
+  if (social.github) push(`- GitHub: ${social.github}`);
+  if (social.linkedin) push(`- LinkedIn: ${social.linkedin}`);
+  if (social.x) push(`- X (Twitter): ${social.x}`);
+  if (social.instagram) push(`- Instagram: ${social.instagram}`);
   push("");
 
   push(
-    `Structured data: ${name} embeds Schema.org JSON-LD sitewide — Organization (areaServed US/GB/AU/IN), Service (with multi-currency Offer in USD/INR/AUD/GBP), OfferCatalog (on /pricing), FAQPage, Person, BreadcrumbList, and WebSite — to support search engines and AI answer engines.`,
+    `Structured data: ${name} embeds Schema.org JSON-LD sitewide — Organization and ProfessionalService (areaServed US/GB/AU/IN, opening hours Mon–Fri 10:00–18:00 IST, no invented street address), Service (with multi-currency Offer in USD/INR/AUD/GBP), OfferCatalog (on /pricing), WebPage, FAQPage, Person, BreadcrumbList, and WebSite — to support search engines and AI answer engines.`,
   );
   push("");
 

@@ -8,6 +8,8 @@ import {
   type LoginLinkState,
 } from "@/lib/server/auth/actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 /**
  * The "Complete sign-in" button on the magic-link landing page.
@@ -16,15 +18,42 @@ import { Button } from "@/components/ui/button";
  * never by the GET that rendered the page, so inbox link-scanners that
  * prefetch URLs cannot burn the link before its owner uses it.
  */
-export function LoginLinkForm({ token }: { token: string }) {
+export function LoginLinkForm({
+  token,
+  requiresTwoFactor = false,
+}: {
+  token: string;
+  /** The account has TOTP enabled, so a code must accompany the link. */
+  requiresTwoFactor?: boolean;
+}) {
   const [state, action] = useActionState<LoginLinkState, FormData>(
     completeLoginLinkAction,
     undefined,
   );
+  const showCode = requiresTwoFactor || state?.needsTwoFactor;
 
   return (
     <form action={action} className="space-y-5">
       <input type="hidden" name="token" value={token} />
+
+      {showCode && (
+        <div className="space-y-1.5">
+          <Label htmlFor="link-totp">Authentication code</Label>
+          <Input
+            id="link-totp"
+            name="totpCode"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={10}
+            autoFocus
+            required
+            placeholder="123456"
+          />
+          <p className="text-muted-foreground text-xs">
+            Enter the six-digit code from your authenticator app.
+          </p>
+        </div>
+      )}
 
       {state?.error && (
         <div

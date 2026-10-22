@@ -5,6 +5,7 @@ import {
   findActiveNavItem,
 } from "@/lib/admin/navigation";
 import { CAPABILITIES } from "@/lib/server/auth/roles";
+import { ICONS } from "@/components/admin/admin-sidebar";
 
 describe("ADMIN_NAV", () => {
   it("has unique hrefs", () => {
@@ -29,6 +30,47 @@ describe("ADMIN_NAV", () => {
       expect(item.label.length, item.href).toBeGreaterThan(0);
       expect(item.description.length, item.href).toBeGreaterThan(0);
       expect(item.icon.length, item.href).toBeGreaterThan(0);
+    }
+  });
+
+  it("names only icons the sidebar can render", () => {
+    // An unknown name silently falls back to the dashboard glyph.
+    for (const item of ADMIN_NAV_ITEMS) {
+      expect(Object.keys(ICONS), item.href).toContain(item.icon);
+    }
+  });
+
+  it("links every growth page under the Growth, Pipeline, Outreach, or System sections", () => {
+    const sectionOf = (href: string) =>
+      ADMIN_NAV.find((section) =>
+        section.items.some((item) => item.href === href),
+      )?.title;
+    expect(sectionOf("/admin/growth")).toBe("Growth");
+    expect(sectionOf("/admin/analytics")).toBe("Growth");
+    expect(sectionOf("/admin/seo")).toBe("Growth");
+    expect(sectionOf("/admin/content")).toBe("Growth");
+    expect(sectionOf("/admin/feedback")).toBe("Growth");
+    expect(sectionOf("/admin/customer-health")).toBe("Growth");
+    expect(sectionOf("/admin/proposals")).toBe("Pipeline");
+    expect(sectionOf("/admin/chat")).toBe("Outreach");
+    expect(sectionOf("/admin/calls")).toBe("Outreach");
+    expect(sectionOf("/admin/jobs")).toBe("System");
+    for (const href of [
+      "/admin/growth",
+      "/admin/jobs",
+      "/admin/analytics",
+      "/admin/seo",
+      "/admin/chat",
+      "/admin/calls",
+      "/admin/proposals",
+      "/admin/content",
+      "/admin/feedback",
+      "/admin/customer-health",
+    ]) {
+      expect(
+        ADMIN_NAV_ITEMS.find((item) => item.href === href)?.enabled,
+        href,
+      ).toBe(true);
     }
   });
 

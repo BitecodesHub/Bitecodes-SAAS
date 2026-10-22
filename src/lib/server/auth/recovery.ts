@@ -5,6 +5,7 @@ import { adminTokens, adminUsers } from "@/lib/server/db/collections";
 import type { AdminRole, AdminTokenDoc } from "@/lib/server/db/types";
 import { hashPassword, randomToken, sha256Hex } from "@/lib/server/crypto";
 import { revokeAllSessions } from "@/lib/server/auth/session";
+import { recordSecondFactorFailure } from "@/lib/server/auth/login";
 import { queueEmail } from "@/lib/server/email/send";
 import { getSiteUrl } from "@/lib/server/env";
 import { siteConfig } from "@/lib/site";
@@ -74,6 +75,27 @@ export async function consumeToken(
 }
 
 /**
+ * Marks every unused token for a user as consumed.
+ *
+ * Called when a password changes (or an account is disabled): a reset or
+ * sign-in link issued before that moment must not still work afterwards. The
+ * token already consumed by the caller is excluded automatically because its
+ * `usedAt` is no longer null.
+ */
+export async function revokeUnusedTokens(
+  userId: string,
+  keepTokenHash?: string,
+): Promise<number> {
+  const collection = await adminTokens();
+  const filter: Record<string, unknown> = { userId, usedAt: null };
+  if (keepTokenHash) filter.tokenHash = { $ne: keepTokenHash };
+  const result = await collection.updateMany(filter, {
+    $set: { usedAt: new Date() },
+  });
+  return result.modifiedCount;
+}
+
+/**
  * Peeks at a token without consuming it, so the magic-link landing page can
  * show "this link has expired" before the visitor commits. Never treat a
  * successful peek as authentication — only `consumeToken` grants anything.
@@ -100,6 +122,57 @@ async function findActiveUserByEmail(email: string) {
     email: email.trim().toLowerCase(),
   });
   return user && user.status === "active" ? user : null;
+}
+
+export interface LoginLinkInspection {
+  /** The token is unexpired, unused, and belongs to an active account. */
+  valid: boolean;
+  /**
+   * The landing page must ask for a TOTP code. Revealed only to whoever holds
+   * the single-use token, which is already a credential for that account.
+   */
+  requiresTwoFactor: boolean;
+}
+
+/**
+ * Non-consuming inspection for the magic-link landing page, so it can render
+ * the second-factor field before the visitor presses the button. Never use the
+ * result as authentication.
+ */
+export async function inspectLoginLink(
+  token: string | null | undefined,
+): Promise<LoginLinkInspection> {
+  if (!token || token.length > 200) {
+    return { valid: false, requiresTwoFactor: false };
+  }
+
+  try {
+    const collection = await adminTokens();
+    const record = await collection.findOne(
+      {
+        tokenHash: sha256Hex(token),
+        purpose: "login-link",
+        usedAt: null,
+        expiresAt: { $gt: new Date() },
+      },
+      { projection: { userId: 1 } },
+    );
+    if (!record) return { valid: false, requiresTwoFactor: false };
+
+    const users = await adminUsers();
+    const user = await users.findOne(
+      { _id: new ObjectId(record.userId), status: "active" },
+      { projection: { totpSecret: 1, totpEnabledAt: 1 } },
+    );
+    if (!user) return { valid: false, requiresTwoFactor: false };
+
+    return {
+      valid: true,
+      requiresTwoFactor: Boolean(user.totpSecret && user.totpEnabledAt),
+    };
+  } catch {
+    return { valid: false, requiresTwoFactor: false };
+  }
 }
 
 /**
@@ -204,6 +277,10 @@ export async function performPasswordReset(
   const userId = await consumeToken(token, "password-reset");
   if (!userId) return { ok: false, reason: "invalid-token" };
 
+  // Revoke first: if the write below fails, burning the other links is the
+  // safe direction. The consumed token is already excluded by `usedAt`.
+  await revokeUnusedTokens(userId);
+
   const users = await adminUsers();
   const user = await users.findOneAndUpdate(
     { _id: new ObjectId(userId), status: "active" },
@@ -235,30 +312,96 @@ export type LoginLinkOutcome =
       role: import("@/lib/server/db/types").AdminRole;
       sessionEpoch: number;
     }
-  | { ok: false; reason: "invalid-token" | "no-account" };
+  | {
+      ok: false;
+      reason:
+        | "invalid-token"
+        | "no-account"
+        | "two-factor-required"
+        | "invalid-code";
+    }
+  | { ok: false; reason: "locked"; retryAfterSeconds: number };
 
 /**
  * Redeems a sign-in link. The caller creates the session — this function only
  * proves "whoever holds this fresh token is this active user".
+ *
+ * Two-factor accounts must supply their code. The token is deliberately not
+ * consumed until the code is right, so a mistyped digit does not force the
+ * visitor to request a new email. Failed codes count towards the same lockout
+ * as failed passwords; otherwise the link would allow unlimited guesses of a
+ * six-digit code.
  */
 export async function redeemLoginLink(
   token: string,
+  totpCode?: string,
 ): Promise<LoginLinkOutcome> {
-  const userId = await consumeToken(token, "login-link");
-  if (!userId) return { ok: false, reason: "invalid-token" };
+  if (!token || token.length > 200) {
+    return { ok: false, reason: "invalid-token" };
+  }
+
+  const collection = await adminTokens();
+  const record = await collection.findOne(
+    {
+      tokenHash: sha256Hex(token),
+      purpose: "login-link",
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
+    },
+    { projection: { userId: 1 } },
+  );
+  if (!record) return { ok: false, reason: "invalid-token" };
 
   const users = await adminUsers();
-  const user = await users.findOneAndUpdate(
+  const user = await users.findOne({ _id: new ObjectId(record.userId) });
+  if (!user || user.status !== "active") {
+    return { ok: false, reason: "no-account" };
+  }
+
+  const now = new Date();
+  if (user.lockedUntil && user.lockedUntil > now) {
+    return {
+      ok: false,
+      reason: "locked",
+      retryAfterSeconds: Math.ceil(
+        (user.lockedUntil.getTime() - now.getTime()) / 1000,
+      ),
+    };
+  }
+
+  if (user.totpSecret && user.totpEnabledAt) {
+    if (!totpCode) return { ok: false, reason: "two-factor-required" };
+
+    const { verifyTotp } = await import("@/lib/server/auth/totp");
+    if (!verifyTotp(user.totpSecret, totpCode, now.getTime())) {
+      await recordSecondFactorFailure(record.userId, now);
+      return { ok: false, reason: "invalid-code" };
+    }
+  }
+
+  const userId = await consumeToken(token, "login-link");
+  // Another request may have redeemed the same link between the lookup and
+  // this atomic claim. Only one can win, and the loser gets nothing.
+  if (!userId) return { ok: false, reason: "invalid-token" };
+
+  const updated = await users.findOneAndUpdate(
     { _id: new ObjectId(userId), status: "active" },
-    { $set: { lastLoginAt: new Date(), updatedAt: new Date() } },
+    {
+      $set: {
+        lastLoginAt: now,
+        failedAttempts: 0,
+        lockedUntil: null,
+        updatedAt: now,
+      },
+    },
   );
-  if (!user) return { ok: false, reason: "no-account" };
+  if (!updated) return { ok: false, reason: "no-account" };
 
   return {
     ok: true,
     userId,
-    email: user.email,
-    role: user.role,
-    sessionEpoch: user.sessionEpoch,
+    email: updated.email,
+    role: updated.role,
+    sessionEpoch: updated.sessionEpoch,
   };
 }

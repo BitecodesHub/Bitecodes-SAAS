@@ -17,6 +17,10 @@ import {
 } from "@/lib/prospecting/report";
 import { shortUrl } from "@/lib/prospecting/display";
 import { siteConfig } from "@/lib/site";
+import { AuditEmailForm } from "@/components/audit/audit-email-form";
+import { AuditSummary } from "@/components/audit/audit-summary";
+import { buildFallbackAuditSummary } from "@/lib/audit-summary";
+import { toAuditEmailFindings } from "@/lib/audit-email";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -89,6 +93,33 @@ export default async function ReportPage({ params }: PageProps) {
   const items = buildReportItems(classification.tags);
   const observations = buildObservations(signals);
   const headline = reportHeadline(prospect.name, classification.primaryTag);
+  const reviewedUrl =
+    prospect.websiteFinalUrl ??
+    prospect.website ??
+    `${prospect.name}${prospect.city ? `, ${prospect.city}` : ""}`;
+  const summaryFindings = [
+    ...items.map((item) => ({
+      status: "warning" as const,
+      title: item.title,
+      detail: item.why,
+      recommendation: item.fix,
+    })),
+    ...observations
+      .filter((observation) => observation.ok === false)
+      .map((observation) => ({
+        status: "warning" as const,
+        title: observation.label,
+        detail: `Recorded value: ${observation.value}.`,
+      })),
+  ];
+  const summaryInput = {
+    url: reviewedUrl,
+    score: null,
+    context: "review" as const,
+    findings: summaryFindings,
+  };
+  const summaryText =
+    summaryFindings.length > 0 ? buildFallbackAuditSummary(summaryInput) : null;
 
   return (
     <ReportShell>
@@ -195,6 +226,18 @@ export default async function ReportPage({ params }: PageProps) {
         </section>
       )}
 
+      {summaryFindings.length > 0 && (
+        <>
+          <AuditSummary input={summaryInput} />
+          <AuditEmailForm
+            source="report"
+            url={reviewedUrl}
+            summary={summaryText ?? undefined}
+            findings={toAuditEmailFindings(summaryFindings)}
+          />
+        </>
+      )}
+
       <section className="border-border bg-card space-y-4 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
         <h2 className="text-xl font-semibold">
           Want this sorted without the jargon?
@@ -211,13 +254,20 @@ export default async function ReportPage({ params }: PageProps) {
         </p>
         <div className="flex flex-wrap gap-3">
           <Button asChild>
-            <Link href="/contact">
-              Talk to us
+            <Link href="/book-a-call" data-track="report-book-call">
+              Book a free 30-minute review call
               <ArrowRight className="size-4" />
             </Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href="/website-audit">Run your own free check</Link>
+            <Link href="/contact" data-track="report-contact">
+              Talk to us instead
+            </Link>
+          </Button>
+          <Button asChild variant="secondary">
+            <Link href="/website-audit" data-track="report-run-own-audit">
+              Run your own free check
+            </Link>
           </Button>
         </div>
         <p className="text-muted-foreground text-xs">

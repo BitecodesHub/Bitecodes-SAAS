@@ -66,6 +66,24 @@ export function deduct(input: DeductInput): Promise<DeductResult> {
   });
 }
 
+/**
+ * Spends up to `amount`, clamped at the balance — for replies that were
+ * already delivered and cannot be taken back. See `wallet.debitUpTo`.
+ */
+export function deductUpTo(
+  input: DeductInput,
+): Promise<wallet.DebitUpToResult> {
+  return wallet.debitUpTo({
+    ownerId: input.ownerId,
+    product: "chatbot",
+    amount: input.amount,
+    subjectId: input.chatbotId ?? null,
+    refId: input.messageId ?? null,
+    note: input.note ?? null,
+    now: input.now,
+  });
+}
+
 /** Recent token rows for an owner, newest first. */
 export function recentLedger(
   ownerId: string,
