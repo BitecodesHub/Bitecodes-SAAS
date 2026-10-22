@@ -53,9 +53,11 @@ function allowedRoutes(): { path: string; label: string }[] {
  * it is honest to have it. Comparison-and-guide framing — never fabricated
  * rankings or client stories.
  *
- * The library is intentionally larger than a year of twice-weekly publishing
- * so the rotation does not repeat a subject and publish a near-duplicate.
- * `pickUnusedTopic` is the selection rule; see `getUsedAiTopics`.
+ * The library covers roughly five months of twice-weekly publishing, so the
+ * rotation does not repeat a subject before it runs out. Starting a new cycle
+ * is a deliberate editorial act — add new topics rather than letting the
+ * rotation loop over old ground. `pickUnusedTopic` is the selection rule; see
+ * `getUsedAiTopics`.
  */
 export const BLOG_TOPICS: string[] = [
   // Foundational buying guides.
@@ -68,7 +70,6 @@ export const BLOG_TOPICS: string[] = [
   "Business process automation: the five workflows worth automating first",
   "How to brief a software studio so you get an accurate quote",
   "Next.js vs traditional CMS for a marketing site: an honest comparison",
-  "What to look for in a web application development partner",
   "Generative engine optimization (GEO): getting cited by AI answer engines",
   "REST API design mistakes that cost you later, and how to avoid them",
   "When to build an MVP versus a full product: a founder's decision guide",
@@ -96,7 +97,6 @@ export const BLOG_TOPICS: string[] = [
   "Headless CMS vs custom admin panel for a content-driven site",
   "How to migrate a WordPress site to Next.js without losing SEO",
   "Structured data for local service businesses: what is worth implementing",
-  "Answer engine optimisation: how to become the source AI assistants cite",
   "Digital transformation for clinics and professional practices",
   "Custom software for recruitment agencies: build vs buy",
   "Software for manufacturing operations: where custom pays back",

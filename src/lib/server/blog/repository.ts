@@ -5,6 +5,7 @@ import { blogPostDocs, blogRevisions } from "@/lib/server/db/collections";
 import type { BlogPostDoc, BlogStatus } from "@/lib/server/db/types";
 import type { BlogPost } from "@/types/content";
 import { blogPosts as staticPosts } from "@/data/blog";
+import { titlesAreNearDuplicate } from "@/lib/server/blog/duplicates";
 
 /**
  * Blog data layer.
@@ -62,6 +63,19 @@ export async function getPublishedPosts(): Promise<BlogPost[]> {
     // public site must never depend on the database being up.
     return [...staticPosts].sort((a, b) => (a.date < b.date ? 1 : -1));
   }
+}
+
+/**
+ * The published post whose title expresses the same intent as `title`, when
+ * one exists. The generation job uses this to stop a second article that would
+ * compete with an existing page instead of ranking.
+ */
+export async function findSimilarPublishedPost(
+  title: string,
+): Promise<{ slug: string; title: string } | null> {
+  const posts = await getPublishedPosts();
+  const match = posts.find((post) => titlesAreNearDuplicate(post.title, title));
+  return match ? { slug: match.slug, title: match.title } : null;
 }
 
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {

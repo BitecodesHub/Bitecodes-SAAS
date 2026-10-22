@@ -6,6 +6,7 @@ import {
 } from "@/lib/server/blog/generator";
 import {
   createPost,
+  findSimilarPublishedPost,
   getUsedAiTopics,
   publishDueScheduledPosts,
 } from "@/lib/server/blog/repository";
@@ -25,9 +26,13 @@ import type { JobContext } from "@/lib/server/jobs/worker";
  * Blog generation.
  *
  * Drafts one post with the AI generator and — per the owner's choice —
- * publishes it immediately. Auto-published posts are flagged `aiAssisted` in
- * the database (an internal honesty marker, not shown as a disclaimer) and a
- * revision is snapshotted, so a human can always review or roll back.
+ * publishes it immediately, unless its title targets the same intent as an
+ * existing published post. Near-duplicates are saved as drafts so a human can
+ * merge or rewrite them instead of publishing two pages that compete.
+ *
+ * Auto-published posts are flagged `aiAssisted` in the database (an internal
+ * honesty marker, not shown as a disclaimer) and a revision is snapshotted, so
+ * a human can always review or roll back.
  *
  * `dayOfYear` is passed through the payload rather than computed here, because
  * `Date` construction is restricted in some execution contexts; the enqueuer
@@ -100,7 +105,9 @@ export async function handleBlogGenerate(
     );
   }
 
-  const { id, slug } = await createPost({
+  const similar = await findSimilarPublishedPost(draft.title);
+
+  const postInput = {
     slug: draft.slug,
     title: draft.title,
     excerpt: draft.excerpt,
@@ -112,14 +119,40 @@ export async function handleBlogGenerate(
     internalLinks: draft.internalLinks,
     metaDescription: draft.metaDescription,
     readingMinutes: draft.readingMinutes,
-    status: "published",
+    // A near-duplicate is kept as a draft for review — never published to
+    // compete with the page that already owns the intent.
+    status: similar ? "draft" : "published",
     featured: false,
     authorId: null,
     aiAssisted: true,
     aiModel: draft.model,
     topic,
     scheduledFor: null,
-  } as Parameters<typeof createPost>[0]);
+  } as Parameters<typeof createPost>[0];
+
+  const { id, slug } = await createPost(postInput);
+
+  if (similar) {
+    await recordAudit({
+      action: AUDIT_ACTIONS.postCreated,
+      target: { type: "blog_post", id },
+      detail: {
+        slug,
+        topic,
+        aiAssisted: true,
+        reason: "near-duplicate",
+        similarTo: similar.slug,
+      },
+    });
+    context.log(
+      `Held "${draft.title}" as a draft: it overlaps "${similar.title}" (${similar.slug}).`,
+    );
+    return {
+      skipped: "near-duplicate",
+      draftSlug: slug,
+      similarTo: similar.slug,
+    };
+  }
 
   await recordAudit({
     action: AUDIT_ACTIONS.postPublished,
