@@ -61,7 +61,7 @@ const publishedProjects: PublishedProject[] = [
     ],
     relationship: "related-party",
     featured: false,
-    image: "/images/projects/prism.png",
+    image: "/images/projects/prism.jpg",
     liveUrl: "https://prism.sublimecare.com.au",
   },
   {
@@ -206,7 +206,7 @@ const publishedProjects: PublishedProject[] = [
     ],
     relationship: "client",
     featured: true,
-    image: "/images/projects/conceptserve.png",
+    image: "/images/projects/conceptserve.jpg",
     liveUrl: "https://conceptserve.com",
   },
   {
@@ -241,7 +241,7 @@ const publishedProjects: PublishedProject[] = [
     ],
     relationship: "related-party",
     featured: false,
-    image: "/images/projects/sublimecare.png",
+    image: "/images/projects/sublimecare.jpg",
     liveUrl: "https://sublimecare.com.au",
   },
   {

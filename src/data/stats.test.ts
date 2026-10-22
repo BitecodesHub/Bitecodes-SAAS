@@ -6,7 +6,6 @@ import {
   yearsSinceFounding,
 } from "@/data/stats";
 import { projects } from "@/data/projects";
-import { services } from "@/data/services";
 import { siteConfig } from "@/lib/site";
 
 describe("stats", () => {
@@ -31,9 +30,9 @@ describe("stats", () => {
   it("derives every published number from data", () => {
     expect(stats).toEqual([
       { label: "Years since founding", value: yearsSinceFounding },
-      { label: "Projects with a live site", value: liveProjectSites.length },
+      { label: "Case studies published", value: projects.length },
       { label: "Products live", value: liveProducts.length },
-      { label: "Services offered", value: services.length },
+      { label: "Markets served", value: siteConfig.markets.length },
     ]);
     expect(liveProducts.every((product) => product.href.startsWith("/"))).toBe(
       true,

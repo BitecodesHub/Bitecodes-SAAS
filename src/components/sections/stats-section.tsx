@@ -11,7 +11,7 @@ export function StatsSection() {
     <section className="container-page py-16 sm:py-20">
       <h2 className="sr-only">Bitecodes in numbers</h2>
       <Reveal>
-        <div className="border-border grid gap-10 border-y py-12 text-center sm:grid-cols-2 lg:grid-cols-4">
+        <div className="border-border grid grid-cols-2 gap-8 border-y py-12 text-center lg:grid-cols-4 lg:gap-10">
           {stats.map((stat) => (
             <StatCounter key={stat.label} stat={stat} />
           ))}

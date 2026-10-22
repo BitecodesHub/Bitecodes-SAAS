@@ -111,7 +111,7 @@ export interface Project {
   features: string[];
   results: { metric: string; label: string }[];
   featured?: boolean;
-  /** Screenshot under /public, e.g. "/images/projects/prism.png". */
+  /** Screenshot under /public, e.g. "/images/projects/prism.jpg". */
   image?: string;
   liveUrl?: string;
   /** Industry slug from src/data/industries.ts. */

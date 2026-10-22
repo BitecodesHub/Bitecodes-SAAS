@@ -1,6 +1,7 @@
 import { Hero } from "@/components/sections/hero";
 import { StatsSection } from "@/components/sections/stats-section";
 import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
+import { ToolsSection } from "@/components/sections/tools-section";
 import { ServicesSection } from "@/components/sections/services-section";
 import { ProcessSection } from "@/components/sections/process-section";
 import { TestimonialsStrip } from "@/components/proof/testimonials-strip";
@@ -11,9 +12,9 @@ import { JsonLd } from "@/components/json-ld";
 import { createMetadata, faqSchema } from "@/lib/seo";
 import { faqs } from "@/data/faqs";
 
-const HOME_TITLE = "Bitecodes | Web, App and AI Development Studio in India";
+const HOME_TITLE = "Custom Software, SaaS & AI Development Studio | Bitecodes";
 const HOME_DESCRIPTION =
-  "Bitecodes is an India-based software studio building fast websites, web apps, SaaS platforms, APIs, and AI automation for startups and enterprises worldwide.";
+  "Build SaaS products, web applications and AI automations with Bitecodes. Clear project pricing, milestone-based delivery and ongoing engineering support.";
 
 const homeMetadata = createMetadata({
   description: HOME_DESCRIPTION,
@@ -36,13 +37,14 @@ export default function HomePage() {
   return (
     <>
       {/*
-        Conversion order: promise → proof-numbers → featured work → services
-        → process → social proof → pricing → FAQ → close.
+        Conversion order: promise → proof-numbers → featured work → free tools
+        → services → process → social proof → pricing → FAQ → close.
       */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
       <StatsSection />
       <FeaturedWorkSection />
+      <ToolsSection />
       <ServicesSection />
       <ProcessSection />
       {/* Renders nothing when no approved testimonials exist */}

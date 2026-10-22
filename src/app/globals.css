@@ -367,6 +367,19 @@
     }
   }
 
+  /*
+   * Capability strip under the hero. Two identical runs translate by exactly
+   * half the track, so the loop is seamless; hovering pauses it and the global
+   * reduced-motion rule leaves a still strip.
+   */
+  .hero-marquee {
+    animation: hero-marquee 46s linear infinite;
+  }
+
+  .hero-marquee:hover {
+    animation-play-state: paused;
+  }
+
   /* Pure-CSS scroll progress bar (no JS). */
   .scroll-progress {
     position: fixed;
@@ -404,6 +417,15 @@
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes hero-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
   }
 }
 

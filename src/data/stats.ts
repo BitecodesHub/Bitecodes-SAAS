@@ -1,6 +1,5 @@
 import type { Stat } from "@/types/content";
 import { projects } from "@/data/projects";
-import { services } from "@/data/services";
 import { siteConfig } from "@/lib/site";
 
 /*
@@ -29,7 +28,7 @@ export const liveProjectSites = projects.filter(
 
 export const stats: Stat[] = [
   { label: "Years since founding", value: yearsSinceFounding },
-  { label: "Projects with a live site", value: liveProjectSites.length },
+  { label: "Case studies published", value: projects.length },
   { label: "Products live", value: liveProducts.length },
-  { label: "Services offered", value: services.length },
+  { label: "Markets served", value: siteConfig.markets.length },
 ];
