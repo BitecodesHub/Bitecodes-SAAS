@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-10-22  
 **Repository:** `Bitecodes-SAAS`  
-**Current branch:** `growth/customer-magnet`  
+**Current branch:** `main`  
 **Plan status:** Repository implementation complete and deployed to production; owner-gated release items and deferred findings remain
 **Scope:** Consolidate the unfinished Claude/OpenCode work, the Customer-Magnet growth engine, and the AI Chatbot product into one production-grade upgrade sequence.
 
@@ -39,7 +39,7 @@
 
 ### Latest verification evidence
 
-- `TEST_MONGODB_URI=mongodb://127.0.0.1:27017 pnpm test`: **131 test files passed, 1,572 tests passed, 6 skipped** (the live OSM/email suites, skipped by design). Includes the bootstrap, autopilot, health, capabilities, auth, billing, outreach, widget, SEO, reporting, referral, and conversion suites.
+- `TEST_MONGODB_URI=mongodb://127.0.0.1:27017 pnpm test`: **131 test files passed, 1,573 tests passed, 6 skipped** (the live OSM/email suites, skipped by design). Includes the bootstrap, autopilot, health, capabilities, auth, billing, outreach, widget, SEO, reporting, referral, conversion, and job-priority suites.
 - Focused autonomous slice: `src/lib/server/capabilities.test.ts` (7 passed), `src/lib/server/bootstrap.test.ts` (4 passed), `src/lib/server/autopilot.test.ts` (8 passed), `src/app/api/health/route.test.ts` (6 passed).
 - Focused referral slice: `src/lib/server/referrals.test.ts` (5 passed, against MongoDB) — one code per account, no reward before verification, malformed/unknown/self codes rejected, reward paid once, reconciliation pays qualified-unpaid rows without double-paying.
 - Server-level empty-database drill (`next start` on a fresh local database with only MongoDB, `AUTH_SECRET`, `CRON_SECRET`, and `SITE_URL` configured; optional providers blanked):
@@ -58,6 +58,12 @@
   - `POST /api/site-assistant` returned 200 with a grounded answer quoting the published Launch package price and the booking CTA.
   - `/widget.js` served version `2.0.0` with the widget version header and the runtime-derived API origin.
   - A dispatched production heartbeat returned `ok: true`, ran 25 jobs with 0 failures, and recorded `heartbeat.lastTickOk: true`; the remaining queued work drains across subsequent ticks. GitHub's cron schedule change may take until the next scheduled window to replace the previous cadence.
+- Production live suite (2026-10-22, 90/90 checks): 26 public routes, auth/admin redirects, sitemap index plus 92 URLs, robots AI-crawler rules, `llms.txt`/`llms-full.txt`, RSS, canonical/OG/JSON-LD, widget version/origin/parse checks, assistant grounding, deep-health and cron authorization, one controlled checklist lead with an idempotent retry, and static-asset caching. `/api/assistant` and the removed referral endpoint returned 404.
+- Live queue investigation found and fixed two reliability defects that unit tests could not see:
+  - Strict oldest-first claiming let a discovery fan-out starve the next autopilot tick; the runner now claims `autopilot.tick` and `prospect.discover` first and allows 100 jobs per authenticated tick. A focused test asserts a priority job wins over an older backlog.
+  - Three Overpass mirrors at 90s could consume the entire 300s function and leave a discovery `running` behind its lock. Each attempt is now capped at 70s, discovery requires 220s of remaining budget, and the run budget is 240s. The reclaimed job completed, `running` returned to 0, and the tick recorded success at 208s.
+  - Post-fix ticks returned 200 with `ok: true`, ran 100 jobs, left no running jobs, and drained the queue; subsequent growth is fresh enrichment work from the week's discovery fan-out, which drains on later ticks.
+- Embedded-widget CORS: the fail-closed path is verified live (invalid `id`/`t` returns 204 with no `Access-Control-Allow-Origin`). The positive path cannot be exercised on production without a real customer chatbot id and public token; the demo page intentionally shows placeholders. The allowlist matcher and widget preflight contract are covered by 43 passing tests (`domains.test.ts`, `widget-origin.test.ts`).
 - No `.env.local` reads, secret prints, force-pushes, or history rewrites were performed while producing this evidence.
 
 ### Deferred findings
