@@ -24,7 +24,7 @@ Bookmark these. Every switch below is already implemented; none requires a deplo
 | A specific automation sending email | Its toggle | `/admin/growth` | `winbackEmails`, `lifecycleEmails`, `monthlyCustomerReports`, `feedbackRequests`, and `bookingReminders` are the external-email switches. All but booking reminders default off. |
 | A standing search running | Preset enabled switch | `/admin/customers/discover` | The preset stops being claimed. Pausing is preferred to deleting, because the next heartbeat restores the default list only when the whole list is empty. |
 | A queued or running job | Cancel / Retry | `/admin/jobs` | Cancels before the next claim or retries a dead-lettered job after its cause is fixed. |
-| All automation | Disable the heartbeat workflow | GitHub → Actions → **Heartbeat** → Disable workflow, or `gh workflow disable heartbeat.yml` | No new cron tick, so no new jobs are enqueued or drained. Server-start bootstrap still runs on deploy. Re-enable with `gh workflow enable heartbeat.yml`. |
+| All automation | Disable the heartbeat workflow **and** pause the Vercel daily cron | GitHub → Actions → **Heartbeat** → Disable workflow (`gh workflow disable heartbeat.yml`); Vercel → Project → Settings → Cron Jobs, or remove the `crons` entry from `vercel.json` and redeploy | No new cron tick, so no new jobs are enqueued or drained. The daily Vercel cron is a floor, not a duplicate: leaving it enabled means automation resumes within a day. Server-start bootstrap still runs on deploy. Re-enable both when safe. |
 | AI steps only | `aiEnabled` | `/admin/growth` | Background automations skip every AI call. Discovery, enrichment, audits, and public pages continue. |
 
 Owner/admin role notes: all toggles require `manage_settings`; job retry/cancel requires the capability asserted by the jobs page; sending requires `send_email`.
@@ -149,7 +149,7 @@ If the mailbox is reachable but IMAP is not, reply detection stays `manual`: seq
    - AI drafts/research/scoring: the matching toggle in `/admin/growth`, or `aiEnabled` off for all AI steps;
    - external email: the matching toggle and `requireApproval` on;
    - sequence tick: there is no per-sequence pause UI; keep `requireApproval` on, cancel queued send jobs, and disable the heartbeat if the loop is still active.
-3. If many jobs are queued and the runner keeps claiming them, disable the heartbeat workflow. This is the only global stop. Re-enable it only after the queue and toggles are sane.
+3. If many jobs are queued and the runner keeps claiming them, disable the heartbeat workflow and pause the Vercel daily cron (`vercel.json`). Together they are the global stop; the daily cron alone resumes automation within a day. Re-enable both only after the queue and toggles are sane.
 4. A job already inside a serverless invocation cannot be interrupted by Cancel; the handler checks its budget between items. Expect the current invocation to finish, and prevent the next claim.
 
 **Diagnose:** job `type`, attempts, `lastError`, `lockedBy`, created/updated times; the owning handler's logs; queue counts from the cron response (`queued`, `running`, `failed`); `audit_log` for manual triggers. Jobs dead-letter after the bounded attempt count (five by default), so a poison job stops itself; repeated identical failures usually mean bad input or a provider contract change, not a transient error.
@@ -170,7 +170,7 @@ If the mailbox is reachable but IMAP is not, reply detection stays `manual`: seq
 2. `/admin/growth` → switch off every external-email toggle that is on: win-back, lifecycle, monthly reports, feedback requests, booking reminders.
 3. `/admin/settings` → **Contact qualified customers automatically** off; `/admin/customers/discover` → pause presets if discovery is feeding the batch.
 4. `/admin/email` → in **Awaiting your approval**, discard unsent messages. If messages were already approved and send jobs are queued, cancel those jobs in `/admin/jobs`.
-5. If sends are still draining, disable the heartbeat workflow. Do not delete queue rows; cancel them so the record survives.
+5. If sends are still draining, disable the heartbeat workflow and pause the Vercel daily cron. Do not delete queue rows; cancel them so the record survives.
 6. Once the send path is stopped, do not "send a correction" to the whole list without an owner decision. A second bulk message compounds the incident.
 
 **Assess:**
@@ -249,7 +249,7 @@ After rotating the signing secret, verify admin and customer sign-in, and expect
 **Preconditions:**
 
 1. Owner approves the restore point and the target (scratch cluster first, production only if necessary).
-2. Disable the heartbeat workflow so no job writes during the restore.
+2. Disable the heartbeat workflow and pause the Vercel daily cron (`vercel.json`) so no job writes during the restore.
 3. `/admin/settings` → approval on; `/admin/growth` → external toggles off; `/admin/settings` → autopilot off.
 4. Take a fresh backup of the current production database before touching it.
 
@@ -283,7 +283,7 @@ Point a local or staging deployment at the scratch database and run the checks. 
 4. Admin sign-in works; a known customer account, chatbot, form, and booking load.
 5. Recent orders and wallet balances match the chosen restore point.
 6. Send one test email to the owner only; run one manual cron tick and confirm queue counts are sane.
-7. Re-enable external toggles one at a time, then the heartbeat workflow.
+7. Re-enable external toggles one at a time, then the heartbeat workflow and the Vercel daily cron.
 
 Bootstrap never overwrites edited values. It creates a missing settings document, restores the four default discovery presets only when the whole preset list is empty, and seeds missing templates/sequences/models. It does not restore deleted prospects, conversations, or ledger rows; those are governed by the backup/restore point.
 

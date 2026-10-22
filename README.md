@@ -97,7 +97,7 @@ RUN_LIVE_EMAIL=1 pnpm vitest run src/lib/server/email/e2e-outreach.live.test.ts
 | `GET /api/health` | Public | Shallow status: DB ping, autonomy summary, capability states. HTTP 503 only when MongoDB is unreachable. |
 | `GET /api/health?deep=1` | `Authorization: Bearer $CRON_SECRET` | Runs live provider checks. 503 only when overall status is `fail`. |
 | `POST /api/health/bootstrap` | Bearer `CRON_SECRET` | Re-runs the bootstrap. Body `{"dryRun":true}` writes nothing. |
-| `POST /api/cron/run` (also GET) | Bearer `CRON_SECRET` | Enqueues due automations and drains the job queue. Driven by `.github/workflows/heartbeat.yml`. |
+| `POST /api/cron/run` (also GET) | Bearer `CRON_SECRET` | Enqueues due automations and drains the job queue. Driven by `.github/workflows/heartbeat.yml`; `vercel.json` adds one daily Vercel Cron tick as a floor when GitHub's scheduler is delayed. |
 | `GET /api/warm` | Public | Warms the serverless instance and database pool; not a health check. |
 
 The growth page at `/admin/growth` also has **Dry run** and **Reconcile now** controls, with the same result report, and the admin health panel surfaces bootstrap, schedule, preset, and outbound-gate checks.
@@ -107,7 +107,7 @@ Automation defaults are conservative: discovery always runs, auto-contact is off
 ## Deployment
 
 1. Set `MONGODB_URI`, `MONGODB_DB_NAME`, `AUTH_SECRET`, `SITE_URL`, and `CRON_SECRET` in the hosting secret store.
-2. Set the same `CRON_SECRET` in the GitHub repository secrets so the heartbeat can call `/api/cron/run`.
+2. Set the same `CRON_SECRET` in the GitHub repository secrets so the heartbeat can call `/api/cron/run`. Vercel's daily cron fallback authenticates with the hosting `CRON_SECRET` automatically.
 3. Deploy. The first boot creates the default records; verify `GET /api/health` and `POST /api/health/bootstrap` with `{"dryRun":true}`.
 4. Configure optional providers from the admin panel (`/admin/desktop` for AI, `/admin/settings` and `/admin/growth` for email and automation) only after DNS, SPF/DKIM/DMARC, and the postal address are in place.
 5. Complete [`docs/growth/OWNER_CHECKLIST.md`](docs/growth/OWNER_CHECKLIST.md) before enabling outbound marketing.

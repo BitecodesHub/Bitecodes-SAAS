@@ -28,6 +28,7 @@
 - The marketing site now has a grounded, rate-limited assistant (`/api/site-assistant`) built only from service, package, FAQ, and site data, with human fallback CTAs when no provider is configured. The previous non-functional assistant endpoint was removed.
 - Conversion events now cover the remaining lead forms: `lead_magnet`, `audit_request`, `consultant_used`, and `lead_contact`, with token-bearing report paths excluded from analytics.
 - Analytics and SEO corrections: the analytics client can send token-free conversion paths, `llms.txt` is in the sitemap, the default `SITE_URL` example is the served `www` host rather than the apex that answers 308, and the widget derives its API origin at runtime.
+- Cron reliability has two independent drivers: the GitHub Actions heartbeat for five-minute ticks and a daily Vercel Cron entry in `vercel.json` as a floor. Vercel authenticates the request with the hosting `CRON_SECRET` automatically, so the fallback needs no extra setup. The runbooks now treat both as the global stop.
 
 ### Owner-gated release items
 
