@@ -10,7 +10,10 @@ describe("job minimum budgets", () => {
     expect(short).toContain(JOB_TYPES.leadScore);
     expect(short).toContain(JOB_TYPES.outreachDraft);
     expect(short).not.toContain(JOB_TYPES.searchPing);
-    expect(jobTypesTooHeavyFor(60_000)).toEqual([JOB_TYPES.blogGenerate]);
+    expect(jobTypesTooHeavyFor(60_000)).toEqual([
+      JOB_TYPES.blogGenerate,
+      JOB_TYPES.prospectDiscover,
+    ]);
     expect(jobTypesTooHeavyFor(270_000)).toEqual([]);
   });
 });

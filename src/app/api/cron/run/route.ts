@@ -31,8 +31,12 @@ export const maxDuration = 300;
 
 /** Mirrors `maxDuration`, which must stay a literal for the build. */
 const MAX_DURATION_MS = 300_000;
-/** Leaves headroom for the response and the queue stats. */
-const RUN_BUDGET_MS = 270_000;
+/**
+ * Leaves headroom for the response, the queue stats, and the slowest job the
+ * worker is still allowed to claim. A discovery can need 220s; starting one
+ * 30s before a 270s budget ended still overran the 300s function limit.
+ */
+const RUN_BUDGET_MS = 240_000;
 /** A follow-up pass inside `after()`, which shares `maxDuration`. */
 const KICK_BUDGET_MS = 20_000;
 /** Time kept back for the response itself and for `after()` to start. */

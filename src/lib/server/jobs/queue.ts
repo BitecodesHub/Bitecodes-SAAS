@@ -103,6 +103,10 @@ export const JOB_MIN_BUDGET_MS: Partial<Record<JobType, number>> = {
   [JOB_TYPES.reportMonthly]: 60_000,
   // Audits several live pages at up to eight seconds per request.
   [JOB_TYPES.seoSelfAudit]: 60_000,
+  // Up to three Overpass mirrors at 70s each plus the result upserts. Claiming
+  // this with less time left is what let a discovery run past the function
+  // limit and leave a `running` job behind a lock.
+  [JOB_TYPES.prospectDiscover]: 220_000,
 };
 
 /** Job types a run with `remainingMs` left must not claim. Pure. */

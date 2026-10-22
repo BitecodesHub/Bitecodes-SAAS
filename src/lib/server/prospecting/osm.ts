@@ -42,8 +42,13 @@ const OVERPASS_MIN_INTERVAL_MS = 1_200;
  * Must comfortably exceed the server-side `[timeout:45]` budget plus transfer
  * time, or this client aborts queries that were about to succeed — which is
  * indistinguishable from an outage and burns a mirror attempt for nothing.
+ *
+ * Capped at 70s rather than 90s because three mirrors are tried in sequence:
+ * at 90s the worst case was 270s, which consumed the whole cron run and left
+ * the serverless function to be killed mid-discovery. 70s leaves room for the
+ * fallback chain and the database writes that follow it.
  */
-const OVERPASS_TIMEOUT_MS = 90_000;
+const OVERPASS_TIMEOUT_MS = 70_000;
 
 const NOMINATIM_TIMEOUT_MS = 15_000;
 
