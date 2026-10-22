@@ -1018,3 +1018,23 @@ The plan must not promise outcomes controlled by third parties or by market beha
 - automatic creation of DNS records, payment accounts, provider accounts, or business listings.
 
 The engineering commitment is stronger and testable: maximize eligible visibility and qualified demand, automate safe work by default, measure every step, stop harmful loops, and make every external dependency explicit.
+
+## 17. Customer-Magnet release — five acquisition surfaces
+
+Shipped on `main` after the reliability and GEO hardening programme. Each surface is a real, working asset rather than a landing-page claim, and each captures a lead only with explicit consent.
+
+1. **AI visibility check** (`/ai-visibility-check`) — three bounded, SSRF-guarded fetches (homepage, `robots.txt`, `llms.txt`), seven weighted signals, a named crawler-permission list, and three prioritised fixes. Rate-limited API; optional emailed report that re-runs the scan server-side rather than trusting browser-posted scores.
+2. **Answer library** (`/answers`) — fifteen answer-first pages covering cost, hiring, delivery, products, and AI search. Every page opens with a complete quotable answer, carries FAQPage/WebPage JSON-LD, and links to the calculators and services that continue the intent.
+3. **Honest comparison hub** (`/compare`) — five decision-stage comparisons (freelancer, agency, Wix/Squarespace, Webflow, in-house). Copy states where the alternative wins, uses semantic tables, and cross-links to related answers.
+4. **Revenue leak calculator** (`/revenue-leak-calculator`) — transparent funnel arithmetic, a stated 3% enquiry-rate reference point, three uplift scenarios, and an emailed estimate. The server recomputes every figure; the copy explicitly calls it arithmetic, not a forecast.
+5. **Launch templates** (`/templates`) — three original design directions (clinic, restaurant, SaaS) with interactive desktop/phone previews. Clearly labelled as paid starting points, not downloadable themes.
+
+Discovery wiring: sitemap entries for all hubs and detail pages; `llms.txt` and `llms-full.txt` sections with quotable summaries; tools hub, footer, and internal cross-links; WebApplication, WebPage, FAQPage, Question, and BreadcrumbList structured data.
+
+Verification evidence at release time:
+
+- `pnpm format:check`, `pnpm typecheck`, and `pnpm lint` pass.
+- Full Vitest suite (with MongoDB): 134 files, 1,605 passed, 6 skipped; the single price-provenance failure found earlier was fixed by sourcing answer-library price bands from `answers.ts`.
+- `pnpm build` completes; all five hubs and every detail page are prerendered or dynamically served as intended.
+- Local checks: SSRF rejection for `localhost` and `127.0.0.1` (400), oversize body rejection (413), invalid email rejection (400), sitemap/llms coverage confirmed, JSON-LD present on every new page.
+- Production checks: recorded after deployment in section 15 (live verification log).

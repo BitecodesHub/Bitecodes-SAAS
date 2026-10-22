@@ -277,6 +277,28 @@ export const footerNav: FooterColumn[] = [
     ],
   },
   {
+    heading: "Products",
+    links: [
+      { title: "AI Chatbot", href: "/ai-chatbot" },
+      { title: "Forms", href: "/forms" },
+      { title: "Booking", href: "/booking" },
+      { title: "Notes desktop app", href: "/notes" },
+      { title: "Pricing", href: "/pricing" },
+    ],
+  },
+  {
+    heading: "Learn",
+    links: [
+      { title: "AI Visibility Check", href: "/ai-visibility-check" },
+      { title: "Revenue Leak Calculator", href: "/revenue-leak-calculator" },
+      { title: "Answers", href: "/answers" },
+      { title: "Comparisons", href: "/compare" },
+      { title: "Launch Templates", href: "/templates" },
+      { title: "Guides & Resources", href: "/resources" },
+      { title: "Blog", href: "/blog" },
+    ],
+  },
+  {
     heading: "Company",
     links: [
       { title: "About", href: "/about" },
@@ -285,33 +307,7 @@ export const footerNav: FooterColumn[] = [
       { title: "Technologies", href: "/technologies" },
       { title: "Industries", href: "/industries" },
       { title: "Guarantees", href: "/guarantees" },
-    ],
-  },
-  {
-    heading: "Resources",
-    links: [
-      { title: "Guides & Resources", href: "/resources" },
-      { title: "AI Chatbot", href: "/ai-chatbot" },
-      { title: "Notes desktop app", href: "/notes" },
-      { title: "Forms", href: "/forms" },
-      { title: "Booking", href: "/booking" },
-      { title: "Pricing", href: "/pricing" },
-      { title: "Free Tools", href: "/tools" },
-      { title: "Website Audit", href: "/website-audit" },
-      { title: "AI Project Consultant", href: "/ai-project-consultant" },
-      { title: "Project Cost Calculator", href: "/project-cost-calculator" },
-      {
-        title: "Website Cost Calculator",
-        href: "/website-development-cost-calculator",
-      },
-      {
-        title: "Mobile App Cost Calculator",
-        href: "/mobile-app-cost-calculator",
-      },
-      { title: "Blog", href: "/blog" },
       { title: "Careers", href: "/careers" },
-      { title: "FAQ", href: "/faq" },
-      { title: "Contact", href: "/contact" },
     ],
   },
   {

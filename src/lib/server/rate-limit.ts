@@ -156,6 +156,8 @@ export async function consumeRateLimit({
 export const RATE_LIMITS = {
   contact: { max: 5, windowMs: HOUR_MS },
   audit: { max: 3, windowMs: HOUR_MS },
+  /** Each run makes three bounded outbound requests; same budget as the audit. */
+  aiVisibility: { max: 5, windowMs: HOUR_MS },
   ai: { max: 5, windowMs: 24 * HOUR_MS },
   /** Conversational, so a higher ceiling — but still a hard daily cap. */
   chat: { max: 40, windowMs: HOUR_MS },

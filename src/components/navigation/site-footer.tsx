@@ -27,7 +27,7 @@ export function SiteFooter() {
   return (
     <footer className="border-border bg-muted/50 relative mt-24 border-t">
       <div className="container-page py-16">
-        <div className="grid gap-12 lg:grid-cols-[1.4fr_2fr]">
+        <div className="grid gap-12 lg:grid-cols-[1fr_2.3fr]">
           <div className="max-w-sm">
             <Logo />
             <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
@@ -78,7 +78,7 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
             {footerNav.map((col) => (
               <div key={col.heading}>
                 <p className="text-sm font-semibold">{col.heading}</p>

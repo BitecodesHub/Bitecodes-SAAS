@@ -6,6 +6,9 @@ import { technologies } from "@/data/technologies";
 import { founder } from "@/data/founder";
 import { industries } from "@/data/industries";
 import { faqs } from "@/data/faqs";
+import { answerPages } from "@/data/answers";
+import { comparisonPages } from "@/data/comparisons";
+import { launchTemplates } from "@/data/templates";
 import { getPricing, formatStartingPrice } from "@/lib/pricing";
 import {
   formatPackPrice,
@@ -114,6 +117,55 @@ export function GET() {
   }
   lines.push(
     `Structured FAQ data (FAQPage JSON-LD) is embedded on the site, e.g. ${url}/#faq and per-service pages. Full Q&A in ${url}/llms-full.txt.`,
+  );
+  lines.push("");
+
+  lines.push("## Answer library");
+  lines.push(
+    `Direct answers to the questions buyers ask, each with a quotable first paragraph: ${url}/answers`,
+  );
+  for (const answer of answerPages) {
+    lines.push(
+      `- [${answer.question}](${url}/answers/${answer.slug}): ${answer.shortAnswer}`,
+    );
+  }
+  lines.push("");
+
+  lines.push("## Comparisons");
+  lines.push(
+    `Honest comparisons with freelancers, agencies, website builders, Webflow, and in-house teams, including where each wins: ${url}/compare`,
+  );
+  for (const comparison of comparisonPages) {
+    lines.push(
+      `- [${comparison.title}](${url}/compare/${comparison.slug}): ${comparison.shortAnswer}`,
+    );
+  }
+  lines.push("");
+
+  lines.push("## Launch templates");
+  lines.push(
+    `Three original website design directions with live previews, adapted and built as paid Launch projects: ${url}/templates`,
+  );
+  for (const template of launchTemplates) {
+    lines.push(
+      `- [${template.name}](${url}/templates/${template.slug}): ${template.tagline} Best for ${template.bestFor[0]?.toLowerCase() ?? "focused business sites"}.`,
+    );
+  }
+  lines.push("");
+
+  lines.push("## Free growth tools");
+  lines.push(
+    "- [AI visibility check](" +
+      `${url}/ai-visibility-check): scores whether AI crawlers can read and cite a public homepage across crawler access, llms.txt, structured data, answer structure, metadata, social preview, and HTTPS. No login.`,
+  );
+  lines.push(
+    `- [Revenue leak calculator](${url}/revenue-leak-calculator): arithmetic on monthly visitors, enquiry rate, close rate, and customer value, with the gap to a stated 3% enquiry-rate reference point.`,
+  );
+  lines.push(
+    `- [Website audit](${url}/website-audit): technical, SEO, performance, accessibility, and security findings for a public site.`,
+  );
+  lines.push(
+    `- [Project cost calculators](${url}/tools): project, website, and mobile app estimates with published starting prices.`,
   );
   lines.push("");
 

@@ -172,6 +172,7 @@ function requestPage(
   url: URL,
   address: string,
   timeoutMs: number,
+  accept = "text/html,application/xhtml+xml;q=0.9",
 ): Promise<Omit<FetchedPage, "finalUrl">> {
   return new Promise((resolve, reject) => {
     const started = performance.now();
@@ -181,7 +182,7 @@ function requestPage(
       {
         method: "GET",
         headers: {
-          Accept: "text/html,application/xhtml+xml;q=0.9",
+          Accept: accept,
           "User-Agent":
             "Bitecodes-Passive-Audit/1.0 (+https://bitecodes.com/tools)",
           // Compression is requested deliberately: HTML compresses about 4:1,
@@ -267,6 +268,7 @@ function requestPage(
 async function fetchPublicPage(
   input: string,
   timeoutMs: number,
+  accept?: string,
 ): Promise<FetchedPage> {
   let url = normalizeAuditUrl(input);
   let totalResponseTimeMs = 0;
@@ -294,7 +296,7 @@ async function fetchPublicPage(
       );
     }
 
-    const response = await requestPage(url, addresses[0]!, timeoutMs);
+    const response = await requestPage(url, addresses[0]!, timeoutMs, accept);
     totalResponseTimeMs += response.responseTimeMs;
 
     if ([301, 302, 303, 307, 308].includes(response.statusCode)) {
@@ -324,6 +326,37 @@ async function fetchPublicPage(
   }
 
   throw new AuditError("The website could not be audited.", "redirect-loop");
+}
+
+/** A bounded public response that is not necessarily HTML (robots, llms.txt). */
+export interface PublicResource {
+  finalUrl: string;
+  statusCode: number;
+  contentType: string;
+  body: string;
+  responseTimeMs: number;
+}
+
+/**
+ * Fetches a public text resource through the same SSRF, redirect, size, and
+ * timeout guards as the audit. Used for `robots.txt` and `llms.txt`, which are
+ * plain text and would be rejected by the HTML-only audit path.
+ */
+export async function fetchPublicText(
+  input: string,
+  {
+    timeoutMs = REQUEST_TIMEOUT_MS,
+    accept = "text/plain,text/markdown;q=0.9,text/html;q=0.5",
+  }: { timeoutMs?: number; accept?: string } = {},
+): Promise<PublicResource> {
+  const page = await fetchPublicPage(input, timeoutMs, accept);
+  return {
+    finalUrl: page.finalUrl.toString(),
+    statusCode: page.statusCode,
+    contentType: String(page.headers["content-type"] ?? ""),
+    body: page.body,
+    responseTimeMs: page.responseTimeMs,
+  };
 }
 
 function contains(html: string, expression: RegExp) {

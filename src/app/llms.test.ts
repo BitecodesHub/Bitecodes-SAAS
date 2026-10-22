@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "@/app/llms.txt/route";
 import { jobOpenings } from "@/data/careers";
+import { answerPages } from "@/data/answers";
 import { CURRENCIES, SERVICE_PRICING, formatPrice } from "@/lib/pricing";
 import { CREDIT_PACKS, formatPackPrice } from "@/lib/server/billing/packs";
+
+const PRICE_PATTERN = /(?:A\$|₹|\$|£)\s?\d+(?:,\d{2,3})*/g;
 
 /**
  * The machine-readable summary is quoted verbatim by answer engines, so a
@@ -42,8 +45,26 @@ describe("/llms.txt", () => {
       allowed.add(`₹${job.stipend.min.toLocaleString("en-IN")}`);
       allowed.add(`₹${job.stipend.max.toLocaleString("en-IN")}`);
     }
+    // Answer pages quote market price bands ("$500–$10,000"). Those figures
+    // live in answers.ts, so they are sourced data rather than an inline claim
+    // added by the llms route.
+    for (const answer of answerPages) {
+      const corpus = [
+        answer.shortAnswer,
+        answer.metaDescription,
+        ...answer.sections.flatMap((section) => [
+          section.heading,
+          ...section.paragraphs,
+          ...(section.bullets ?? []),
+        ]),
+        ...answer.faqs.flatMap((faq) => [faq.question, faq.answer]),
+      ].join(" ");
+      for (const price of corpus.match(PRICE_PATTERN) ?? []) {
+        allowed.add(price.replace(/\s/g, ""));
+      }
+    }
 
-    const found = text.match(/(?:A\$|₹|\$|£)\s?\d+(?:,\d{2,3})*/g) ?? [];
+    const found = text.match(PRICE_PATTERN) ?? [];
     expect(found.length).toBeGreaterThan(0);
 
     for (const price of found) {

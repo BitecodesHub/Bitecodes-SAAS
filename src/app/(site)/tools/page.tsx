@@ -5,7 +5,12 @@ import {
   Bot,
   Calculator,
   Gauge,
+  LayoutTemplate,
+  Library,
+  Scale,
   ShieldCheck,
+  Sparkles,
+  TrendingUp,
   Laptop,
 } from "lucide-react";
 import { JsonLd } from "@/components/json-ld";
@@ -169,6 +174,54 @@ export default function ToolsPage() {
           </div>
         </div>
       </Section>
+      <Section spacing="sm">
+        <div className="container-page">
+          <SectionHeader
+            eyebrow="AI search & growth"
+            title="Find where the next customer is"
+            description="Check how AI search sees your site, estimate what a better conversion rate is worth, and start from a design direction that is already thought through."
+          />
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <ToolCard
+              href="/ai-visibility-check"
+              title="AI visibility check"
+              description="See whether GPTBot, ClaudeBot, PerplexityBot, and other AI crawlers can read your site — and what to fix first."
+              icon={Sparkles}
+              cta="Run the free check"
+            />
+            <ToolCard
+              href="/revenue-leak-calculator"
+              title="Revenue leak calculator"
+              description="Estimate what your current enquiry rate is leaving on the table at your traffic, close rate, and customer value."
+              icon={TrendingUp}
+              cta="Open calculator"
+            />
+            <ToolCard
+              href="/templates"
+              title="Launch templates"
+              description="Three original website directions with live, responsive previews for clinics, restaurants, and SaaS."
+              icon={LayoutTemplate}
+              cta="Browse templates"
+            />
+          </div>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <ToolCard
+              href="/answers"
+              title="Answer library"
+              description="Clear, current answers to the questions buyers ask about cost, timelines, hiring, and AI search."
+              icon={Library}
+              cta="Browse answers"
+            />
+            <ToolCard
+              href="/compare"
+              title="Compare your options"
+              description="Honest comparisons with freelancers, agencies, website builders, Webflow, and in-house teams — including where each wins."
+              icon={Scale}
+              cta="Compare options"
+            />
+          </div>
+        </div>
+      </Section>
     </>
   );
 }
@@ -178,11 +231,15 @@ function ToolCard({
   title,
   description,
   featured = false,
+  icon: Icon = Calculator,
+  cta = "Open calculator",
 }: {
   href: string;
   title: string;
   description: string;
   featured?: boolean;
+  icon?: typeof Calculator;
+  cta?: string;
 }) {
   return (
     <article
@@ -193,7 +250,7 @@ function ToolCard({
       }
     >
       <span className="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-2xl">
-        <Calculator className="size-5" />
+        <Icon className="size-5" />
       </span>
       <h2 className="mt-5 text-xl font-semibold">{title}</h2>
       <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
@@ -205,7 +262,7 @@ function ToolCard({
         className="mt-6"
       >
         <Link href={href}>
-          Open calculator
+          {cta}
           <ArrowRight className="size-4" />
         </Link>
       </Button>

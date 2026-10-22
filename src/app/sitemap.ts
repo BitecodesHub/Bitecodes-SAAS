@@ -5,6 +5,9 @@ import { projects } from "@/data/projects";
 import { jobOpenings } from "@/data/careers";
 import { resources } from "@/data/resources";
 import { industries } from "@/data/industries";
+import { answerPages } from "@/data/answers";
+import { comparisonPages } from "@/data/comparisons";
+import { launchTemplates } from "@/data/templates";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 
 // Dynamic so newly published (including AI-published) posts appear without a
@@ -33,7 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/login", priority: 0.5 },
     { path: "/tools", priority: 0.9 },
     { path: "/website-audit", priority: 0.9 },
+    { path: "/ai-visibility-check", priority: 0.9 },
+    { path: "/revenue-leak-calculator", priority: 0.9 },
     { path: "/ai-project-consultant", priority: 0.9 },
+    { path: "/answers", priority: 0.9 },
+    { path: "/compare", priority: 0.8 },
+    { path: "/templates", priority: 0.9 },
     { path: "/project-cost-calculator", priority: 0.9 },
     { path: "/website-development-cost-calculator", priority: 0.9 },
     { path: "/mobile-app-cost-calculator", priority: 0.9 },
@@ -121,6 +129,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const answerRoutes: MetadataRoute.Sitemap = answerPages.map((page) => ({
+    url: `${base}/answers/${page.slug}`,
+    lastModified: new Date(`${page.updated}T00:00:00Z`),
+    changeFrequency: "monthly",
+    priority: 0.8,
+  }));
+
+  const comparisonRoutes: MetadataRoute.Sitemap = comparisonPages.map(
+    (page) => ({
+      url: `${base}/compare/${page.slug}`,
+      lastModified: new Date(`${page.updated}T00:00:00Z`),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    }),
+  );
+
+  const templateRoutes: MetadataRoute.Sitemap = launchTemplates.map(
+    (template) => ({
+      url: `${base}/templates/${template.slug}`,
+      lastModified: new Date(`${template.updated}T00:00:00Z`),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    }),
+  );
+
   return [
     ...routes,
     ...jobRoutes,
@@ -129,5 +162,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...blogRoutes,
     ...resourceRoutes,
     ...industryRoutes,
+    ...answerRoutes,
+    ...comparisonRoutes,
+    ...templateRoutes,
   ];
 }

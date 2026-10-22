@@ -7,6 +7,9 @@ import { founder } from "@/data/founder";
 import { industries } from "@/data/industries";
 import { getPublishedPosts } from "@/lib/server/blog/repository";
 import { faqs } from "@/data/faqs";
+import { answerPages } from "@/data/answers";
+import { comparisonPages } from "@/data/comparisons";
+import { launchTemplates } from "@/data/templates";
 import { processSteps } from "@/data/process";
 import { getPricing, formatStartingPrice } from "@/lib/pricing";
 import { formatPackPrice, packsFor } from "@/lib/server/billing/packs";
@@ -213,6 +216,67 @@ export async function GET() {
     push("");
   }
 
+  // --- Answer library ---
+  push("## Answer library");
+  push(
+    `${answerPages.length} answer-first pages. Each opens with a complete, quotable answer, then supports it with detail. Prices match the published pricing pages.`,
+  );
+  push("");
+  for (const a of answerPages) {
+    push(`### ${a.question}`);
+    push(`URL: ${url}/answers/${a.slug}`);
+    push(`Category: ${a.category}`);
+    push(`Updated: ${a.updated}`);
+    push(`Answer: ${a.shortAnswer}`);
+    for (const section of a.sections) {
+      push(`${section.heading}: ${section.paragraphs.join(" ")}`);
+      if (section.bullets?.length) {
+        push(`Key points: ${section.bullets.join("; ")}.`);
+      }
+    }
+    push("");
+  }
+
+  // --- Comparisons ---
+  push("## Comparisons");
+  push(
+    `${comparisonPages.length} decision-stage comparisons. Each states where the alternative wins, not only where ${name} does.`,
+  );
+  push("");
+  for (const c of comparisonPages) {
+    push(`### ${c.title}`);
+    push(`URL: ${url}/compare/${c.slug}`);
+    push(`Compared with: ${c.alternativeName}`);
+    push(`Updated: ${c.updated}`);
+    push(`Answer: ${c.shortAnswer}`);
+    for (const row of c.rows) {
+      push(
+        `${row.label} — ${name}: ${row.bitecodes} Alternative: ${row.alternative}`,
+      );
+    }
+    push(`Choose ${name} when: ${c.chooseBitecodes.join(" ")}`);
+    push(`Choose ${c.alternativeName} when: ${c.chooseAlternative.join(" ")}`);
+    push(`Verdict: ${c.verdict}`);
+    push("");
+  }
+
+  // --- Launch templates ---
+  push("## Launch templates");
+  push(
+    `${launchTemplates.length} design directions for a Launch engagement. These are previews, not downloadable themes.`,
+  );
+  push("");
+  for (const t of launchTemplates) {
+    push(`### ${t.name}`);
+    push(`URL: ${url}/templates/${t.slug}`);
+    push(`Industry: ${t.industry}`);
+    push(`Tagline: ${t.tagline}`);
+    push(`Description: ${t.description}`);
+    push(`Best for: ${t.bestFor.join("; ")}.`);
+    push(`Included: ${t.included.join("; ")}.`);
+    push("");
+  }
+
   // --- Key links ---
   push("## Key links");
   push(`- Home: ${url}/`);
@@ -225,6 +289,12 @@ export async function GET() {
   push(`- Guarantees: ${url}/guarantees`);
   push(`- About: ${url}/about`);
   push(`- Blog: ${url}/blog`);
+  push(`- Answer library: ${url}/answers`);
+  push(`- Comparisons: ${url}/compare`);
+  push(`- Launch templates: ${url}/templates`);
+  push(`- AI visibility check: ${url}/ai-visibility-check`);
+  push(`- Revenue leak calculator: ${url}/revenue-leak-calculator`);
+  push(`- Free tools: ${url}/tools`);
   push(`- Careers: ${url}/careers`);
   for (const job of jobOpenings) {
     push(
