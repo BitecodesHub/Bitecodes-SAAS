@@ -168,10 +168,8 @@ export default function BookingPage() {
           { name: "Home", href: "/" },
           { name: "Booking", href: "/booking" },
         ]}
-      />
-
-      <Section spacing="sm">
-        <div className="container-page flex flex-wrap gap-3">
+      >
+        <div className="mt-2 flex flex-wrap justify-center gap-3">
           <Button asChild size="lg">
             <Link href="/signup">
               Get started free
@@ -182,7 +180,7 @@ export default function BookingPage() {
             <Link href="#pricing">See pricing</Link>
           </Button>
         </div>
-      </Section>
+      </PageHeader>
 
       <Section spacing="sm">
         <div className="container-page">

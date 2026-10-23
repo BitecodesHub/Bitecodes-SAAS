@@ -133,7 +133,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <div className="bg-background flex w-full max-w-xl flex-col gap-4 rounded-[28px] p-7 sm:p-9">
         <Link
           href="/"
-          className="text-primary text-[13px] font-semibold tracking-[0.08em] uppercase"
+          className="text-primary inline-flex min-h-11 items-center text-[13px] font-semibold tracking-[0.08em] uppercase"
         >
           {siteConfig.name}
         </Link>

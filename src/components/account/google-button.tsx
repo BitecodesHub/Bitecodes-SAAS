@@ -30,7 +30,7 @@ export function GoogleButton({
       // Next quietly fetching it on hover would start a sign-in nobody asked
       // for and overwrite the state of one already in progress.
       prefetch={false}
-      className="border-border bg-background hover:bg-muted focus-visible:ring-ring flex w-full items-center justify-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+      className="border-border bg-background hover:bg-muted focus-visible:ring-ring flex min-h-11 w-full items-center justify-center gap-2.5 rounded-[14px] border px-4 text-[15px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
       <GoogleMark />
       {label}
