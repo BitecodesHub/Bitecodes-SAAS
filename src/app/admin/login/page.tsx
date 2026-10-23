@@ -36,18 +36,18 @@ export default async function AdminLoginPage({
           <Logo href="/" />
         </div>
 
-        <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-          <h1 className="text-xl font-semibold tracking-tight">
+        <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
+          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">
             Sign in to the admin panel
           </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
             This area is for Bitecodes staff.
           </p>
 
           {reset === "done" && (
             <p
               role="status"
-              className="border-border bg-muted/40 mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+              className="bg-background mt-4 rounded-[16px] p-4 text-[14px] leading-[1.5]"
             >
               Your password has been changed. Sign in with the new one.
             </p>
@@ -57,21 +57,18 @@ export default async function AdminLoginPage({
             <LoginForm next={next} />
           </div>
 
-          <p className="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-6 text-center text-[13px] leading-[1.6]">
             <Link
               href="/admin/forgot-password"
-              className="hover:text-foreground underline underline-offset-4"
+              className="text-primary underline underline-offset-4"
             >
               Forgotten your password? Get a reset or one-click sign-in link
             </Link>
           </p>
         </div>
 
-        <p className="text-muted-foreground mt-6 text-center text-xs">
-          <Link
-            href="/"
-            className="hover:text-foreground underline underline-offset-4"
-          >
+        <p className="text-muted-foreground mt-6 text-center text-[13px]">
+          <Link href="/" className="text-primary underline underline-offset-4">
             Return to bitecodes.com
           </Link>
         </p>

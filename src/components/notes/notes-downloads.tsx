@@ -29,7 +29,7 @@ const MAC_PRIVACY_SETTINGS =
 
 function MacSteps() {
   return (
-    <ol className="space-y-3 text-sm">
+    <ol className="space-y-3 text-[15px] leading-[1.6]">
       <li>
         <strong>Open the downloaded file</strong> and drag{" "}
         <strong>Notes</strong> into
@@ -44,7 +44,7 @@ function MacSteps() {
         down and click <strong>Open Anyway</strong> next to “Notes”, then
         confirm.
         <div className="mt-2">
-          <Button asChild size="sm" variant="outline">
+          <Button asChild variant="outline">
             <a href={MAC_PRIVACY_SETTINGS}>
               <Settings className="size-4" aria-hidden="true" /> Open Privacy
               &amp; Security
@@ -62,7 +62,7 @@ function MacSteps() {
 
 function WindowsSteps() {
   return (
-    <ol className="space-y-3 text-sm">
+    <ol className="space-y-3 text-[15px] leading-[1.6]">
       <li>
         <strong>Run the downloaded installer.</strong> If Windows shows “Windows
         protected your PC”, click <strong>More info</strong>, then{" "}
@@ -94,7 +94,7 @@ export function NotesDownloads({
 
   if (downloads.length === 0) {
     return (
-      <p className="text-muted-foreground rounded-xl border p-4 text-sm">
+      <p className="bg-surface-2 text-muted-foreground rounded-[18px] p-4 text-[14px] leading-[1.6]">
         Downloads are being prepared. Check back shortly.
       </p>
     );
@@ -133,7 +133,7 @@ export function NotesDownloads({
               href={d.url}
               rel="noopener"
               onClick={() => setStarted(platformOf(d))}
-              className="border-border bg-card hover:border-primary/50 flex items-center gap-3 rounded-xl border p-4 text-sm transition-colors"
+              className="bg-surface-2 hover:bg-background flex items-center gap-3 rounded-[18px] p-4 text-[15px] transition-colors"
             >
               {d.key.startsWith("mac") ? (
                 <Apple
@@ -148,7 +148,7 @@ export function NotesDownloads({
               )}
               <span className="flex-1">
                 <span className="block font-medium">{d.label}</span>
-                <span className="text-muted-foreground block text-xs">
+                <span className="text-muted-foreground block text-[13px]">
                   {d.detail}
                 </span>
               </span>
@@ -165,16 +165,16 @@ export function NotesDownloads({
         <section
           role="status"
           aria-live="polite"
-          className="border-primary/30 bg-primary/5 rounded-2xl border p-5"
+          className="bg-primary/5 rounded-[24px] p-6"
         >
-          <h3 className="flex items-center gap-2 font-semibold">
+          <h3 className="flex items-center gap-2 text-[16px] font-semibold">
             <CheckCircle2 className="text-primary size-5" aria-hidden="true" />
             Your download has started — here is how to open Notes
           </h3>
           <div className="mt-3">
             {started === "mac" ? <MacSteps /> : <WindowsSteps />}
           </div>
-          <p className="text-muted-foreground mt-4 text-xs">
+          <p className="text-muted-foreground mt-4 text-[13px] leading-[1.6]">
             Why the warning? Notes is not yet signed with a paid Apple /
             Microsoft developer certificate, so your computer cannot check who
             made it. The download comes straight from Bitecodes’ official

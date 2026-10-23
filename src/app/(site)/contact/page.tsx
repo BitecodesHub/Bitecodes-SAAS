@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Clock, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+} from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
@@ -60,10 +67,10 @@ export default function ContactPage() {
           { name: "Contact", href: "/contact" },
         ]}
       />
-      <Section>
-        <div className="container-page grid gap-12 lg:grid-cols-[1fr_1.4fr]">
-          <Reveal className="space-y-6">
-            <div className="space-y-4">
+      <Section className="bg-surface-2">
+        <div className="container-page grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+          <Reveal className="space-y-8 lg:sticky lg:top-24">
+            <div className="space-y-5">
               <ContactItem icon={Mail} label="Email">
                 <a
                   href={`mailto:${siteConfig.contact.email}`}
@@ -99,7 +106,9 @@ export default function ContactPage() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold">Follow along</p>
+              <p className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
+                Follow along
+              </p>
               <div className="mt-3 flex gap-3">
                 {socials.map((s) => (
                   <a
@@ -108,7 +117,7 @@ export default function ContactPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.label}
-                    className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-11 items-center justify-center rounded-full border transition-colors"
+                    className="bg-background text-muted-foreground hover:text-primary flex size-11 items-center justify-center rounded-full shadow-[var(--shadow-soft)] transition-colors"
                   >
                     <s.icon className="size-4" />
                   </a>
@@ -122,24 +131,23 @@ export default function ContactPage() {
               target="_blank"
               rel="noopener noreferrer"
               referrerPolicy="no-referrer"
-              className="border-border bg-card group hover:border-primary/40 relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl border transition-colors"
+              className="group bg-background flex flex-col items-start gap-2 rounded-[28px] p-7 transition-all duration-300 hover:-translate-y-0.5"
             >
-              <div className="relative flex flex-col items-center gap-2 text-center">
-                <MapPin className="text-primary size-7 transition-transform group-hover:-translate-y-0.5" />
-                <p className="text-sm font-medium">
-                  {siteConfig.contact.address.full}
-                </p>
-                <p className="text-muted-foreground text-xs">
-                  Open location in Google Maps
-                </p>
-              </div>
+              <MapPin className="text-primary size-6 transition-transform group-hover:-translate-y-0.5" />
+              <p className="mt-2 text-[17px] font-medium">
+                {siteConfig.contact.address.full}
+              </p>
+              <p className="text-muted-foreground group-hover:text-primary inline-flex items-center gap-1.5 text-[13px] transition-colors">
+                Open location in Google Maps
+                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              </p>
             </a>
           </Reveal>
 
           <Reveal direction="left">
             <Suspense
               fallback={
-                <div className="border-border bg-card h-96 rounded-2xl border" />
+                <div className="bg-background h-96 rounded-[32px] shadow-[var(--shadow-soft)]" />
               }
             >
               <ContactForm />
@@ -147,12 +155,12 @@ export default function ContactPage() {
           </Reveal>
         </div>
       </Section>
-      <Section className="border-border bg-secondary/35 border-t" spacing="sm">
-        <div className="container-page max-w-3xl">
-          <h2 className="text-center text-2xl font-semibold">
+      <Section spacing="sm">
+        <div className="container-page max-w-4xl">
+          <h2 className="text-center text-[clamp(1.875rem,3vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
             Before you send a brief
           </h2>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {[
               [
                 "What happens next?",
@@ -171,12 +179,9 @@ export default function ContactPage() {
                 "Yes. Mention it in your message and avoid sharing confidential details until an appropriate agreement is in place.",
               ],
             ].map(([question, answer]) => (
-              <div
-                key={question}
-                className="border-border bg-card rounded-2xl border p-5"
-              >
-                <h3 className="text-sm font-semibold">{question}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <div key={question} className="bg-surface-2 rounded-[24px] p-7">
+                <h3 className="text-[17px] font-semibold">{question}</h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   {answer}
                 </p>
               </div>
@@ -199,14 +204,14 @@ function ContactItem({
 }) {
   return (
     <div className="flex items-start gap-4">
-      <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+      <span className="bg-background text-primary flex size-11 shrink-0 items-center justify-center rounded-2xl shadow-[var(--shadow-soft)]">
         <Icon className="size-5" />
       </span>
       <div>
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+        <p className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
           {label}
         </p>
-        <p className="mt-0.5 text-sm">{children}</p>
+        <p className="mt-1 text-[17px] leading-snug">{children}</p>
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/types/content";
-import { Badge } from "@/components/ui/badge";
 import { ProjectCover } from "@/components/project-cover";
 import { cn } from "@/lib/utils";
 
@@ -37,45 +36,42 @@ export function ProjectCard({
     <Link
       href={`/portfolio/${project.slug}`}
       className={cn(
-        "group bg-card focus-visible:ring-ring border-border relative flex flex-col overflow-hidden rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:ring-2 focus-visible:outline-none",
+        "group bg-surface-2 focus-visible:ring-ring relative flex flex-col overflow-hidden rounded-[28px] transition-all duration-300 hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:outline-none",
         className,
       )}
     >
-      {/* Cover, a screenshot when we have one, branded panel otherwise. */}
       <div className="relative">
         <ProjectCover
           project={project}
           priority={priority}
-          rounded="rounded-t-2xl"
+          rounded="rounded-t-[28px]"
           aspect={coverAspect}
         />
-        <span className="absolute right-5 bottom-5 z-30 flex size-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-          <ArrowUpRight className="size-4" />
+        <span className="absolute right-5 bottom-5 z-30 flex size-10 items-center justify-center rounded-full bg-white/90 text-[#1d1d1f] shadow-[var(--shadow-soft)] transition-transform duration-300 group-hover:scale-105">
+          <ArrowUpRight className="size-4" aria-hidden />
         </span>
       </div>
-      <div className={cn("flex flex-1 flex-col", lead ? "p-6 sm:p-8" : "p-6")}>
-        <div className="flex items-start justify-between gap-4">
-          <h3
-            className={cn(
-              "font-semibold tracking-tight",
-              lead ? "text-2xl sm:text-3xl" : "text-xl",
-            )}
-          >
-            {project.name}
-          </h3>
-          <Badge variant="muted">{project.year}</Badge>
-        </div>
-        <p className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-2 text-xs">
-          {project.client !== project.name && <span>{project.client}</span>}
-          {project.client !== project.name && label && (
-            <span aria-hidden>·</span>
+      <div className={cn("flex flex-1 flex-col", lead ? "p-7 sm:p-9" : "p-6")}>
+        <p className="text-muted-foreground text-[13px] font-medium tracking-[0.02em]">
+          {project.category} · {project.year}
+        </p>
+        <h3
+          className={cn(
+            "mt-2 font-semibold tracking-[-0.025em]",
+            lead ? "text-[28px] sm:text-[34px]" : "text-[22px]",
           )}
-          {label && <span>{label}</span>}
+        >
+          {project.name}
+        </h3>
+        <p className="text-muted-foreground mt-1 text-[13px]">
+          {[project.client !== project.name ? project.client : null, label]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
         <p
           className={cn(
             "text-muted-foreground mt-3 leading-relaxed",
-            lead ? "max-w-2xl text-base" : "text-sm",
+            lead ? "max-w-2xl text-[16px]" : "text-[15px]",
           )}
         >
           {project.teaser}

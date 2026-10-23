@@ -16,11 +16,11 @@ export default function ForgotPasswordPage() {
           <Logo href="/" />
         </div>
 
-        <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-          <h1 className="text-xl font-semibold tracking-tight">
+        <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
+          <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">
             Get back into your account
           </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
             Enter your email and choose how you want to sign in.
           </p>
 
@@ -28,10 +28,10 @@ export default function ForgotPasswordPage() {
             <RecoveryForm />
           </div>
 
-          <p className="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-6 text-center text-[13px] leading-[1.6]">
             <Link
               href="/admin/login"
-              className="hover:text-foreground underline underline-offset-4"
+              className="text-primary underline underline-offset-4"
             >
               Back to sign in
             </Link>

@@ -118,11 +118,11 @@ export function SiteAssistant() {
             setOpen(true);
             trackConversion("assistant_open", pathname);
           }}
-          className="border-border bg-card text-foreground hover:border-primary fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-medium shadow-lg transition-colors"
+          className="glass fixed right-4 bottom-[calc(1rem+var(--sticky-cta-height,0px))] z-50 flex h-12 items-center gap-2 rounded-full px-5 text-[14px] font-medium shadow-[var(--shadow-lift)] transition-transform active:scale-[0.98] max-sm:size-12 max-sm:justify-center max-sm:px-0"
           aria-label="Open the Bitecodes assistant"
         >
-          <MessageCircle aria-hidden="true" className="size-4" />
-          Ask us anything
+          <MessageCircle aria-hidden="true" className="size-[18px]" />
+          <span className="max-sm:sr-only">Ask us anything</span>
         </button>
       )}
 
@@ -131,12 +131,14 @@ export function SiteAssistant() {
           role="dialog"
           aria-modal="false"
           aria-label="Bitecodes assistant"
-          className="border-border bg-card fixed right-4 bottom-4 z-50 flex h-[min(32rem,calc(100vh-2rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border shadow-2xl"
+          className="bg-background/95 fixed right-4 bottom-[calc(1rem+var(--sticky-cta-height,0px))] z-50 flex h-[min(34rem,calc(100dvh-2rem-var(--sticky-cta-height,0px)))] w-[min(25rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-[28px] shadow-[var(--shadow-lift)] ring-1 ring-black/5 backdrop-blur-xl dark:ring-white/10"
         >
-          <header className="border-border flex items-center justify-between border-b px-4 py-3">
+          <header className="flex items-center justify-between gap-3 px-5 py-4">
             <div>
-              <p className="text-sm font-semibold">Bitecodes assistant</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-[15px] font-semibold tracking-[-0.01em]">
+                Bitecodes assistant
+              </p>
+              <p className="text-muted-foreground text-[13px] leading-snug">
                 Answers from this site. A person replies on a call.
               </p>
             </div>
@@ -144,7 +146,7 @@ export function SiteAssistant() {
               type="button"
               onClick={() => setOpen(false)}
               aria-label="Close assistant"
-              className="text-muted-foreground hover:text-foreground rounded p-1"
+              className="text-muted-foreground hover:bg-surface-2 hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-full transition-colors"
             >
               <X aria-hidden="true" className="size-4" />
             </button>
@@ -156,7 +158,7 @@ export function SiteAssistant() {
           >
             {messages.length === 0 && (
               <div className="space-y-2">
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground px-1 text-[14px] leading-relaxed">
                   Ask about a project, a price, or how we work. For a firm
                   number, book the free 30-minute call.
                 </p>
@@ -165,7 +167,7 @@ export function SiteAssistant() {
                     key={suggestion}
                     type="button"
                     onClick={() => ask(suggestion)}
-                    className="border-border hover:border-primary w-full rounded-xl border px-3 py-2 text-left text-sm"
+                    className="bg-surface-2 hover:bg-accent flex min-h-11 w-full items-center rounded-xl px-4 py-2.5 text-left text-[14px] transition-colors"
                   >
                     {suggestion}
                   </button>
@@ -178,8 +180,8 @@ export function SiteAssistant() {
                 key={`${message.role}-${index}`}
                 className={
                   message.role === "user"
-                    ? "bg-primary text-primary-foreground ml-auto max-w-[85%] rounded-2xl px-3 py-2 text-sm"
-                    : "bg-muted text-foreground max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed"
+                    ? "bg-primary text-primary-foreground ml-auto max-w-[85%] rounded-[18px] px-4 py-2.5 text-[14px] leading-relaxed"
+                    : "bg-surface-2 text-foreground max-w-[90%] rounded-[18px] px-4 py-2.5 text-[14px] leading-relaxed"
                 }
               >
                 {message.text}
@@ -187,24 +189,24 @@ export function SiteAssistant() {
             ))}
 
             {pending && (
-              <div className="text-muted-foreground flex items-center gap-2 text-xs">
+              <div className="text-muted-foreground flex items-center gap-2 px-1 text-[13px]">
                 <Loader2 aria-hidden="true" className="size-3 animate-spin" />
                 Thinking…
               </div>
             )}
 
             {(offline || messages.length > 0) && (
-              <div className="border-border flex flex-wrap gap-2 border-t pt-3">
+              <div className="flex flex-wrap gap-2 pt-2">
                 <Link
                   href="/book-a-call"
-                  className="bg-primary text-primary-foreground rounded-full px-3 py-1.5 text-xs font-medium"
+                  className="bg-primary text-primary-foreground rounded-full px-4 py-2 text-[13px] font-medium"
                   onClick={() => setOpen(false)}
                 >
                   Book a free call
                 </Link>
                 <Link
                   href="/contact"
-                  className="border-border rounded-full border px-3 py-1.5 text-xs font-medium"
+                  className="bg-surface-2 hover:bg-accent rounded-full px-4 py-2 text-[13px] font-medium transition-colors"
                   onClick={() => setOpen(false)}
                 >
                   Send a message
@@ -218,7 +220,7 @@ export function SiteAssistant() {
               event.preventDefault();
               ask(input);
             }}
-            className="border-border flex items-center gap-2 border-t px-3 py-3"
+            className="flex items-center gap-2 px-3 py-3"
           >
             <input
               ref={inputRef}
@@ -227,13 +229,13 @@ export function SiteAssistant() {
               maxLength={600}
               placeholder="Ask a question…"
               aria-label="Your question"
-              className="border-border focus-outline min-w-0 flex-1 rounded-xl border px-3 py-2 text-sm"
+              className="bg-surface-2 focus-visible:ring-ring/30 min-w-0 flex-1 rounded-full px-4 py-2.5 text-[16px] focus-visible:ring-2 focus-visible:outline-none"
             />
             <button
               type="submit"
               disabled={pending || !input.trim()}
               aria-label="Send question"
-              className="bg-primary text-primary-foreground rounded-xl p-2 disabled:opacity-40"
+              className="bg-primary text-primary-foreground flex size-10 shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-30"
             >
               <Send aria-hidden="true" className="size-4" />
             </button>

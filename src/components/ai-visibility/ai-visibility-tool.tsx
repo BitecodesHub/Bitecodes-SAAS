@@ -80,7 +80,7 @@ export function AiVisibilityTool() {
     <div>
       <form
         onSubmit={submit}
-        className="border-border bg-card mx-auto max-w-3xl rounded-3xl border p-5 shadow-[var(--shadow-lift)] sm:p-8"
+        className="bg-background mx-auto max-w-3xl rounded-[28px] p-6 sm:p-8"
       >
         <Label htmlFor="ai-visibility-url">Website URL</Label>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
@@ -119,7 +119,7 @@ export function AiVisibilityTool() {
         </div>
         <p
           id="ai-visibility-scope"
-          className="text-muted-foreground mt-3 text-xs leading-relaxed"
+          className="text-muted-foreground mt-3 text-[13px] leading-[1.55]"
         >
           Reads one public homepage, robots.txt, and llms.txt. No login, no
           JavaScript execution, no invasive scan.
@@ -128,7 +128,7 @@ export function AiVisibilityTool() {
           <p
             id="ai-visibility-error"
             role="alert"
-            className="bg-destructive/10 text-destructive mt-4 rounded-xl px-4 py-3 text-sm"
+            className="bg-destructive/10 text-destructive mt-4 rounded-[14px] px-4 py-3 text-[14px]"
           >
             {error}
           </p>
@@ -163,23 +163,23 @@ function Results({ result }: { result: AiVisibilityResult }) {
 
   return (
     <section className="mt-10" aria-labelledby="ai-visibility-results">
-      <div className="border-border bg-foreground text-background rounded-3xl border p-6 shadow-[var(--shadow-lift)] sm:p-8">
+      <div className="bg-foreground text-background rounded-[28px] p-7 sm:p-9">
         <div className="grid items-center gap-8 md:grid-cols-[auto_1fr]">
           <ScoreRing score={result.score} />
           <div>
-            <p className="text-background/60 text-xs font-semibold tracking-[0.16em] uppercase">
+            <p className="text-background/60 text-[11px] font-semibold tracking-[0.14em] uppercase">
               AI visibility result
             </p>
             <h2
               id="ai-visibility-results"
-              className="mt-2 text-3xl font-semibold tracking-tight"
+              className="mt-2 text-3xl font-semibold tracking-[-0.025em]"
             >
               {copy.label}
             </h2>
-            <p className="text-background/65 mt-2 max-w-xl text-sm leading-relaxed">
+            <p className="text-background/65 mt-2 max-w-xl text-[15px] leading-[1.55]">
               {copy.line}
             </p>
-            <p className="text-background/50 mt-3 truncate text-sm">
+            <p className="text-background/50 mt-3 truncate text-[14px]">
               {result.finalUrl}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
@@ -237,14 +237,16 @@ function Results({ result }: { result: AiVisibilityResult }) {
             label="Points available"
           />
         </div>
-        <p className="text-background/55 mt-6 text-xs leading-relaxed">
+        <p className="text-background/55 mt-6 text-[13px] leading-[1.55]">
           {result.scope}
         </p>
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-        <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-          <h3 className="text-lg font-semibold">What the check found</h3>
+        <div className="bg-background rounded-[24px] p-6 sm:p-7">
+          <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+            What the check found
+          </h3>
           <div className="mt-5 divide-y divide-[var(--border)]">
             {result.checks.map((check) => (
               <div key={check.id} className="py-4 first:pt-0 last:pb-0">
@@ -252,16 +254,16 @@ function Results({ result }: { result: AiVisibilityResult }) {
                   <StatusIcon status={check.status} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-sm font-semibold">{check.label}</p>
-                      <p className="text-muted-foreground text-xs tabular-nums">
+                      <p className="text-[15px] font-semibold">{check.label}</p>
+                      <p className="text-muted-foreground text-[13px] tabular-nums">
                         {check.earned}/{check.max}
                       </p>
                     </div>
-                    <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                    <p className="text-muted-foreground mt-1 text-[14px] leading-[1.55]">
                       {check.detail}
                     </p>
                     {check.status !== "pass" ? (
-                      <p className="mt-2 text-sm leading-relaxed">
+                      <p className="mt-2 text-[14px] leading-[1.55]">
                         <ShieldCheck className="text-primary mr-1.5 inline size-4 shrink-0" />
                         {check.recommendation}
                       </p>
@@ -274,21 +276,21 @@ function Results({ result }: { result: AiVisibilityResult }) {
         </div>
 
         <div className="space-y-4">
-          <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-            <h3 className="text-sm font-semibold">Crawler permissions</h3>
-            <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+          <div className="bg-background rounded-[24px] p-6">
+            <h3 className="text-[15px] font-semibold">Crawler permissions</h3>
+            <p className="text-muted-foreground mt-1 text-[13px] leading-[1.55]">
               From robots.txt. Exact user-agent rules override wildcard rules.
             </p>
             <ul className="mt-4 space-y-2">
               {result.crawlers.map((crawler) => (
                 <li
                   key={crawler.name}
-                  className="flex items-center justify-between gap-3 text-sm"
+                  className="flex items-center justify-between gap-3 text-[14px]"
                 >
                   <span className="truncate">{crawler.name}</span>
                   <span
                     className={cn(
-                      "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                      "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[13px] font-medium",
                       crawler.allowed
                         ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                         : "bg-destructive/10 text-destructive",
@@ -303,17 +305,17 @@ function Results({ result }: { result: AiVisibilityResult }) {
           </div>
 
           {result.priorityFixes.length > 0 ? (
-            <div className="border-primary/25 bg-primary/5 rounded-2xl border p-6">
-              <h3 className="text-sm font-semibold">Fix these first</h3>
+            <div className="bg-primary/5 rounded-[24px] p-6">
+              <h3 className="text-[15px] font-semibold">Fix these first</h3>
               <ol className="mt-3 space-y-3">
                 {result.priorityFixes.map((fix, index) => (
-                  <li key={fix.title} className="flex gap-3 text-sm">
-                    <span className="bg-primary text-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
+                  <li key={fix.title} className="flex gap-3 text-[14px]">
+                    <span className="bg-primary text-primary-foreground flex size-5 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold">
                       {index + 1}
                     </span>
                     <div>
                       <p className="font-medium">{fix.title}</p>
-                      <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                      <p className="text-muted-foreground mt-1 text-[13px] leading-[1.55]">
                         {fix.detail}
                       </p>
                     </div>
@@ -372,12 +374,12 @@ function ReportEmailForm({ result }: { result: AiVisibilityResult }) {
 
   if (state === "sent") {
     return (
-      <div className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-        <p className="flex items-center gap-2 font-semibold">
+      <div className="bg-background mt-6 rounded-[24px] p-6">
+        <p className="flex items-center gap-2 text-[16px] font-semibold">
           <CheckCircle2 className="size-5 text-emerald-600" />
           Report sent
         </p>
-        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
           Check your inbox for the prioritized fixes. Nothing else was
           subscribed.
         </p>
@@ -388,13 +390,15 @@ function ReportEmailForm({ result }: { result: AiVisibilityResult }) {
   return (
     <form
       onSubmit={submit}
-      className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+      className="bg-background mt-6 rounded-[24px] p-6 sm:p-7"
     >
       <div className="flex items-center gap-2">
         <Mail className="text-primary size-5" />
-        <h3 className="text-lg font-semibold">Email me this report</h3>
+        <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+          Email me this report
+        </h3>
       </div>
-      <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
         A copy of the score and the highest-value fixes, so you can act on them
         later.
       </p>
@@ -424,12 +428,12 @@ function ReportEmailForm({ result }: { result: AiVisibilityResult }) {
           />
         </div>
       </div>
-      <label className="text-muted-foreground mt-3 flex items-start gap-2 text-xs leading-relaxed">
+      <label className="text-muted-foreground mt-3 flex items-start gap-2 text-[13px] leading-relaxed">
         <input
           type="checkbox"
           checked={followUp}
           onChange={(event) => setFollowUp(event.target.checked)}
-          className="accent-primary mt-0.5 size-4"
+          className="accent-primary mt-0.5 size-5"
         />
         <span>
           You may contact me about this report. Leave unticked for the report
@@ -437,7 +441,7 @@ function ReportEmailForm({ result }: { result: AiVisibilityResult }) {
         </span>
       </label>
       {message ? (
-        <p role="alert" className="text-destructive mt-3 text-sm">
+        <p role="alert" className="text-destructive mt-3 text-[14px]">
           {message}
         </p>
       ) : null}
@@ -500,7 +504,7 @@ function ScoreRing({ score }: { score: number }) {
       </svg>
       <div className="absolute text-center">
         <p className="text-4xl font-semibold tabular-nums">{score}</p>
-        <p className="text-background/50 text-xs">out of 100</p>
+        <p className="text-background/50 text-[13px]">out of 100</p>
       </div>
     </div>
   );
@@ -508,9 +512,9 @@ function ScoreRing({ score }: { score: number }) {
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="bg-background/8 border-background/10 rounded-2xl border p-4">
+    <div className="bg-background/10 rounded-[18px] p-4">
       <p className="text-2xl font-semibold tabular-nums">{value}</p>
-      <p className="text-background/55 mt-1 text-xs">{label}</p>
+      <p className="text-background/55 mt-1 text-[13px]">{label}</p>
     </div>
   );
 }

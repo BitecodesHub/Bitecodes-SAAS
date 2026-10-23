@@ -32,7 +32,7 @@ export function FaqExplorer({ faqs }: { faqs: Faq[] }) {
         />
       </div>
       <p
-        className="text-muted-foreground mt-4 text-center text-sm"
+        className="text-muted-foreground mt-4 text-center text-[13px]"
         aria-live="polite"
       >
         {filtered.length} {filtered.length === 1 ? "answer" : "answers"}
@@ -44,9 +44,9 @@ export function FaqExplorer({ faqs }: { faqs: Faq[] }) {
           defaultOpenFirst={false}
         />
       ) : (
-        <div className="border-border bg-card mx-auto mt-8 max-w-2xl rounded-2xl border p-8 text-center">
-          <h2 className="font-semibold">No matching answer</h2>
-          <p className="text-muted-foreground mt-2 text-sm">
+        <div className="bg-surface-2 mx-auto mt-8 max-w-2xl rounded-[24px] p-8 text-center">
+          <h2 className="text-[17px] font-semibold">No matching answer</h2>
+          <p className="text-muted-foreground mt-2 text-[15px]">
             Try a broader phrase, or contact us for a project-specific answer.
           </p>
         </div>

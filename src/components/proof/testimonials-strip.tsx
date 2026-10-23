@@ -52,30 +52,29 @@ export function TestimonialsStrip() {
   if (items.length === 0) return null;
 
   return (
-    <section
-      aria-labelledby="testimonials-heading"
-      className="border-border bg-surface-2 border-y"
-    >
-      <div className="container-page py-16 sm:py-20">
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
-          Testimonials
-        </p>
-        <h2
-          id="testimonials-heading"
-          className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl"
-        >
-          What clients say
-        </h2>
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <section aria-labelledby="testimonials-heading">
+      <div className="container-page py-24 sm:py-32">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-primary text-[13px] font-semibold tracking-[0.14em] uppercase">
+            Testimonials
+          </p>
+          <h2
+            id="testimonials-heading"
+            className="mt-5 text-[clamp(2.25rem,4.6vw,4rem)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance"
+          >
+            What clients say
+          </h2>
+        </div>
+        <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, index) => (
             <figure
               key={`${item.name}-${item.approvedAt}-${index}`}
-              className="border-border bg-card flex h-full flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+              className="bg-surface-2 flex h-full flex-col rounded-[28px] p-7 sm:p-8"
             >
-              <blockquote className="text-foreground flex-1 text-base leading-relaxed text-pretty">
+              <blockquote className="flex-1 text-[17px] leading-[1.6] text-pretty">
                 “{item.quote}”
               </blockquote>
-              <figcaption className="text-muted-foreground mt-5 text-sm">
+              <figcaption className="text-muted-foreground mt-6 text-[14px]">
                 <span className="text-foreground font-medium">{item.name}</span>
                 {(item.role || item.company) && (
                   <span>

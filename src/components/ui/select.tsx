@@ -10,9 +10,6 @@ import { cn } from "@/lib/utils";
  * better experience than a custom dropdown in a small viewport), and ships no
  * JavaScript. The chevron is decorative and the native arrow is hidden with
  * `appearance-none`.
- *
- * This replaces the identical class strings that were copy-pasted into
- * `contact-form.tsx`, `project-cost-calculator.tsx`, and `project-consultant.tsx`.
  */
 const Select = React.forwardRef<
   HTMLSelectElement,
@@ -22,7 +19,7 @@ const Select = React.forwardRef<
     <select
       ref={ref}
       className={cn(
-        "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 flex h-11 w-full appearance-none rounded-xl border px-4 py-2 pr-10 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm",
+        "bg-surface-2 focus-visible:ring-ring/30 flex h-12 w-full appearance-none rounded-xl px-4 py-2 pr-10 text-[16px] transition-shadow focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}

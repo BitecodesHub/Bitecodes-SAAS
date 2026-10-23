@@ -75,7 +75,7 @@ export function Logo({ className, iconOnly = false, href = "/" }: LogoProps) {
   return (
     <Link
       href={href}
-      className="focus-visible:ring-ring focus-visible:ring-offset-background inline-flex rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="focus-visible:ring-ring focus-visible:ring-offset-background inline-flex min-h-11 items-center rounded-lg focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
       aria-label={`${siteConfig.name} — home`}
     >
       {content}

@@ -192,21 +192,23 @@ export default function FormsProductPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             How it works
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 0.05}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <step.icon className="size-5" />
                   </span>
-                  <p className="text-muted-foreground mt-4 text-xs font-medium tracking-wider uppercase">
+                  <p className="text-muted-foreground mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                     Step {i + 1}
                   </p>
-                  <h3 className="mt-1 text-lg font-semibold">{step.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h3 className="mt-1.5 text-[19px] font-semibold tracking-[-0.01em]">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {step.body}
                   </p>
                 </div>
@@ -216,32 +218,32 @@ export default function FormsProductPage() {
         </div>
       </Section>
 
-      <Section spacing="sm">
+      <Section spacing="sm" className="bg-surface-2">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             The embed code
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
             Both snippets are generated for you in the dashboard, with your form
             id and token already filled in.
           </p>
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <div className="border-border bg-muted/30 overflow-x-auto rounded-2xl border p-4">
-              <p className="text-muted-foreground mb-2 text-xs font-medium">
+          <div className="mt-8 grid gap-3 lg:grid-cols-2">
+            <div className="bg-background overflow-x-auto rounded-[20px] p-5">
+              <p className="text-muted-foreground mb-3 text-[13px] font-medium">
                 Script tag — inline form
               </p>
-              <pre className="text-foreground/90 text-xs leading-relaxed">
+              <pre className="text-foreground/90 text-[13px] leading-[1.6]">
                 <code>{`<script src="${siteConfig.url}/form-widget.js"
   data-form="YOUR_FORM_ID"
   data-token="YOUR_PUBLIC_TOKEN">
 </script>`}</code>
               </pre>
             </div>
-            <div className="border-border bg-muted/30 overflow-x-auto rounded-2xl border p-4">
-              <p className="text-muted-foreground mb-2 text-xs font-medium">
+            <div className="bg-background overflow-x-auto rounded-[20px] p-5">
+              <p className="text-muted-foreground mb-3 text-[13px] font-medium">
                 Iframe — no JavaScript on your page
               </p>
-              <pre className="text-foreground/90 text-xs leading-relaxed">
+              <pre className="text-foreground/90 text-[13px] leading-[1.6]">
                 <code>{`<iframe
   src="${siteConfig.url}/form/YOUR_FORM_ID?t=YOUR_TOKEN"
   style="width:100%;max-width:560px;height:620px;border:0"
@@ -254,20 +256,20 @@ export default function FormsProductPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             What you get
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
             {FEATURES.map((feature, i) => (
               <Reveal key={feature.title} delay={i * 0.05}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <feature.icon className="size-5" />
                   </span>
-                  <h3 className="mt-4 text-lg font-semibold">
+                  <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
                     {feature.title}
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {feature.body}
                   </p>
                 </div>
@@ -275,25 +277,27 @@ export default function FormsProductPage() {
             ))}
           </div>
 
-          <ul className="mt-8 grid gap-3 sm:grid-cols-2">
+          <ul className="bg-surface-2 mt-3 grid gap-3 rounded-[24px] p-7 sm:grid-cols-2">
             {INCLUDED.map((item) => (
               <li key={item} className="flex items-start gap-3">
-                <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
+                <span className="text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                   <Check className="size-3.5" />
                 </span>
-                <span className="text-muted-foreground text-sm">{item}</span>
+                <span className="text-muted-foreground text-[15px] leading-[1.5]">
+                  {item}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       </Section>
 
-      <Section spacing="sm" id="pricing">
+      <Section spacing="sm" className="bg-surface-2" id="pricing">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Submission credits
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
             One credit per accepted submission. Spam caught by the honeypot is
             free, credits do not expire while your account is open, and there is
             no monthly commitment.{" "}
@@ -302,35 +306,35 @@ export default function FormsProductPage() {
             </span>
           </p>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 grid gap-3 md:grid-cols-3">
             {FORM_PACKS.map((pack) => (
               <div
                 key={pack.packId}
-                className="border-border bg-card relative flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+                className="bg-background relative flex flex-col rounded-[28px] p-7"
               >
                 {pack.popular && (
                   <Badge
                     variant="secondary"
-                    className="absolute -top-3 right-5"
+                    className="bg-surface-2 absolute top-5 right-5"
                   >
                     Most chosen
                   </Badge>
                 )}
-                <h3 className="text-lg font-semibold">{pack.label}</h3>
-                <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">
+                <h3 className="text-[17px] font-semibold">{pack.label}</h3>
+                <p className="mt-3 text-[36px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
                   {formatPackPrice(pack)}
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-muted-foreground mt-2 text-[13px]">
                   {pack.credits.toLocaleString()} submissions ·{" "}
                   {perSubmissionPrice(pack)} each
                 </p>
-                <p className="text-muted-foreground mt-3 flex-1 text-sm leading-relaxed">
+                <p className="text-muted-foreground mt-3 flex-1 text-[15px] leading-[1.55]">
                   {pack.blurb}
                 </p>
                 <Button
                   asChild
-                  variant={pack.popular ? "default" : "outline"}
-                  className="mt-5 w-full"
+                  variant={pack.popular ? "default" : "secondary"}
+                  className={`mt-6 w-full ${pack.popular ? "" : "bg-background"}`}
                 >
                   <Link href="/signup">Get started free</Link>
                 </Button>
@@ -338,7 +342,7 @@ export default function FormsProductPage() {
             ))}
           </div>
 
-          <p className="text-muted-foreground mt-5 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-5 text-[13px] leading-[1.6]">
             Prices in INR and inclusive of applicable taxes at checkout. Need a
             larger volume, an annual arrangement, or self-hosting?{" "}
             <Link
@@ -354,14 +358,14 @@ export default function FormsProductPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Frequently asked
           </h2>
-          <dl className="mt-6 max-w-3xl space-y-5">
+          <dl className="mt-8 max-w-3xl space-y-6">
             {FAQS.map((item) => (
               <div key={item.question}>
-                <dt className="font-medium">{item.question}</dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dt className="text-[16px] font-semibold">{item.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {item.answer}
                 </dd>
               </div>

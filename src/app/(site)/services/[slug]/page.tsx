@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Check, Clock3 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Section, SectionHeader } from "@/components/section";
+import { Section } from "@/components/section";
+import { CtaSection } from "@/components/cta-section";
 import { Reveal } from "@/components/motion/reveal";
 import { ProjectCard } from "@/components/cards/project-card";
 import { ServiceCard } from "@/components/cards/service-card";
@@ -94,54 +95,49 @@ export default async function ServiceDetailPage({
       />
 
       <Section spacing="sm">
-        <div className="container-page grid gap-12 lg:grid-cols-[1.6fr_1fr]">
-          <div className="space-y-12">
-            <Reveal className="space-y-5">
-              <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
-                <service.icon className="size-7" />
+        <div className="container-page grid gap-12 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+          <div className="space-y-14">
+            <Reveal className="space-y-6">
+              <span className="bg-surface-2 text-primary flex size-16 items-center justify-center rounded-[22px]">
+                <service.icon className="size-8" />
               </span>
-              <p className="text-lg leading-relaxed">{service.description}</p>
-              {service.timeline && (
-                <p className="text-muted-foreground leading-relaxed">
-                  {service.timeline} The exact schedule is agreed in the written
-                  quote before work begins.
-                </p>
-              )}
+              <p className="text-[21px] leading-[1.55] tracking-[-0.012em]">
+                {service.description}
+              </p>
             </Reveal>
 
             {service.deliverables && service.deliverables.length > 0 && (
               <Reveal>
-                <h2 className="text-2xl font-semibold tracking-tight">
+                <h2 className="text-[clamp(1.75rem,2.6vw,2.25rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
                   What you receive
                 </h2>
-                <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2">
                   {service.deliverables.map((deliverable) => (
-                    <li key={deliverable} className="flex items-start gap-3">
-                      <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
-                        <Check className="size-3.5" />
-                      </span>
-                      <span className="text-muted-foreground text-sm">
-                        {deliverable}
-                      </span>
+                    <li
+                      key={deliverable}
+                      className="bg-surface-2 flex items-start gap-3 rounded-[18px] p-4 text-[15px] leading-relaxed"
+                    >
+                      <Check className="text-primary mt-0.5 size-4 shrink-0" />
+                      <span>{deliverable}</span>
                     </li>
                   ))}
                 </ul>
               </Reveal>
             )}
 
-            <div className="grid gap-10 sm:grid-cols-2">
+            <div className="grid gap-12 sm:grid-cols-2">
               {service.idealFor && service.idealFor.length > 0 && (
                 <Reveal>
-                  <h2 className="text-2xl font-semibold tracking-tight">
+                  <h2 className="text-[24px] font-semibold tracking-[-0.02em]">
                     Who it is for
                   </h2>
                   <ul className="mt-5 space-y-3">
                     {service.idealFor.map((item) => (
                       <li
                         key={item}
-                        className="text-muted-foreground flex items-start gap-3 text-sm leading-relaxed"
+                        className="text-muted-foreground flex items-start gap-3 text-[16px] leading-relaxed"
                       >
-                        <span className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full" />
+                        <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
                         {item}
                       </li>
                     ))}
@@ -150,16 +146,16 @@ export default async function ServiceDetailPage({
               )}
               {service.outcomes && service.outcomes.length > 0 && (
                 <Reveal>
-                  <h2 className="text-2xl font-semibold tracking-tight">
+                  <h2 className="text-[24px] font-semibold tracking-[-0.02em]">
                     What changes
                   </h2>
                   <ul className="mt-5 space-y-3">
                     {service.outcomes.map((outcome) => (
                       <li
                         key={outcome}
-                        className="text-muted-foreground flex items-start gap-3 text-sm leading-relaxed"
+                        className="text-muted-foreground flex items-start gap-3 text-[16px] leading-relaxed"
                       >
-                        <span className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full" />
+                        <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
                         {outcome}
                       </li>
                     ))}
@@ -169,21 +165,26 @@ export default async function ServiceDetailPage({
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-5">
+            <ServicePricing slug={service.slug} />
             {service.timeline && (
-              <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+              <div className="bg-surface-2 rounded-[24px] p-6">
+                <h2 className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
                   Typical timeline
                 </h2>
-                <p className="mt-3 flex items-start gap-3 text-sm leading-relaxed">
+                <p className="mt-3 flex items-start gap-3 text-[15px] leading-[1.6]">
                   <Clock3 className="text-primary mt-0.5 size-4 shrink-0" />
                   {service.timeline}
+                </p>
+                <p className="text-muted-foreground mt-3 text-[13px] leading-[1.6]">
+                  The exact schedule is agreed in the written quote before work
+                  begins.
                 </p>
               </div>
             )}
             {stack.length > 0 && (
-              <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+              <div className="bg-surface-2 rounded-[24px] p-6">
+                <h2 className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
                   Typical stack
                 </h2>
                 <div className="mt-4 flex flex-col gap-3">
@@ -199,7 +200,7 @@ export default async function ServiceDetailPage({
                             name={tech.name}
                             size="sm"
                           />
-                          <span className="text-sm font-medium">
+                          <span className="text-[15px] font-medium">
                             {tech.name}
                           </span>
                         </div>
@@ -208,16 +209,18 @@ export default async function ServiceDetailPage({
                 </div>
               </div>
             )}
-            <ServicePricing slug={service.slug} />
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <h2 className="text-lg font-semibold">
+            <div className="rounded-[24px] bg-[#1d1d1f] p-6 text-white dark:bg-[#101012]">
+              <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
                 Check the starting point
               </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="mt-2 text-[14px] leading-relaxed text-white/65">
                 A free website audit shows what is holding an existing site back
                 before you commit to a scope.
               </p>
-              <Button asChild className="mt-4 w-full">
+              <Button
+                asChild
+                className="mt-5 w-full bg-white text-[#1d1d1f] hover:bg-white/90"
+              >
                 <Link
                   href="/website-audit"
                   data-track="service-audit-click"
@@ -234,28 +237,27 @@ export default async function ServiceDetailPage({
       </Section>
 
       {faqs.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="FAQ"
-              title={`Questions about ${service.title.toLowerCase()}`}
-              description="Direct answers about scope, timeline, pricing, and how the work is delivered."
-              align="left"
-            />
+            <h2 className="max-w-3xl text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              Questions about {service.title.toLowerCase()}
+            </h2>
+            <p className="text-muted-foreground mt-3 max-w-2xl text-[17px] leading-relaxed">
+              Direct answers about scope, timeline, pricing, and how the work is
+              delivered.
+            </p>
             <FaqDetails faqs={faqs} className="mt-8 max-w-3xl" />
           </div>
         </Section>
       )}
 
       {relatedProjects.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="Related work"
-              title="Projects that used this service"
-              align="left"
-            />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              Projects that used this service
+            </h2>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {relatedProjects.map((project) => (
                 <ProjectCard key={project.slug} project={project} />
               ))}
@@ -265,28 +267,29 @@ export default async function ServiceDetailPage({
       )}
 
       {relatedIndustries.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="Industries"
-              title="Where this service fits"
-              description="Each industry page describes the workflows, constraints, and questions we see in that sector."
-              align="left"
-            />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              Where this service fits
+            </h2>
+            <p className="text-muted-foreground mt-3 max-w-2xl text-[17px] leading-relaxed">
+              Each industry page describes the workflows, constraints, and
+              questions we see in that sector.
+            </p>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {relatedIndustries.map((industry) => (
                 <Link
                   key={industry.slug}
                   href={`/industries/${industry.slug}`}
-                  className="group border-border bg-card hover:border-primary/30 focus-visible:ring-ring flex h-full flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                  className="group bg-background focus-visible:ring-ring flex h-full flex-col rounded-[28px] p-7 transition-shadow hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:outline-none"
                 >
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                  <span className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
                     <industry.icon className="size-5" />
                   </span>
-                  <h3 className="mt-4 text-lg font-semibold tracking-tight">
+                  <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.02em]">
                     {industry.name}
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                     {industry.description}
                   </p>
                 </Link>
@@ -297,12 +300,12 @@ export default async function ServiceDetailPage({
       )}
 
       {related.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm">
           <div className="container-page">
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
               Related services
             </h2>
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((s) => (
                 <ServiceCard key={s.slug} service={s} className="h-full" />
               ))}
@@ -311,54 +314,20 @@ export default async function ServiceDetailPage({
         </Section>
       )}
 
-      <Section spacing="sm" className="border-border border-t">
-        <div className="container-page">
-          <Reveal>
-            <div className="bg-primary text-primary-foreground rounded-3xl px-6 py-12 text-center sm:px-14 sm:py-16">
-              <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                Start with a free website audit.
-              </h2>
-              <p className="text-primary-foreground/85 mx-auto mt-4 max-w-2xl text-base leading-relaxed">
-                See how an existing site performs on SEO, speed, accessibility,
-                and security headers. No account is required, and the report is
-                yours to keep.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-background text-foreground hover:bg-background/90"
-                >
-                  <Link
-                    href="/website-audit"
-                    data-track="service-audit-click"
-                    data-track-service={service.slug}
-                    data-track-location="service-footer"
-                  >
-                    Run a free audit
-                    <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
-                >
-                  <Link
-                    href="/book-a-call"
-                    data-track="service-book-call-click"
-                    data-track-service={service.slug}
-                    data-track-location="service-footer"
-                  >
-                    Book a call
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </Section>
+      <CtaSection
+        title="Start with a free website audit."
+        description="See how an existing site performs on SEO, speed, accessibility, and security headers. No account is required, and the report is yours to keep."
+        primary={{
+          label: "Run a free audit",
+          href: "/website-audit",
+          track: "service-audit-click",
+        }}
+        secondary={{
+          label: "Book a call",
+          href: "/book-a-call",
+          track: "service-book-call-click",
+        }}
+      />
     </>
   );
 }

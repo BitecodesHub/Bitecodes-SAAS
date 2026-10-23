@@ -61,12 +61,14 @@ export default function CareersPage() {
             eyebrow="How we work"
             title="What the internship is like"
           />
-          <StaggerGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerGroup className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {cultureValues.map((v) => (
               <StaggerItem key={v.title}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <h3 className="font-semibold">{v.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+                    {v.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2.5 text-[15px] leading-[1.55]">
                     {v.description}
                   </p>
                 </div>
@@ -77,22 +79,24 @@ export default function CareersPage() {
       </Section>
 
       {/* Benefits */}
-      <Section className="border-border bg-card/40 border-y">
+      <Section className="bg-surface-2">
         <div className="container-page">
           <SectionHeader
             eyebrow="What you get"
             title="Stipend, incentives and more"
           />
-          <StaggerGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerGroup className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {benefits.map((b) => (
               <StaggerItem key={b.title}>
-                <div className="border-border bg-card flex h-full gap-4 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+                <div className="bg-background flex h-full gap-4 rounded-[24px] p-7">
+                  <span className="bg-surface-2 text-primary flex size-11 shrink-0 items-center justify-center rounded-[14px]">
                     <b.icon className="size-5" />
                   </span>
                   <div>
-                    <h3 className="font-semibold">{b.title}</h3>
-                    <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                    <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+                      {b.title}
+                    </h3>
+                    <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                       {b.description}
                     </p>
                   </div>
@@ -107,26 +111,26 @@ export default function CareersPage() {
       <Section>
         <div className="container-page">
           <SectionHeader eyebrow="Open roles" title="Now hiring" />
-          <div className="mx-auto mt-12 max-w-3xl space-y-4">
+          <div className="mx-auto mt-14 max-w-3xl space-y-3">
             {jobOpenings.map((job, i) => (
               <Reveal key={job.slug} delay={i * 0.05}>
-                <div className="group border-border bg-card hover:border-primary/30 flex flex-col gap-4 rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors sm:flex-row sm:items-center sm:justify-between">
+                <div className="group bg-surface-2 flex flex-col gap-5 rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-lg font-semibold">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <h3 className="text-[21px] font-semibold tracking-[-0.015em]">
                         <Link
                           href={`/careers/${job.slug}`}
-                          className="hover:text-primary transition-colors"
+                          className="hover:text-primary inline-flex min-h-11 items-center transition-colors"
                         >
                           {job.title}
                         </Link>
                       </h3>
                       <Badge variant="muted">{job.department}</Badge>
                     </div>
-                    <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                    <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                       {job.summary}
                     </p>
-                    <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-4 text-xs">
+                    <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-4 text-[13px]">
                       <span className="flex items-center gap-1.5">
                         <MapPin className="size-3.5" />
                         {job.location}
@@ -137,8 +141,8 @@ export default function CareersPage() {
                   </div>
                   <Button
                     asChild
-                    variant="outline"
-                    className="shrink-0 sm:self-center"
+                    variant="secondary"
+                    className="bg-background shrink-0 sm:self-center"
                   >
                     <Link
                       href={`/careers/${job.slug}`}
@@ -156,16 +160,20 @@ export default function CareersPage() {
       </Section>
 
       {/* Hiring process */}
-      <Section className="border-border border-t">
+      <Section className="bg-surface-2">
         <div className="container-page">
           <SectionHeader eyebrow="Hiring" title="Four steps, about a week" />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-14 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {hiringProcess.map((step, i) => (
               <Reveal key={step.step} delay={i * 0.05}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="text-3xl font-semibold">0{step.step}</span>
-                  <h3 className="mt-3 font-semibold">{step.title}</h3>
-                  <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <div className="bg-background h-full rounded-[24px] p-7">
+                  <span className="text-muted-foreground text-[13px] font-semibold tabular-nums">
+                    0{step.step}
+                  </span>
+                  <h3 className="mt-3 text-[19px] font-semibold tracking-[-0.01em]">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {step.description}
                   </p>
                 </div>

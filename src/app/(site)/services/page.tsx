@@ -34,17 +34,16 @@ export default function ServicesPage() {
         ]}
       />
       <Section>
-        <div className="container-page space-y-16">
+        <div className="container-page space-y-20">
           {serviceCategories.map((category) => {
             const items = services.filter((s) => s.category === category);
             return (
               <div key={category}>
-                <div className="mb-6 flex items-center gap-4">
-                  <h2 className="text-xl font-semibold tracking-tight">
+                <div className="mb-8 flex items-baseline justify-between gap-4">
+                  <h2 className="text-[28px] font-semibold tracking-[-0.025em] sm:text-[32px]">
                     {category}
                   </h2>
-                  <span className="bg-border h-px flex-1" />
-                  <span className="text-muted-foreground text-sm">
+                  <span className="text-muted-foreground text-[13px]">
                     {items.length} services
                   </span>
                 </div>

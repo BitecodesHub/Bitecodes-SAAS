@@ -190,7 +190,7 @@ export default function AiChatbotPage() {
               Start free <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
+          <Button asChild variant="secondary" size="lg">
             <a
               href={siteConfig.contact.whatsapp}
               target="_blank"
@@ -205,21 +205,23 @@ export default function AiChatbotPage() {
       {/* How it works */}
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             How it works
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 0.05}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <step.icon className="size-5" />
                   </span>
-                  <p className="text-muted-foreground mt-4 text-xs font-medium">
+                  <p className="text-muted-foreground mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                     Step {i + 1}
                   </p>
-                  <h3 className="mt-1 font-semibold">{step.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h3 className="mt-1.5 text-[19px] font-semibold tracking-[-0.01em]">
+                    {step.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {step.body}
                   </p>
                 </div>
@@ -230,25 +232,25 @@ export default function AiChatbotPage() {
       </Section>
 
       {/* Embed demo */}
-      <Section spacing="sm">
+      <Section spacing="sm" className="bg-surface-2">
         <div className="container-page grid gap-8 lg:grid-cols-2 lg:items-center">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               Two ways to embed
             </h2>
-            <p className="text-muted-foreground mt-3 leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               A floating widget via a single script tag, or a full-page chat via
               an iframe. Both respect your domain allowlist and go live the
               moment you paste them in.
             </p>
-            <ul className="mt-5 space-y-2.5">
+            <ul className="mt-5 space-y-3">
               {[
                 "No framework, plugin, or build step",
                 "Style-isolated so it never clashes with your site",
                 "Desktop, tablet, and mobile — dark and light",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm">
-                  <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
+                <li key={item} className="flex items-start gap-3 text-[15px]">
+                  <span className="text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                     <Check className="size-3.5" />
                   </span>
                   <span className="text-muted-foreground">{item}</span>
@@ -257,20 +259,20 @@ export default function AiChatbotPage() {
             </ul>
           </Reveal>
           <Reveal direction="left">
-            <div className="border-border bg-card overflow-x-auto rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
-              <p className="text-muted-foreground mb-2 text-xs font-medium">
+            <div className="bg-background overflow-x-auto rounded-[24px] p-6">
+              <p className="text-muted-foreground mb-3 text-[13px] font-medium">
                 Option 1 — JavaScript widget
               </p>
-              <pre className="text-foreground/90 text-xs leading-relaxed">
+              <pre className="text-foreground/90 text-[13px] leading-[1.6]">
                 <code>{`<script src="${siteConfig.url}/widget.js"
   data-chatbot="CHATBOT_ID"
   data-token="PUBLIC_TOKEN">
 </script>`}</code>
               </pre>
-              <p className="text-muted-foreground mt-5 mb-2 text-xs font-medium">
+              <p className="text-muted-foreground mt-6 mb-3 text-[13px] font-medium">
                 Option 2 — iframe
               </p>
-              <pre className="text-foreground/90 text-xs leading-relaxed">
+              <pre className="text-foreground/90 text-[13px] leading-[1.6]">
                 <code>{`<iframe
   src="${siteConfig.url}/chat/CHATBOT_ID"
   width="400" height="600">
@@ -284,18 +286,20 @@ export default function AiChatbotPage() {
       {/* Features */}
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Everything a serious chatbot needs
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 0.04}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <f.icon className="size-5" />
                   </span>
-                  <h3 className="mt-4 font-semibold">{f.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                    {f.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {f.body}
                   </p>
                 </div>
@@ -306,45 +310,45 @@ export default function AiChatbotPage() {
       </Section>
 
       {/* Pricing */}
-      <Section spacing="sm">
+      <Section spacing="sm" className="bg-surface-2">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Simple, token-based pricing
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
             Buy a pack of tokens once and use them whenever you like — there is
             no subscription and nothing expires monthly. Tokens cover the
             question and the answer together, so a longer reply costs more than
             a short one. Answer counts below are approximate for that reason.
           </p>
 
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
+          <div className="mt-8 grid gap-3 md:grid-cols-3">
             {CHATBOT_PACKS.map((pack) => (
               <div
                 key={pack.packId}
-                className={
+                className={`relative flex flex-col rounded-[28px] p-7 ${
                   pack.popular
-                    ? "border-primary bg-card relative flex flex-col rounded-2xl border-2 p-6 shadow-[var(--shadow-lift)]"
-                    : "border-border bg-card relative flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
-                }
+                    ? "bg-background shadow-[var(--shadow-lift)]"
+                    : "bg-background/60"
+                }`}
               >
                 {pack.popular && (
-                  <Badge className="absolute -top-3 left-6">Most chosen</Badge>
+                  <Badge className="absolute top-5 left-6">Most chosen</Badge>
                 )}
-                <h3 className="text-lg font-semibold">{pack.label}</h3>
-                <p className="mt-3 text-3xl font-semibold tracking-tight tabular-nums">
+                <h3 className="text-[17px] font-semibold">{pack.label}</h3>
+                <p className="mt-3 text-[36px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
                   {formatPackPrice(pack)}
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-muted-foreground mt-2 text-[13px]">
                   {pack.credits.toLocaleString()} tokens · {perUnitPrice(pack)}
                 </p>
-                <p className="text-muted-foreground mt-3 flex-1 text-sm leading-relaxed">
+                <p className="text-muted-foreground mt-3 flex-1 text-[15px] leading-[1.55]">
                   {pack.blurb}
                 </p>
                 <Button
                   asChild
-                  variant={pack.popular ? "default" : "outline"}
-                  className="mt-5 w-full"
+                  variant={pack.popular ? "default" : "secondary"}
+                  className={`mt-6 w-full ${pack.popular ? "" : "bg-background"}`}
                 >
                   <Link href="/signup">Get started free</Link>
                 </Button>
@@ -352,7 +356,7 @@ export default function AiChatbotPage() {
             ))}
           </div>
 
-          <p className="text-muted-foreground mt-6 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-6 text-[13px] leading-[1.6]">
             Launch pricing, billed in Indian rupees. Every answer is metered
             against your balance and recorded in a ledger you can audit, and the
             assistant stops rather than overspending when a balance runs out.
@@ -363,17 +367,14 @@ export default function AiChatbotPage() {
       {/* FAQ */}
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
             Frequently asked questions
           </h2>
-          <dl className="mt-6 space-y-5">
+          <dl className="mt-8 space-y-6">
             {FAQS.map((item) => (
-              <div
-                key={item.question}
-                className="border-border border-b pb-5 last:border-0"
-              >
-                <dt className="font-medium">{item.question}</dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+              <div key={item.question}>
+                <dt className="text-[16px] font-semibold">{item.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {item.answer}
                 </dd>
               </div>

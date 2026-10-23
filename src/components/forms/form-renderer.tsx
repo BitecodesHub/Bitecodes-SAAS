@@ -126,9 +126,16 @@ export function FormRenderer({
     return (
       <div
         role="status"
-        className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+        className="bg-surface-2 rounded-[20px] p-5 text-[15px] leading-[1.6]"
       >
-        {thankYouMessage}
+        <p className="flex items-start gap-2.5">
+          <span
+            aria-hidden="true"
+            className="mt-[7px] size-2 shrink-0 rounded-full"
+            style={{ background: "var(--chart-3)" }}
+          />
+          {thankYouMessage}
+        </p>
       </div>
     );
   }
@@ -136,7 +143,11 @@ export function FormRenderer({
   const accent = appearance.primaryColor;
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-4">
+    <form
+      onSubmit={submit}
+      noValidate
+      className="bg-surface-2 space-y-5 rounded-[24px] p-6"
+    >
       {fields.map((field) => {
         const id = `f_${field.name}`;
         if (field.type === "hidden") {
@@ -153,16 +164,20 @@ export function FormRenderer({
 
         if (field.type === "checkbox") {
           return (
-            <div key={field.name} className="flex items-start gap-2.5">
+            <div key={field.name} className="flex min-h-11 items-start gap-3">
               <input
                 id={id}
                 type="checkbox"
                 checked={Boolean(values[field.name])}
                 onChange={(e) => set(field.name, e.target.checked)}
                 required={field.required}
-                className="mt-1"
+                style={{ accentColor: accent }}
+                className="mt-0.5 size-[18px] shrink-0"
               />
-              <label htmlFor={id} className="text-sm leading-relaxed">
+              <label
+                htmlFor={id}
+                className="cursor-pointer text-[15px] leading-[1.55]"
+              >
                 {field.label}
                 {field.required && <span style={{ color: accent }}> *</span>}
               </label>
@@ -171,8 +186,8 @@ export function FormRenderer({
         }
 
         return (
-          <div key={field.name} className="space-y-1.5">
-            <label htmlFor={id} className="block text-sm font-semibold">
+          <div key={field.name} className="space-y-2">
+            <label htmlFor={id} className="block text-[15px] font-semibold">
               {field.label}
               {field.required && <span style={{ color: accent }}> *</span>}
             </label>
@@ -186,7 +201,7 @@ export function FormRenderer({
                 value={String(values[field.name] ?? "")}
                 onChange={(e) => set(field.name, e.target.value)}
                 rows={5}
-                className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"
+                className="bg-background placeholder:text-muted-foreground/70 w-full rounded-[14px] px-4 py-3 text-[15px] leading-[1.55] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               />
             ) : field.type === "select" ? (
               <select
@@ -194,7 +209,7 @@ export function FormRenderer({
                 required={field.required}
                 value={String(values[field.name] ?? "")}
                 onChange={(e) => set(field.name, e.target.value)}
-                className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"
+                className="bg-background min-h-11 w-full rounded-[14px] px-4 py-3 text-[15px] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               >
                 {!field.required && <option value="">Please choose…</option>}
                 {field.options.map((opt) => (
@@ -221,7 +236,7 @@ export function FormRenderer({
                 autoComplete={autoCompleteFor(field.type, field.name)}
                 value={String(values[field.name] ?? "")}
                 onChange={(e) => set(field.name, e.target.value)}
-                className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"
+                className="bg-background placeholder:text-muted-foreground/70 min-h-11 w-full rounded-[14px] px-4 text-[15px] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               />
             )}
           </div>
@@ -243,7 +258,10 @@ export function FormRenderer({
       )}
 
       {error && (
-        <p role="alert" className="text-destructive text-sm">
+        <p
+          role="alert"
+          className="bg-destructive/10 text-destructive rounded-[14px] px-4 py-3 text-[14px] leading-[1.5]"
+        >
           {error}
         </p>
       )}
@@ -252,7 +270,7 @@ export function FormRenderer({
         type="submit"
         disabled={pending}
         style={{ background: accent }}
-        className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className="inline-flex min-h-11 items-center rounded-full px-6 text-[15px] font-semibold text-white transition-opacity disabled:opacity-60"
       >
         {pending ? "Sending…" : appearance.buttonText}
       </button>

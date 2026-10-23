@@ -71,12 +71,12 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
   return (
     <section
       id="decision"
-      className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:p-8 print:hidden"
+      className="bg-surface-2 rounded-[28px] p-7 sm:p-9 print:hidden"
     >
-      <h2 className="text-xl font-semibold tracking-tight">
+      <h2 className="text-[24px] font-semibold tracking-[-0.02em]">
         Accept this proposal
       </h2>
-      <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-2.5 max-w-2xl text-[15px] leading-[1.6]">
         Type your name as a signature and confirm. We will email you next to
         arrange the start date and the first invoice. Nothing is charged from
         this page.
@@ -114,12 +114,12 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
         />
       </div>
 
-      <label className="mt-4 flex items-start gap-3 text-sm leading-relaxed">
+      <label className="mt-5 flex items-start gap-3 text-[15px] leading-[1.6]">
         <input
           type="checkbox"
           checked={confirmed}
           onChange={(event) => setConfirmed(event.target.checked)}
-          className="border-input accent-primary focus-visible:ring-ring/40 mt-0.5 size-4 rounded border"
+          className="accent-primary focus-visible:ring-ring/40 mt-1 size-5 rounded"
         />
         <span>
           I confirm that I am authorised to accept this proposal on behalf of
@@ -129,7 +129,10 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
       </label>
 
       {error && (
-        <p role="alert" className="text-destructive mt-4 text-sm">
+        <p
+          role="alert"
+          className="bg-destructive/10 text-destructive mt-4 rounded-[16px] p-4 text-[14px] leading-[1.5]"
+        >
           {error}
         </p>
       )}
@@ -137,7 +140,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
       <Button
         type="button"
         size="lg"
-        className="mt-5 w-full sm:w-auto"
+        className="mt-6 w-full sm:w-auto"
         onClick={accept}
         disabled={
           pending ||
@@ -155,8 +158,8 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
         Accept proposal
       </Button>
 
-      <details className="border-border mt-8 border-t pt-6">
-        <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-sm transition-colors">
+      <details className="border-background mt-8 border-t pt-6">
+        <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-[15px] transition-colors">
           This is not a fit. Tell us why.
         </summary>
         <div className="mt-4 max-w-xl space-y-3">
@@ -169,14 +172,15 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
           />
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
+            className="bg-background"
             onClick={decline}
             disabled={pending || declineReason.trim().length < 3}
           >
             {pending && <Loader2 className="size-4 animate-spin" />}
             Decline proposal
           </Button>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p className="text-muted-foreground text-[13px] leading-[1.6]">
             Declining closes this proposal. Nothing is charged, and you can
             still ask for a revised proposal afterwards.
           </p>

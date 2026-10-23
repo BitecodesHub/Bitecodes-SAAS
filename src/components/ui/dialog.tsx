@@ -49,7 +49,7 @@ const DialogSheet = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="focus-visible:ring-ring absolute top-4 right-4 flex size-11 items-center justify-center rounded-full opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2">
+      <DialogPrimitive.Close className="text-muted-foreground hover:bg-surface-2 hover:text-foreground focus-visible:ring-ring absolute top-2.5 right-3 flex size-11 items-center justify-center rounded-full transition-colors focus:outline-none focus-visible:ring-2">
         <X className="size-5" />
         <span className="sr-only">Close</span>
       </DialogPrimitive.Close>

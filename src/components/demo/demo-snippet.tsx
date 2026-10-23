@@ -47,7 +47,7 @@ export function DemoSnippet({
         <button
           type="button"
           onClick={copy}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex min-h-11 items-center gap-1.5 rounded-[10px] px-3 text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
           aria-label={copied ? "Copied" : `Copy ${label}`}
           data-track="demo-copy-snippet"
         >

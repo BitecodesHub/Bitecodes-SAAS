@@ -6,50 +6,50 @@ import { processSteps } from "@/data/process";
 
 /**
  * Delivery stages as an editorial spec list beside a sticky introduction.
- * A numbered rail scans faster than a zigzag timeline and keeps the page from
- * repeating the centered-header-plus-grid rhythm used by the sections above.
+ * Big numerals do real work here: the process is genuinely sequential, so the
+ * numbering encodes order rather than decorating the heading.
  */
 export function ProcessSection() {
   return (
-    <Section id="process" className="bg-surface-2">
+    <Section id="process">
       <div className="container-page">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <div className="grid gap-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
           <div className="lg:sticky lg:top-28 lg:self-start">
             <Reveal>
-              <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-primary text-[13px] font-semibold tracking-[0.14em] uppercase">
                 How we work
               </p>
-              <h2 className="mt-4 max-w-md text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl md:leading-[1.08]">
+              <h2 className="mt-5 max-w-md text-[clamp(2.25rem,4.4vw,3.75rem)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance">
                 A process built on visibility, not surprises.
               </h2>
-              <p className="text-muted-foreground mt-4 max-w-md text-base leading-relaxed">
+              <p className="text-muted-foreground mt-5 max-w-md text-[17px] leading-[1.6]">
                 Seven clear stages, with working software shown in short
                 increments — so you always know where things stand.
               </p>
               <Link
                 href="/process"
-                className="text-foreground decoration-border hover:decoration-foreground mt-6 inline-flex items-center gap-2 text-sm font-medium underline underline-offset-4 transition-colors"
+                className="text-primary mt-7 inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium transition-opacity hover:opacity-75"
               >
                 See how a project runs
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4" aria-hidden />
               </Link>
             </Reveal>
           </div>
 
-          <ol className="border-border border-t">
+          <ol className="border-t border-black/[0.07] dark:border-white/10">
             {processSteps.map((step) => (
               <li
                 key={step.step}
-                className="border-border grid grid-cols-[2.5rem_1fr] gap-x-4 gap-y-1 border-b py-6 sm:grid-cols-[3rem_1fr] sm:gap-x-6"
+                className="grid grid-cols-[3rem_1fr] gap-x-5 gap-y-1 border-b border-black/[0.07] py-7 sm:grid-cols-[4.5rem_1fr] sm:gap-x-8 dark:border-white/10"
               >
-                <span className="text-muted-foreground pt-0.5 text-sm font-semibold tabular-nums">
+                <span className="text-muted-foreground/50 pt-1 text-[26px] leading-none font-semibold tracking-[-0.03em] tabular-nums sm:text-[32px]">
                   {String(step.step).padStart(2, "0")}
                 </span>
                 <div>
-                  <h3 className="text-lg font-semibold tracking-tight">
+                  <h3 className="text-[21px] font-semibold tracking-[-0.02em]">
                     {step.title}
                   </h3>
-                  <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                     {step.description}
                   </p>
                 </div>

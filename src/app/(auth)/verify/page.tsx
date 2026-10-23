@@ -15,11 +15,11 @@ export default async function VerifyPage({
   const { email } = await searchParams;
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-      <h1 className="text-xl font-semibold tracking-tight">
+    <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
+      <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
         Send the link again
       </h1>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
         Enter the address you signed up with and we will send a fresh
         confirmation link.
       </p>
@@ -30,7 +30,7 @@ export default async function VerifyPage({
         <ResendVerificationForm defaultEmail={(email ?? "").slice(0, 254)} />
       </div>
 
-      <p className="text-muted-foreground mt-6 text-center text-sm">
+      <p className="text-muted-foreground mt-6 text-center text-[14px]">
         Already confirmed?{" "}
         <Link
           href="/login"

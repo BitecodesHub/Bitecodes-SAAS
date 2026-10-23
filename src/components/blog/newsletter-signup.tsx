@@ -67,14 +67,14 @@ export function NewsletterSignup({
     return (
       <aside
         aria-label="Newsletter"
-        className="border-border bg-card mt-10 rounded-2xl border p-6"
+        className="bg-surface-2 mt-10 rounded-[24px] p-6 sm:p-7"
       >
-        <p className="font-semibold">
+        <p className="text-[17px] font-semibold tracking-[-0.01em]">
           {alreadySubscribed
             ? "You\u2019re already subscribed."
             : "Check your inbox!"}
         </p>
-        <p className="text-muted-foreground mt-1 text-sm">
+        <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.55]">
           {alreadySubscribed
             ? "You\u2019re already on the list. We\u2019ll send you our next issue."
             : "We\u2019ve sent a confirmation link to your email address. Click it to complete your signup."}
@@ -86,13 +86,13 @@ export function NewsletterSignup({
   return (
     <aside
       aria-label="Newsletter signup"
-      className="border-border bg-card mt-10 rounded-2xl border p-6"
+      className="bg-surface-2 mt-10 rounded-[24px] p-6 sm:p-7"
       data-track-form="newsletter-signup"
     >
-      <h2 className="text-base font-semibold">
+      <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
         Get practical engineering notes in your inbox
       </h2>
-      <p className="text-muted-foreground mt-1 text-sm">
+      <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.55]">
         Weekly. No marketing fluff. Unsubscribe any time.
       </p>
 
@@ -111,7 +111,7 @@ export function NewsletterSignup({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={state.phase === "submitting"}
-            className="border-input bg-background placeholder:text-muted-foreground w-full rounded-lg border px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-offset-1 focus:outline-none disabled:opacity-60"
+            className="bg-background placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-[14px] px-4 py-3 text-[15px] transition-shadow focus-visible:ring-2 focus-visible:outline-none disabled:opacity-60"
           />
         </div>
 
@@ -127,7 +127,7 @@ export function NewsletterSignup({
           />
           <label
             htmlFor={consentId}
-            className="text-muted-foreground cursor-pointer text-sm leading-relaxed"
+            className="text-muted-foreground cursor-pointer text-[13px] leading-[1.55]"
           >
             I agree to receive the Bitecodes newsletter. You can unsubscribe at
             any time.
@@ -135,7 +135,10 @@ export function NewsletterSignup({
         </div>
 
         {state.phase === "error" && (
-          <p role="alert" className="text-sm text-red-600">
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-[14px] px-4 py-3 text-[14px] leading-[1.5]"
+          >
             {state.message}
           </p>
         )}
@@ -143,7 +146,7 @@ export function NewsletterSignup({
         <button
           type="submit"
           disabled={state.phase === "submitting" || !consent}
-          className="bg-foreground text-background inline-flex min-h-10 items-center rounded-lg px-4 py-2 text-sm font-medium transition-opacity disabled:opacity-50"
+          className="bg-primary text-primary-foreground focus-visible:ring-ring/40 inline-flex min-h-11 items-center rounded-full px-5 text-[15px] font-semibold transition-opacity focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
         >
           {state.phase === "submitting" ? "Subscribing\u2026" : "Subscribe"}
         </button>

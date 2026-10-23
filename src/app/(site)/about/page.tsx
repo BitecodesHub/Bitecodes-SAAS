@@ -96,10 +96,10 @@ export default function AboutPage() {
       <Section>
         <div className="container-page grid gap-12 lg:grid-cols-2 lg:items-center">
           <Reveal>
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="text-[clamp(2rem,3.5vw,3rem)] leading-[1.08] font-semibold tracking-[-0.03em]">
               Our story
             </h2>
-            <div className="text-muted-foreground mt-4 space-y-4 leading-relaxed">
+            <div className="text-muted-foreground mt-5 space-y-4 text-[17px] leading-[1.65]">
               <p>
                 Bitecodes started with a simple frustration: too much software
                 is shipped slow, bloated, and impossible to maintain. We
@@ -120,22 +120,26 @@ export default function AboutPage() {
           </Reveal>
           <Reveal direction="left">
             <div className="grid gap-5 sm:grid-cols-2">
-              <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+              <div className="bg-surface-2 rounded-[28px] p-7">
+                <span className="bg-background text-primary flex size-12 items-center justify-center rounded-2xl shadow-[var(--shadow-soft)]">
                   <Target className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold">Our mission</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.02em]">
+                  Our mission
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   To build software that is fast, reliable, and a genuine
                   pleasure to use, and to make the process feel effortless.
                 </p>
               </div>
-              <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:mt-8">
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+              <div className="bg-surface-2 rounded-[28px] p-7 sm:mt-8">
+                <span className="bg-background text-primary flex size-12 items-center justify-center rounded-2xl shadow-[var(--shadow-soft)]">
                   <Eye className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold">Our vision</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.02em]">
+                  Our vision
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   A world where great engineering is accessible to every
                   ambitious team, regardless of size or location.
                 </p>
@@ -148,21 +152,23 @@ export default function AboutPage() {
       <StatsSection />
 
       {/* Values */}
-      <Section className="border-border bg-card/40 border-y">
+      <Section className="bg-surface-2">
         <div className="container-page">
           <SectionHeader
             eyebrow="Values"
             title="The principles behind every decision"
           />
-          <StaggerGroup className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerGroup className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((v) => (
               <StaggerItem key={v.title}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-background h-full rounded-[28px] p-7">
+                  <span className="bg-primary/10 text-primary flex size-12 items-center justify-center rounded-2xl">
                     <v.icon className="size-5" />
                   </span>
-                  <h3 className="mt-4 font-semibold">{v.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h3 className="mt-5 text-[21px] font-semibold tracking-[-0.02em]">
+                    {v.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                     {v.description}
                   </p>
                 </div>
@@ -180,21 +186,23 @@ export default function AboutPage() {
             title="Read the commitments before you commit"
             description="The process and the guarantees are public, so you can judge how we work before a conversation."
           />
-          <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
+          <div className="mx-auto mt-14 grid max-w-4xl gap-5 sm:grid-cols-2">
             {howWeWork.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group border-border bg-card focus-visible:ring-ring focus-visible:ring-offset-background hover:bg-accent/40 rounded-2xl border p-7 shadow-[var(--shadow-soft)] transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="group bg-surface-2 focus-visible:ring-ring focus-visible:ring-offset-background hover:bg-background rounded-[28px] p-8 transition-all hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               >
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <span className="bg-background text-primary flex size-12 items-center justify-center rounded-2xl shadow-[var(--shadow-soft)]">
                   <item.icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold">{item.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[24px] font-semibold tracking-[-0.02em]">
+                  {item.title}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
                   {item.description}
                 </p>
-                <span className="text-primary mt-5 inline-flex items-center gap-2 text-sm font-medium">
+                <span className="text-primary mt-6 inline-flex items-center gap-2 text-[15px] font-medium">
                   {item.cta}
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                 </span>

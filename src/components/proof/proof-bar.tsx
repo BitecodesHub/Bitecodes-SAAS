@@ -9,10 +9,7 @@ import { stats } from "@/data/stats";
  */
 export function ProofBar() {
   return (
-    <section
-      aria-label="Bitecodes at a glance"
-      className="border-border bg-surface-2 border-y"
-    >
+    <section aria-label="Bitecodes at a glance" className="bg-surface-2">
       <div className="container-page">
         <dl className="grid gap-x-8 gap-y-5 py-7 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat) => (

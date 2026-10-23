@@ -96,7 +96,7 @@ export default async function ComparisonPage({
 
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-4xl">
-          <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-[14px]">
             <span className="flex items-center gap-1.5">
               <Clock className="size-4" />
               {page.readingMinutes} min read
@@ -107,22 +107,22 @@ export default async function ComparisonPage({
             <span>Typical engagement models, honestly compared</span>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-2xl border border-[var(--border)] shadow-[var(--shadow-soft)]">
+          <div className="bg-surface-2 mt-8 overflow-hidden rounded-[24px]">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] border-collapse text-left text-sm">
+              <table className="w-full min-w-[680px] border-collapse text-left text-[15px]">
                 <caption className="sr-only">
                   Bitecodes compared with {page.alternativeName} across scope,
                   cost, speed, ownership, and risk.
                 </caption>
                 <thead>
-                  <tr className="bg-secondary/60">
-                    <th scope="col" className="p-4 font-semibold">
+                  <tr className="text-muted-foreground text-[13px] font-semibold tracking-[0.1em] uppercase">
+                    <th scope="col" className="px-6 py-5 font-semibold">
                       Dimension
                     </th>
-                    <th scope="col" className="p-4 font-semibold">
+                    <th scope="col" className="px-6 py-5 font-semibold">
                       Bitecodes
                     </th>
-                    <th scope="col" className="p-4 font-semibold">
+                    <th scope="col" className="px-6 py-5 font-semibold">
                       {page.alternativeName}
                     </th>
                   </tr>
@@ -131,16 +131,18 @@ export default async function ComparisonPage({
                   {page.rows.map((row) => (
                     <tr
                       key={row.label}
-                      className="border-border border-t align-top"
+                      className="border-background border-t align-top"
                     >
                       <th
                         scope="row"
-                        className="text-muted-foreground p-4 font-medium"
+                        className="text-muted-foreground px-6 py-5 font-medium"
                       >
                         {row.label}
                       </th>
-                      <td className="p-4 leading-relaxed">{row.bitecodes}</td>
-                      <td className="text-muted-foreground p-4 leading-relaxed">
+                      <td className="px-6 py-5 leading-[1.55]">
+                        {row.bitecodes}
+                      </td>
+                      <td className="text-muted-foreground px-6 py-5 leading-[1.55]">
                         {row.alternative}
                       </td>
                     </tr>
@@ -150,15 +152,17 @@ export default async function ComparisonPage({
             </div>
           </div>
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
             <Reveal>
-              <div className="border-primary/25 bg-primary/5 h-full rounded-2xl border p-6">
-                <h2 className="text-lg font-semibold">Choose Bitecodes if…</h2>
-                <ul className="mt-4 space-y-3">
+              <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+                  Choose Bitecodes if…
+                </h2>
+                <ul className="mt-5 space-y-3">
                   {page.chooseBitecodes.map((item) => (
                     <li
                       key={item}
-                      className="flex items-start gap-3 text-sm leading-relaxed"
+                      className="flex items-start gap-3 text-[15px] leading-[1.55]"
                     >
                       <Check className="text-primary mt-0.5 size-4 shrink-0" />
                       <span>{item}</span>
@@ -168,15 +172,15 @@ export default async function ComparisonPage({
               </div>
             </Reveal>
             <Reveal>
-              <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                <h2 className="text-lg font-semibold">
+              <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
                   Choose {page.alternativeName} if…
                 </h2>
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-5 space-y-3">
                   {page.chooseAlternative.map((item) => (
                     <li
                       key={item}
-                      className="text-muted-foreground flex items-start gap-3 text-sm leading-relaxed"
+                      className="text-muted-foreground flex items-start gap-3 text-[15px] leading-[1.55]"
                     >
                       <X className="mt-0.5 size-4 shrink-0" />
                       <span>{item}</span>
@@ -187,25 +191,27 @@ export default async function ComparisonPage({
             </Reveal>
           </div>
 
-          <div className="border-border bg-foreground text-background mt-10 rounded-2xl p-6 shadow-[var(--shadow-lift)] sm:p-8">
-            <div className="flex items-center gap-2">
+          <div className="bg-foreground text-background mt-10 rounded-[28px] p-7 sm:p-9">
+            <div className="flex items-center gap-2.5">
               <CircleDot className="size-5" />
-              <h2 className="text-lg font-semibold">The honest verdict</h2>
+              <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
+                The honest verdict
+              </h2>
             </div>
-            <p className="text-background/75 mt-3 leading-relaxed">
+            <p className="text-background/75 mt-3 text-[17px] leading-[1.65]">
               {page.verdict}
             </p>
           </div>
 
-          <div className="border-border mt-12 border-t pt-10">
-            <h2 className="text-2xl font-semibold tracking-tight">
+          <div className="bg-surface-2 mt-12 rounded-[28px] p-7 sm:p-9">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
               Frequently asked
             </h2>
             <dl className="mt-6 space-y-6">
               {page.faqs.map((faq) => (
                 <div key={faq.question}>
-                  <dt className="font-medium">{faq.question}</dt>
-                  <dd className="text-muted-foreground mt-2 leading-relaxed">
+                  <dt className="text-[16px] font-semibold">{faq.question}</dt>
+                  <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                     {faq.answer}
                   </dd>
                 </div>
@@ -213,28 +219,32 @@ export default async function ComparisonPage({
             </dl>
           </div>
 
-          <div className="border-primary/25 bg-primary/5 mt-10 rounded-2xl border p-6">
-            <h2 className="text-lg font-semibold">{page.cta.label}</h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-              {page.cta.description}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-3">
+          <div className="bg-surface-2 mt-10 flex flex-col items-start justify-between gap-5 rounded-[28px] p-7 sm:flex-row sm:items-center sm:p-9">
+            <div>
+              <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
+                {page.cta.label}
+              </h2>
+              <p className="text-muted-foreground mt-2 max-w-xl text-[15px] leading-[1.55]">
+                {page.cta.description}
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-3">
               <Button asChild>
                 <Link href={page.cta.href} data-track="comparison-primary-cta">
                   {page.cta.label}
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="secondary" className="bg-background">
                 <Link href="/compare">See all comparisons</Link>
               </Button>
             </div>
           </div>
 
-          <div className="border-border mt-10 border-t pt-6">
+          <div className="mt-10">
             <Link
               href="/compare"
-              className="text-primary inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:underline"
+              className="text-primary inline-flex min-h-11 items-center gap-2 text-[15px] font-medium hover:underline"
             >
               <ArrowLeft className="size-4" />
               All comparisons
@@ -244,14 +254,14 @@ export default async function ComparisonPage({
       </Section>
 
       {related.length > 0 || relatedAnswerItems.length > 0 ? (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
             {related.length > 0 ? (
               <>
-                <h2 className="text-xl font-semibold tracking-tight">
+                <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
                   Other comparisons
                 </h2>
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mt-8 grid gap-3 md:grid-cols-2">
                   {related.map((item) => (
                     <RelatedCard key={item.slug} page={item} />
                   ))}
@@ -259,11 +269,11 @@ export default async function ComparisonPage({
               </>
             ) : null}
             {relatedAnswerItems.length > 0 ? (
-              <div className={related.length > 0 ? "mt-10" : undefined}>
-                <h2 className="text-xl font-semibold tracking-tight">
+              <div className={related.length > 0 ? "mt-14" : undefined}>
+                <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
                   Related answers
                 </h2>
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="mt-8 grid gap-3 md:grid-cols-2">
                   {relatedAnswerItems.map((item) => (
                     <RelatedAnswerCard key={item.slug} page={item} />
                   ))}
@@ -281,16 +291,16 @@ function RelatedCard({ page }: { page: ComparisonPage }) {
   return (
     <Link
       href={`/compare/${page.slug}`}
-      className="group border-border bg-card hover:border-primary/30 rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+      className="group bg-background rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
       data-track="comparison-related"
     >
-      <p className="text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase">
+      <p className="text-muted-foreground text-[13px] font-semibold tracking-[0.1em] uppercase">
         Bitecodes vs {page.alternativeName}
       </p>
-      <h3 className="group-hover:text-primary mt-3 leading-snug font-semibold">
+      <h3 className="group-hover:text-primary mt-3 text-[19px] leading-[1.3] font-semibold tracking-[-0.01em] transition-colors">
         {page.title}
       </h3>
-      <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-2 line-clamp-2 text-[15px] leading-[1.55]">
         {page.shortAnswer}
       </p>
     </Link>
@@ -301,16 +311,16 @@ function RelatedAnswerCard({ page }: { page: AnswerPage }) {
   return (
     <Link
       href={`/answers/${page.slug}`}
-      className="group border-border bg-card hover:border-primary/30 rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+      className="group bg-background rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
       data-track="comparison-related-answer"
     >
-      <p className="text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase">
+      <p className="text-muted-foreground text-[13px] font-semibold tracking-[0.1em] uppercase">
         {page.category}
       </p>
-      <h3 className="group-hover:text-primary mt-3 leading-snug font-semibold">
+      <h3 className="group-hover:text-primary mt-3 text-[19px] leading-[1.3] font-semibold tracking-[-0.01em] transition-colors">
         {page.question}
       </h3>
-      <p className="text-muted-foreground mt-2 line-clamp-2 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-2 line-clamp-2 text-[15px] leading-[1.55]">
         {page.shortAnswer}
       </p>
     </Link>

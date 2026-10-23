@@ -72,7 +72,7 @@ export function WebsiteAuditTool() {
     <div>
       <form
         onSubmit={submit}
-        className="border-border bg-card mx-auto max-w-3xl rounded-3xl border p-5 shadow-[var(--shadow-lift)] sm:p-8"
+        className="bg-background mx-auto max-w-3xl rounded-[28px] p-6 sm:p-8"
       >
         <Label htmlFor="audit-url">Website URL</Label>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
@@ -111,7 +111,7 @@ export function WebsiteAuditTool() {
         </div>
         <p
           id="audit-scope"
-          className="text-muted-foreground mt-3 text-xs leading-relaxed"
+          className="text-muted-foreground mt-3 text-[13px] leading-[1.55]"
         >
           Passive public check only. No login, JavaScript execution, port scan,
           exploit attempt, endpoint discovery, or authenticated testing.
@@ -120,7 +120,7 @@ export function WebsiteAuditTool() {
           <p
             id="audit-error"
             role="alert"
-            className="bg-destructive/10 text-destructive mt-4 rounded-xl px-4 py-3 text-sm"
+            className="bg-destructive/10 text-destructive mt-4 rounded-[14px] px-4 py-3 text-[14px]"
           >
             {error}
           </p>
@@ -154,20 +154,20 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
 
   return (
     <section className="mt-10" aria-labelledby="audit-results-heading">
-      <div className="border-border bg-foreground text-background rounded-3xl border p-6 shadow-[var(--shadow-lift)] sm:p-8">
+      <div className="bg-foreground text-background rounded-[28px] p-7 sm:p-9">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-background/60 text-xs font-semibold tracking-[0.16em] uppercase">
+            <p className="text-background/60 text-[11px] font-semibold tracking-[0.14em] uppercase">
               Passive audit result
             </p>
             <h2
               id="audit-results-heading"
-              className="mt-2 text-3xl font-semibold"
+              className="mt-2 text-3xl font-semibold tracking-[-0.025em] tabular-nums"
             >
               {result.overallScore}
               <span className="text-background/50 text-lg">/100</span>
             </h2>
-            <p className="text-background/65 mt-2 max-w-xl truncate text-sm">
+            <p className="text-background/65 mt-2 max-w-xl truncate text-[14px]">
               {result.finalUrl}
             </p>
           </div>
@@ -187,18 +187,20 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
             />
           ))}
         </div>
-        <p className="text-background/55 mt-6 text-xs leading-relaxed">
+        <p className="text-background/55 mt-6 text-[13px] leading-[1.55]">
           {result.scope}
         </p>
       </div>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
         {categories.map((category) => (
           <article
             key={category}
-            className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+            className="bg-background rounded-[24px] p-6 sm:p-7"
           >
-            <h3 className="text-lg font-semibold">{categoryLabel(category)}</h3>
+            <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+              {categoryLabel(category)}
+            </h3>
             <div className="mt-5 space-y-5">
               {result.findings
                 .filter((finding) => finding.category === category)
@@ -220,11 +222,11 @@ function AuditResults({ result }: { result: WebsiteAuditResult }) {
         findings={toAuditEmailFindings(result.findings)}
       />
 
-      <div className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-        <h3 className="text-lg font-semibold">
+      <div className="bg-background mt-6 rounded-[24px] p-6 sm:p-7">
+        <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
           Book a free 30-minute review call
         </h3>
-        <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
           Walk through the findings with a developer, decide what matters first,
           and leave with a clear next step. No obligation and no sales script.
         </p>
@@ -247,11 +249,13 @@ function ScoreCard({
   score: number;
 }) {
   return (
-    <div className="bg-background/8 border-background/10 rounded-2xl border p-4">
-      <p className="text-background/55 text-xs">{categoryLabel(category)}</p>
+    <div className="bg-background/10 rounded-[18px] p-4">
+      <p className="text-background/55 text-[13px]">
+        {categoryLabel(category)}
+      </p>
       <p
         className={cn(
-          "mt-1 text-2xl font-semibold",
+          "mt-1 text-2xl font-semibold tabular-nums",
           score >= 80
             ? "text-emerald-300"
             : score >= 60
@@ -285,12 +289,12 @@ function Finding({ finding }: { finding: AuditFinding }) {
         )}
       />
       <div>
-        <p className="text-sm font-semibold">{finding.title}</p>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        <p className="text-[15px] font-semibold">{finding.title}</p>
+        <p className="text-muted-foreground mt-1 text-[14px] leading-[1.55]">
           {finding.detail}
         </p>
         {finding.status !== "pass" && finding.recommendation ? (
-          <p className="mt-2 text-sm">
+          <p className="mt-2 text-[14px] leading-[1.55]">
             <ShieldCheck className="text-primary mr-1 inline size-4" />
             {finding.recommendation}
           </p>

@@ -39,40 +39,46 @@ const packages = [
 
 export function PricingPreviewSection() {
   return (
-    <Section>
+    <Section className="bg-surface-2">
       <div className="container-page">
         <SectionHeader
           eyebrow="Indicative pricing"
           title="Plan with visible starting points"
           description="Compare common engagement types, then configure a project-specific INR range with the free calculator. Final scope and commercial terms follow discovery."
         />
-        <div className="mt-12 grid gap-5 lg:grid-cols-3">
+        <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {packages.map((item) => {
             const pricing = getPricing(item.slug)!;
             return (
               <article
                 key={item.slug}
-                className="border-border bg-card flex flex-col rounded-3xl border p-6 shadow-[var(--shadow-soft)]"
+                className="bg-background flex flex-col rounded-[28px] p-7 shadow-[var(--shadow-soft)] sm:p-8"
               >
-                <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                <p className="text-muted-foreground text-[13px] font-semibold tracking-[0.06em] uppercase">
                   {pricing.model}
                 </p>
-                <h3 className="mt-3 text-xl font-semibold">{item.title}</h3>
-                <p className="mt-5 text-3xl font-semibold tracking-tight">
+                <h3 className="mt-3 text-[23px] font-semibold tracking-[-0.025em]">
+                  {item.title}
+                </h3>
+                <p className="mt-6 text-[36px] leading-none font-semibold tracking-[-0.04em]">
                   From {formatPrice(pricing.startingFromUSD, "INR")}
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-muted-foreground mt-2 text-[14px]">
                   {item.timeline} · scoped per project
                 </p>
-                <ul className="text-muted-foreground mt-6 flex-1 space-y-3 text-sm">
+                <ul className="text-muted-foreground mt-7 flex-1 space-y-3 text-[15px]">
                   {item.includes.map((line) => (
-                    <li key={line} className="flex gap-2">
-                      <Check className="text-primary mt-0.5 size-4 shrink-0" />
+                    <li key={line} className="flex gap-2.5">
+                      <Check
+                        className="text-primary mt-0.5 size-4 shrink-0"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
                       <span>{line}</span>
                     </li>
                   ))}
                 </ul>
-                <Button asChild variant="outline" className="mt-7">
+                <Button asChild variant="secondary" className="mt-8">
                   <Link href={`/services/${item.slug}`}>
                     View service
                     <ArrowRight className="size-4" />
@@ -83,12 +89,13 @@ export function PricingPreviewSection() {
           })}
         </div>
         <div className="mt-10 flex justify-center">
-          <Button asChild variant="outline" size="lg">
-            <Link href="/pricing">
-              View all service pricing
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+          <Link
+            href="/pricing"
+            className="text-primary inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium transition-opacity hover:opacity-75"
+          >
+            View all service pricing
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
         </div>
       </div>
     </Section>

@@ -306,13 +306,24 @@ export function BookingRenderer({
     return (
       <div
         role="status"
-        className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm leading-relaxed text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
+        className="bg-surface-2 rounded-[20px] p-5 text-[15px] leading-[1.6]"
       >
-        <p className="font-semibold">
+        <p className="flex items-start gap-2.5 font-semibold">
+          <span
+            aria-hidden="true"
+            className="mt-[7px] size-2 shrink-0 rounded-full"
+            style={{ background: "var(--chart-3)" }}
+          />
           You are booked for {fmt(new Date(confirmed.slot.startIso), FULL)}
         </p>
-        {zoneLine && <p className="mt-1 opacity-80">{zoneLine}</p>}
-        {confirmed.message && <p className="mt-2">{confirmed.message}</p>}
+        {zoneLine && (
+          <p className="text-muted-foreground mt-1.5 pl-[18px] text-[13px]">
+            {zoneLine}
+          </p>
+        )}
+        {confirmed.message && (
+          <p className="mt-2.5 pl-[18px]">{confirmed.message}</p>
+        )}
       </div>
     );
   }
@@ -321,7 +332,7 @@ export function BookingRenderer({
     return (
       <div
         role="alert"
-        className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm leading-relaxed text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+        className="bg-destructive/10 text-destructive rounded-[20px] p-5 text-[15px] leading-[1.6]"
       >
         {loadError}
       </div>
@@ -330,26 +341,36 @@ export function BookingRenderer({
 
   if (slots === null) {
     return (
-      <p className="text-muted-foreground text-sm">Loading available times…</p>
+      <p className="text-muted-foreground text-[15px]">
+        Loading available times…
+      </p>
     );
   }
 
   // Step two: name and email for the slot already chosen.
   if (chosen) {
     return (
-      <form onSubmit={book} noValidate className="space-y-4">
-        <div className="border-border rounded-xl border p-3.5 text-sm">
-          <span className="text-muted-foreground">Your appointment</span>
-          <b className="mt-0.5 block text-base font-semibold">
+      <form
+        onSubmit={book}
+        noValidate
+        className="bg-surface-2 space-y-5 rounded-[24px] p-6"
+      >
+        <div>
+          <span className="text-muted-foreground block text-[11px] font-medium tracking-[0.14em] uppercase">
+            Your appointment
+          </span>
+          <b className="mt-1.5 block text-[17px] leading-tight font-semibold tracking-[-0.01em]">
             {fmt(new Date(chosen.startIso), FULL)}
           </b>
           {zoneLine && (
-            <span className="text-muted-foreground">{zoneLine}</span>
+            <span className="text-muted-foreground mt-1 block text-[13px]">
+              {zoneLine}
+            </span>
           )}
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="bk_name" className="block text-sm font-semibold">
+        <div className="space-y-2">
+          <label htmlFor="bk_name" className="block text-[15px] font-semibold">
             Your name<span style={{ color: accent }}> *</span>
           </label>
           <input
@@ -359,12 +380,12 @@ export function BookingRenderer({
             autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"
+            className="bg-background placeholder:text-muted-foreground/70 min-h-11 w-full rounded-[14px] px-4 text-[15px] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="bk_email" className="block text-sm font-semibold">
+        <div className="space-y-2">
+          <label htmlFor="bk_email" className="block text-[15px] font-semibold">
             Email address<span style={{ color: accent }}> *</span>
           </label>
           <input
@@ -374,12 +395,15 @@ export function BookingRenderer({
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border-border bg-background w-full rounded-lg border px-3 py-2.5 text-sm"
+            className="bg-background placeholder:text-muted-foreground/70 min-h-11 w-full rounded-[14px] px-4 text-[15px] transition-shadow outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
           />
         </div>
 
         {formError && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-[14px] px-4 py-3 text-[14px] leading-[1.5]"
+          >
             {formError}
           </p>
         )}
@@ -389,7 +413,7 @@ export function BookingRenderer({
             type="submit"
             disabled={pending}
             style={{ backgroundColor: accent }}
-            className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            className="inline-flex min-h-11 items-center rounded-full px-6 text-[15px] font-semibold text-white transition-opacity disabled:opacity-60"
           >
             {pending ? "Booking…" : appearance.buttonText || "Confirm booking"}
           </button>
@@ -399,7 +423,7 @@ export function BookingRenderer({
               setChosen(null);
               setFormError(null);
             }}
-            className="text-muted-foreground px-2 py-2.5 text-sm underline"
+            className="text-muted-foreground hover:text-foreground min-h-11 px-3 text-[15px] underline underline-offset-4 transition-colors"
           >
             Choose a different time
           </button>
@@ -413,20 +437,31 @@ export function BookingRenderer({
   const visible = showAllDays ? days : days.slice(0, DAYS_SHOWN);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {banner && (
         <div
           role="alert"
-          className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm leading-relaxed text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          className="bg-surface-2 rounded-[20px] p-5 text-[15px] leading-[1.6]"
         >
-          {banner}
+          <p className="flex items-start gap-2.5">
+            <span
+              aria-hidden="true"
+              className="mt-[7px] size-2 shrink-0 rounded-full"
+              style={{ background: "var(--chart-4)" }}
+            />
+            {banner}
+          </p>
         </div>
       )}
 
-      {zoneLine && <p className="text-muted-foreground text-xs">{zoneLine}</p>}
+      {zoneLine && (
+        <p className="text-muted-foreground text-[13px] leading-[1.5]">
+          {zoneLine}
+        </p>
+      )}
 
       {days.length === 0 ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground text-[15px] leading-[1.6]">
           There are no times available at the moment. Please check back later,
           or get in touch to arrange a time directly.
         </p>
@@ -434,7 +469,7 @@ export function BookingRenderer({
         <>
           {visible.map((group) => (
             <div key={group.date.toISOString()}>
-              <h2 className="mb-2 text-sm font-semibold">
+              <h2 className="text-muted-foreground mb-2.5 text-[11px] font-medium tracking-[0.14em] uppercase">
                 {fmt(group.date, DAY_HEADING)}
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -456,7 +491,7 @@ export function BookingRenderer({
                           trackConversion("booking_start", analyticsPath);
                         }
                       }}
-                      className="border-border bg-background min-w-21 rounded-lg border px-3 py-2 text-sm hover:border-current"
+                      className="bg-surface-2 min-w-[84px] rounded-[14px] px-4 py-2.5 text-[15px] font-medium transition-transform hover:scale-[1.03] active:scale-[0.98]"
                     >
                       {fmt(start, TIME_ONLY)}
                     </button>
@@ -471,7 +506,7 @@ export function BookingRenderer({
               type="button"
               onClick={() => setShowAllDays(true)}
               style={{ color: accent }}
-              className="text-sm underline"
+              className="min-h-11 text-[15px] font-semibold underline underline-offset-4"
             >
               Show more dates
             </button>

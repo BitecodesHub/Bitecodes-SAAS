@@ -58,18 +58,21 @@ export default async function SignupPage({
       : undefined;
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-      <h1 className="text-xl font-semibold tracking-tight">
+    <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
+      <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
         Create your account
       </h1>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
         Free credits on every product, no card, and nothing expires. Takes about
         a minute.
       </p>
 
-      <ul className="border-border bg-muted/30 mt-5 space-y-2.5 rounded-2xl border p-4">
+      <ul className="bg-background mt-5 space-y-2.5 rounded-[20px] p-4">
         {INCLUDED.map((item) => (
-          <li key={item.product} className="flex items-start gap-2.5 text-sm">
+          <li
+            key={item.product}
+            className="flex items-start gap-2.5 text-[14px] leading-[1.55]"
+          >
             <Check
               aria-hidden="true"
               className="text-primary mt-0.5 size-4 shrink-0"

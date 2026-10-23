@@ -42,7 +42,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
           required
           autoFocus
         />
-        <p className="text-muted-foreground text-xs">At least 10 characters.</p>
+        <p className="text-muted-foreground text-[13px] leading-[1.5]">
+          At least 10 characters.
+        </p>
       </div>
 
       <div className="space-y-2">

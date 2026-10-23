@@ -21,48 +21,53 @@ const socialLinks = [
   },
 ].filter((link): link is typeof link & { href: string } => link.href !== null);
 
+/**
+ * Apple-style utility footer: quiet type, dense link columns, and a clear
+ * legal row. It carries navigation, not promotion, so the closing section of
+ * each page keeps the last word.
+ */
 export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-border bg-muted/50 relative mt-24 border-t">
-      <div className="container-page py-16">
-        <div className="grid gap-12 lg:grid-cols-[1fr_2.3fr]">
+    <footer className="bg-surface-2 border-t border-black/[0.06] text-[13px] dark:border-white/10">
+      <div className="container-page py-12 sm:py-14">
+        <div className="grid gap-10 lg:grid-cols-[1.15fr_2.5fr] lg:gap-16">
           <div className="max-w-sm">
             <Logo />
-            <p className="text-muted-foreground mt-4 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-4 leading-relaxed">
               {siteConfig.description}
             </p>
-            <div className="mt-6 space-y-2 text-sm">
+            <div className="mt-6 space-y-1">
               <a
                 href={`mailto:${siteConfig.contact.email}`}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+                className="text-muted-foreground hover:text-foreground flex min-h-11 items-center gap-2.5 transition-colors"
               >
-                <Mail className="size-4" />
+                <Mail className="size-4" aria-hidden />
                 {siteConfig.contact.email}
               </a>
               <a
                 href={siteConfig.contact.phoneHref}
-                className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+                className="text-muted-foreground hover:text-foreground flex min-h-11 items-center gap-2.5 transition-colors"
               >
-                <Phone className="size-4" />
+                <Phone className="size-4" aria-hidden />
                 {siteConfig.contact.phone}
               </a>
               <a
                 href={siteConfig.contact.whatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground flex items-center gap-2 transition-colors"
+                className="text-muted-foreground hover:text-foreground flex min-h-11 items-center gap-2.5 transition-colors"
               >
-                <MessageCircle className="size-4" />
+                <MessageCircle className="size-4" aria-hidden />
                 WhatsApp us
               </a>
-              <p className="text-muted-foreground flex items-center gap-2">
-                <MapPin className="size-4" />
+              <p className="text-muted-foreground flex min-h-11 items-center gap-2.5">
+                <MapPin className="size-4 shrink-0" aria-hidden />
                 {siteConfig.contact.address.full}
               </p>
             </div>
-            <div className="mt-6 flex gap-2">
+            <div className="mt-5 flex gap-2">
               {socialLinks.map((s) => (
                 <a
                   key={s.label}
@@ -70,7 +75,7 @@ export function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.label}
-                  className="border-border text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary flex size-11 items-center justify-center rounded-full border transition-colors"
+                  className="text-muted-foreground hover:bg-background hover:text-foreground flex size-11 items-center justify-center rounded-full transition-colors"
                 >
                   <s.icon className="size-4" />
                 </a>
@@ -78,16 +83,18 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-9 sm:grid-cols-3 lg:grid-cols-5">
             {footerNav.map((col) => (
               <div key={col.heading}>
-                <p className="text-sm font-semibold">{col.heading}</p>
-                <ul className="mt-4 space-y-2.5">
+                <p className="text-[13px] font-semibold tracking-[0.02em]">
+                  {col.heading}
+                </p>
+                <ul className="mt-3 space-y-0.5">
                   {col.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                        className="text-muted-foreground hover:text-foreground inline-flex min-h-11 min-w-11 items-center transition-colors"
                       >
                         {link.title}
                       </Link>
@@ -99,11 +106,11 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="border-border text-muted-foreground mt-14 flex flex-col items-center justify-between gap-4 border-t pt-8 text-sm sm:flex-row">
+        <div className="text-muted-foreground mt-12 flex flex-col gap-3 border-t border-black/[0.06] pt-6 text-[13px] sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
           <p>
             © {year} {siteConfig.legalName}. All rights reserved.
           </p>
-          <p>{siteConfig.tagline}</p>
+          <p className="text-balance">{siteConfig.tagline}</p>
         </div>
       </div>
     </footer>

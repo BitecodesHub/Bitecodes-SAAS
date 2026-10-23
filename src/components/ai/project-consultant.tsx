@@ -92,7 +92,7 @@ export function ProjectConsultant() {
   return (
     <form
       onSubmit={submit}
-      className="border-border bg-card mx-auto max-w-4xl rounded-3xl border p-5 shadow-[var(--shadow-lift)] sm:p-8"
+      className="bg-background mx-auto max-w-4xl rounded-[28px] p-6 sm:p-8"
       data-track-form="ai-project-consultant"
     >
       <div className="grid gap-6 sm:grid-cols-2">
@@ -235,7 +235,7 @@ export function ProjectConsultant() {
             className="mt-2"
             placeholder="you@company.com"
           />
-          <p className="text-muted-foreground mt-1.5 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-1.5 text-[13px] leading-[1.55]">
             Add an address if you would like us to keep the brief on file and
             follow up. The recommendation is shown either way.
           </p>
@@ -255,7 +255,7 @@ export function ProjectConsultant() {
         />
       </div>
       <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-muted-foreground max-w-xl text-xs leading-relaxed">
+        <p className="text-muted-foreground max-w-xl text-[13px] leading-[1.55]">
           Do not include passwords, API keys, personal identifiers, health
           records, payment details, or confidential data. Your brief is sent to
           an AI provider to generate this response and is stored so our team can
@@ -284,7 +284,7 @@ export function ProjectConsultant() {
       {error ? (
         <p
           role="alert"
-          className="bg-destructive/10 text-destructive mt-5 rounded-xl px-4 py-3 text-sm"
+          className="bg-destructive/10 text-destructive mt-5 rounded-[14px] px-4 py-3 text-[14px]"
         >
           {error}
         </p>
@@ -306,18 +306,18 @@ function Recommendation({
   return (
     <section
       aria-live="polite"
-      className="border-border bg-card rounded-3xl border shadow-[var(--shadow-lift)]"
+      className="bg-background overflow-hidden rounded-[28px]"
     >
-      <div className="bg-foreground text-background rounded-t-3xl p-6 sm:p-8">
-        <p className="text-background/60 text-xs font-semibold tracking-[0.16em] uppercase">
+      <div className="bg-foreground text-background p-7 sm:p-9">
+        <p className="text-background/60 text-[11px] font-semibold tracking-[0.14em] uppercase">
           AI-assisted, human-reviewed next
         </p>
         <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-3xl font-semibold">
+            <h2 className="text-3xl font-semibold tracking-[-0.025em]">
               {recommendation.recommendedPackage}
             </h2>
-            <p className="text-background/70 mt-2 max-w-2xl leading-relaxed">
+            <p className="text-background/70 mt-2 max-w-2xl text-[15px] leading-[1.6]">
               {recommendation.summary}
             </p>
           </div>
@@ -342,7 +342,7 @@ function Recommendation({
           <Metric icon={Users} label="Team" value={quote.teamSize} />
         </div>
       </div>
-      <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-2">
+      <div className="grid gap-8 p-7 sm:p-9 lg:grid-cols-2">
         <List title="Recommended scope" items={recommendation.scope} />
         <List
           title="Technology direction"
@@ -362,11 +362,16 @@ function Recommendation({
         {recommendation.addOns.length ? (
           <List title="Optional add-ons" items={recommendation.addOns} />
         ) : null}
-        <div className="border-border flex flex-col gap-4 border-t pt-6 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
-          <p className="text-muted-foreground text-sm">
+        <div className="bg-surface-2 flex flex-col gap-4 rounded-[20px] p-5 sm:flex-row sm:items-center sm:justify-between lg:col-span-2">
+          <p className="text-muted-foreground text-[15px]">
             {recommendation.nextStep}
           </p>
-          <Button type="button" variant="outline" onClick={onReset}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="bg-background"
+            onClick={onReset}
+          >
             <RefreshCw className="size-4" />
             Start over
           </Button>
@@ -395,7 +400,7 @@ function SelectField({
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 h-11 w-full rounded-xl border px-3 text-sm shadow-sm focus-visible:ring-2 focus-visible:outline-none"
+        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 h-11 w-full rounded-[14px] border px-3 text-[15px] focus-visible:ring-2 focus-visible:outline-none"
       >
         {options.map(([optionValue, optionLabel]) => (
           <option key={optionValue} value={optionValue}>
@@ -416,18 +421,18 @@ function Metric({
   value: string;
 }) {
   return (
-    <div className="bg-background/8 border-background/10 rounded-2xl border p-4">
+    <div className="bg-background/10 rounded-[18px] p-4">
       <Icon className="size-4" />
-      <p className="text-background/55 mt-3 text-xs">{label}</p>
-      <p className="mt-1 text-sm font-semibold">{value}</p>
+      <p className="text-background/55 mt-3 text-[13px]">{label}</p>
+      <p className="mt-1 text-[15px] font-semibold">{value}</p>
     </div>
   );
 }
 function List({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
-      <h3 className="font-semibold">{title}</h3>
-      <ul className="text-muted-foreground mt-3 space-y-2 text-sm">
+      <h3 className="text-[16px] font-semibold tracking-[-0.01em]">{title}</h3>
+      <ul className="text-muted-foreground mt-3 space-y-2 text-[15px] leading-[1.55]">
         {items.map((item) => (
           <li key={item} className="flex gap-2">
             <Check className="text-primary mt-0.5 size-4 shrink-0" />

@@ -32,10 +32,12 @@ export default async function HostedFormPage({
 
   if (!form) {
     return (
-      <main className="mx-auto w-full max-w-lg p-6">
-        <div className="border-border bg-card rounded-xl border p-5 text-sm leading-relaxed">
-          <p className="font-medium">This form is not available.</p>
-          <p className="text-muted-foreground mt-1">
+      <main className="mx-auto w-full max-w-lg px-5 py-8 sm:px-6 sm:py-10">
+        <div className="bg-surface-2 rounded-[24px] p-6">
+          <p className="text-[17px] font-semibold tracking-[-0.01em]">
+            This form is not available.
+          </p>
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.6]">
             The link may be incomplete, or the form may have been paused by its
             owner.
           </p>
@@ -45,10 +47,12 @@ export default async function HostedFormPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg p-6">
-      <h1 className="text-xl font-semibold tracking-tight">{form.name}</h1>
+    <main className="mx-auto w-full max-w-lg px-5 py-8 sm:px-6 sm:py-10">
+      <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">
+        {form.name}
+      </h1>
       {form.description && (
-        <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
           {form.description}
         </p>
       )}

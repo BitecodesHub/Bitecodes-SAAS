@@ -34,25 +34,29 @@ export default function TechnologiesPage() {
         ]}
       />
       <Section>
-        <div className="container-page space-y-14">
+        <div className="container-page space-y-20">
           {techCategories.map((category) => {
             const items = technologies.filter((t) => t.category === category);
             return (
               <div key={category}>
-                <div className="mb-6 flex items-center gap-4">
-                  <h2 className="text-xl font-semibold tracking-tight">
+                <div className="mb-8 flex items-baseline justify-between gap-6">
+                  <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
                     {category}
                   </h2>
-                  <span className="bg-border h-px flex-1" />
+                  <span className="text-muted-foreground text-[13px] tabular-nums">
+                    {items.length} {items.length === 1 ? "tool" : "tools"}
+                  </span>
                 </div>
-                <StaggerGroup className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <StaggerGroup className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((tech) => (
                     <StaggerItem key={tech.slug}>
-                      <div className="border-border bg-card hover:border-primary/30 flex h-full gap-4 rounded-2xl border p-5 shadow-[var(--shadow-soft)] transition-colors">
+                      <div className="bg-surface-2 hover:bg-background flex h-full items-start gap-4 rounded-[24px] p-6 transition-colors duration-300 hover:shadow-[var(--shadow-soft)]">
                         <TechIcon slug={tech.slug} name={tech.name} size="md" />
-                        <div>
-                          <h3 className="font-semibold">{tech.name}</h3>
-                          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                        <div className="min-w-0">
+                          <h3 className="text-[17px] leading-tight font-semibold tracking-[-0.01em]">
+                            {tech.name}
+                          </h3>
+                          <p className="text-muted-foreground mt-2 text-[15px] leading-[1.5]">
                             {tech.description}
                           </p>
                         </div>

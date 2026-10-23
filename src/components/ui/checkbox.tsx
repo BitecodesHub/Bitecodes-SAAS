@@ -33,7 +33,7 @@ const Checkbox = React.forwardRef<
   }, [indeterminate]);
 
   return (
-    <div className={cn("flex items-center gap-2.5", className)}>
+    <div className={cn("flex min-h-6 items-center gap-2.5", className)}>
       <span className="relative inline-flex size-5 shrink-0">
         <input
           ref={innerRef}
@@ -61,7 +61,7 @@ const Checkbox = React.forwardRef<
       {label && (
         <label
           htmlFor={inputId}
-          className="cursor-pointer text-sm leading-snug"
+          className="cursor-pointer text-[15px] leading-snug"
         >
           {label}
         </label>

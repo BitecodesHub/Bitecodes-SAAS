@@ -186,28 +186,27 @@ export default function BookingPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             How it works
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
             Four steps, and the longest one is deciding your opening hours.
           </p>
-          <ol className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((step, i) => (
-              <li
-                key={step.title}
-                className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
-              >
+              <li key={step.title} className="bg-surface-2 rounded-[24px] p-7">
                 <div className="flex items-center gap-3">
-                  <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
+                  <span className="bg-background text-primary flex size-10 items-center justify-center rounded-[12px]">
                     <step.icon className="size-4.5" />
                   </span>
-                  <span className="text-muted-foreground text-xs font-medium">
+                  <span className="text-muted-foreground text-[13px] font-medium">
                     Step {i + 1}
                   </span>
                 </div>
-                <h3 className="mt-4 font-semibold">{step.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                  {step.title}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {step.body}
                 </p>
               </li>
@@ -218,20 +217,22 @@ export default function BookingPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             What makes it reliable
           </h2>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
             {FEATURES.map((feature) => (
               <div
                 key={feature.title}
-                className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+                className="bg-surface-2 rounded-[24px] p-7"
               >
-                <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
+                <span className="bg-background text-primary flex size-10 items-center justify-center rounded-[12px]">
                   <feature.icon className="size-4.5" />
                 </span>
-                <h3 className="mt-4 font-semibold">{feature.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                  {feature.title}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {feature.body}
                 </p>
               </div>
@@ -242,51 +243,53 @@ export default function BookingPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Everything included
           </h2>
-          <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+          <ul className="bg-surface-2 mt-8 grid gap-3 rounded-[24px] p-7 sm:grid-cols-2">
             {INCLUDED.map((item) => (
-              <li key={item} className="flex items-start gap-2.5 text-sm">
+              <li key={item} className="flex items-start gap-3 text-[15px]">
                 <Check className="text-primary mt-0.5 size-4 shrink-0" />
-                <span>{item}</span>
+                <span className="text-muted-foreground leading-[1.5]">
+                  {item}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       </Section>
 
-      <Section spacing="sm" id="pricing">
+      <Section spacing="sm" className="bg-surface-2" id="pricing">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Pay per booking, not per month
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl">
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
             Credits are bought up front and spent one per confirmed booking.
             Showing the calendar is free, and a booking that loses a slot to
             someone else is refunded automatically.
           </p>
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
             {BOOKING_PACKS.map((pack) => (
               <div
                 key={pack.packId}
-                className={`border-border bg-card relative rounded-2xl border p-6 shadow-[var(--shadow-soft)] ${
-                  pack.popular ? "ring-primary/30 ring-2" : ""
+                className={`relative rounded-[28px] p-7 ${
+                  pack.popular
+                    ? "bg-background shadow-[var(--shadow-soft)]"
+                    : "bg-background/60"
                 }`}
               >
                 {pack.popular && (
-                  <Badge className="absolute -top-2.5 right-5">
-                    Most chosen
-                  </Badge>
+                  <Badge className="absolute top-5 right-5">Most chosen</Badge>
                 )}
-                <h3 className="font-semibold">{pack.label}</h3>
-                <p className="mt-2 text-3xl font-semibold tracking-tight">
+                <h3 className="text-[17px] font-semibold">{pack.label}</h3>
+                <p className="mt-3 text-[36px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
                   {formatPackPrice(pack)}
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-muted-foreground mt-2 text-[13px]">
                   {pack.credits.toLocaleString()} bookings
                 </p>
-                <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+                <p className="text-muted-foreground mt-3 text-[15px] leading-[1.55]">
                   {pack.blurb}
                 </p>
               </div>
@@ -297,14 +300,14 @@ export default function BookingPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Common questions
           </h2>
-          <dl className="mt-6 space-y-6">
+          <dl className="mt-8 max-w-3xl space-y-6">
             {FAQS.map((faq) => (
               <div key={faq.question}>
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <dt className="text-[16px] font-semibold">{faq.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {faq.answer}
                 </dd>
               </div>

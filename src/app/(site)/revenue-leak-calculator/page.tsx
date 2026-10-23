@@ -120,7 +120,7 @@ export default function RevenueLeakCalculatorPage() {
       <Section spacing="sm">
         <div className="container-page">
           <RevenueCalculator />
-          <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-center text-xs leading-relaxed">
+          <p className="text-muted-foreground mx-auto mt-6 max-w-3xl text-center text-[13px] leading-[1.6]">
             This is arithmetic on your assumptions, not a forecast or a promise.
             Revenue depends on lead quality, pricing, sales capacity, and the
             market. Use it to decide where to investigate, not as a guarantee.
@@ -128,28 +128,30 @@ export default function RevenueLeakCalculatorPage() {
         </div>
       </Section>
 
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               Three levers that actually move conversion
             </h2>
-            <p className="text-muted-foreground mt-3 leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               None of them require a full redesign. Most leaks are clarity and
               friction problems long before they are visual ones.
             </p>
           </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-10 grid gap-3 md:grid-cols-3">
             {levers.map((lever) => (
               <div
                 key={lever.title}
-                className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+                className="bg-background rounded-[24px] p-7"
               >
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <span className="bg-surface-2 text-primary flex size-11 items-center justify-center rounded-[14px]">
                   <lever.icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold">{lever.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                  {lever.title}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {lever.description}
                 </p>
               </div>
@@ -160,14 +162,14 @@ export default function RevenueLeakCalculatorPage() {
 
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
             Questions about the estimate
           </h2>
-          <dl className="mt-10 space-y-6">
+          <dl className="mt-8 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="text-muted-foreground mt-2 leading-relaxed">
+                <dt className="text-[16px] font-semibold">{faq.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {faq.answer}
                 </dd>
               </div>

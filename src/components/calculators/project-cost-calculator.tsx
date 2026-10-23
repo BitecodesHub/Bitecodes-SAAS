@@ -50,15 +50,15 @@ export function ProjectCostCalculator({
   return (
     <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr] lg:items-start">
       <form
-        className="border-border bg-card space-y-8 rounded-3xl border p-5 shadow-[var(--shadow-soft)] sm:p-8"
+        className="bg-surface-2 space-y-8 rounded-[28px] p-6 sm:p-9"
         onSubmit={(event) => event.preventDefault()}
       >
         {lockProjectType ? (
-          <div className="border-primary/20 bg-primary/5 rounded-2xl border p-4">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          <div className="bg-background rounded-[20px] p-4">
+            <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.14em] uppercase">
               Project type
             </p>
-            <p className="mt-1 font-semibold">
+            <p className="mt-1 text-[15px] font-semibold">
               {
                 projectTypes.find(
                   (project) => project.value === input.projectType,
@@ -125,15 +125,15 @@ export function ProjectCostCalculator({
                 <label
                   key={feature.value}
                   className={cn(
-                    "border-border hover:border-primary/40 flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-colors",
-                    checked && "border-primary bg-primary/5",
+                    "bg-background flex min-h-12 cursor-pointer items-center gap-3 rounded-[16px] px-4 py-3 text-[15px] transition-colors",
+                    checked && "bg-primary/10",
                   )}
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggleFeature(feature.value)}
-                    className="accent-primary size-4"
+                    className="accent-primary size-5"
                   />
                   <span className="flex-1 font-medium">{feature.label}</span>
                   {checked ? (
@@ -193,18 +193,18 @@ export function ProjectCostCalculator({
       <aside
         aria-live="polite"
         aria-atomic="true"
-        className="border-primary/20 bg-foreground text-background overflow-hidden rounded-3xl border p-6 shadow-[var(--shadow-lift)] sm:p-8 lg:sticky lg:top-24"
+        className="bg-foreground text-background overflow-hidden rounded-[28px] p-7 sm:p-9 lg:sticky lg:top-24"
       >
-        <p className="text-background/65 text-xs font-semibold tracking-[0.16em] uppercase">
+        <p className="text-background/65 text-[11px] font-semibold tracking-[0.14em] uppercase">
           Indicative investment
         </p>
-        <p className="mt-4 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        <p className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-balance tabular-nums sm:text-4xl">
           {formatInr(estimate.minimum)}–{formatInr(estimate.maximum)}
         </p>
-        <p className="text-background/65 mt-2 text-sm">
+        <p className="text-background/65 mt-2 text-[14px]">
           Excluding GST and third-party charges
         </p>
-        <div className="border-background/15 mt-7 grid gap-4 border-y py-6">
+        <div className="bg-background/8 mt-7 grid gap-4 rounded-[20px] p-5">
           <ResultRow
             icon={Clock3}
             label="Delivery"
@@ -221,7 +221,7 @@ export function ProjectCostCalculator({
             value="Scoped fixed quote"
           />
         </div>
-        <ul className="text-background/70 mt-6 space-y-3 text-sm leading-relaxed">
+        <ul className="text-background/70 mt-6 space-y-3 text-[15px] leading-[1.55]">
           {estimate.assumptions.map((assumption) => (
             <li key={assumption} className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0" />
@@ -235,7 +235,7 @@ export function ProjectCostCalculator({
             <ArrowRight className="size-4" />
           </Link>
         </Button>
-        <p className="text-background/55 mt-4 text-center text-xs">
+        <p className="text-background/55 mt-4 text-center text-[13px]">
           No sign-up required. Your configuration is only shared when you
           contact us.
         </p>
@@ -253,7 +253,9 @@ function EstimatorSection({
 }) {
   return (
     <fieldset>
-      <legend className="mb-4 text-base font-semibold">{legend}</legend>
+      <legend className="mb-4 text-[16px] font-semibold tracking-[-0.01em]">
+        {legend}
+      </legend>
       {children}
     </fieldset>
   );
@@ -275,9 +277,9 @@ function ChoiceCard({
   return (
     <label
       className={cn(
-        "border-border hover:border-primary/40 cursor-pointer rounded-2xl border p-4 transition-all",
+        "bg-background cursor-pointer rounded-[20px] p-4 transition-colors",
         "has-[:focus-visible]:outline-ring has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2",
-        checked && "border-primary bg-primary/5 shadow-[var(--shadow-soft)]",
+        checked && "bg-primary/10",
       )}
     >
       <input
@@ -289,17 +291,17 @@ function ChoiceCard({
       />
       <span className="flex items-start justify-between gap-2">
         <span>
-          <span className="block text-sm font-semibold">{label}</span>
+          <span className="block text-[15px] font-semibold">{label}</span>
           {description ? (
-            <span className="text-muted-foreground mt-1 block text-xs">
+            <span className="text-muted-foreground mt-1 block text-[13px]">
               {description}
             </span>
           ) : null}
         </span>
         <span
           className={cn(
-            "border-border mt-0.5 flex size-5 items-center justify-center rounded-full border",
-            checked && "border-primary bg-primary text-primary-foreground",
+            "bg-surface-2 mt-0.5 flex size-5 items-center justify-center rounded-full",
+            checked && "bg-primary text-primary-foreground",
           )}
         >
           {checked ? <Check className="size-3" /> : null}
@@ -323,14 +325,14 @@ function SelectField({
   const id = React.useId();
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-sm font-semibold">
+      <label htmlFor={id} className="mb-2 block text-[15px] font-semibold">
         {label}
       </label>
       <select
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-11 w-full rounded-xl border px-3 text-sm shadow-sm focus-visible:ring-2 focus-visible:outline-none"
+        className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 h-11 w-full rounded-[14px] border px-3 text-[15px] focus-visible:ring-2 focus-visible:outline-none"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -353,12 +355,12 @@ function ResultRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="bg-background/10 flex size-10 items-center justify-center rounded-xl">
+      <span className="bg-background/10 flex size-10 items-center justify-center rounded-[14px]">
         <Icon className="size-4" />
       </span>
       <span>
-        <span className="text-background/55 block text-xs">{label}</span>
-        <strong className="text-sm font-medium">{value}</strong>
+        <span className="text-background/55 block text-[13px]">{label}</span>
+        <strong className="text-[15px] font-medium">{value}</strong>
       </span>
     </div>
   );

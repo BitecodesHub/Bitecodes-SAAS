@@ -24,11 +24,11 @@ import {
  * boundary and every public path is unchanged.
  */
 
-// Inter — the publicly-available Google Fonts sans that is the standard
-// equivalent to Google Sans (which is proprietary / not on Google Fonts).
-// One family for body + display keeps the identity clean, modern, and fast.
+// Inter is the delivery face on non-Apple devices. On Apple hardware the
+// system resolves SF Pro first (see `--font-sans` in globals.css), matching the
+// platform's own typographic voice without shipping a licensed font.
 const interSans = Inter({
-  variable: "--font-sans",
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
@@ -104,7 +104,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#1b1b24" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
   colorScheme: "light dark",
 };

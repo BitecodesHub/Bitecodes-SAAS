@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { jobOpenings } from "@/data/careers";
@@ -22,7 +23,6 @@ import {
   type ContactFormInput,
   type ContactResponse,
 } from "@/lib/contact";
-import { cn } from "@/lib/utils";
 
 type ContactValues = ContactFormInput;
 
@@ -108,14 +108,14 @@ export function ContactForm() {
 
   if (reference) {
     return (
-      <div className="border-border bg-card flex flex-col items-center rounded-2xl border p-10 text-center shadow-[var(--shadow-soft)]">
+      <div className="bg-background flex flex-col items-center rounded-[32px] p-10 text-center shadow-[var(--shadow-soft)]">
         <span className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-full">
           <CheckCircle2 className="size-7" />
         </span>
-        <h3 className="mt-5 text-xl font-semibold">
+        <h3 className="mt-5 text-[24px] font-semibold tracking-[-0.02em]">
           Thank you — message received.
         </h3>
-        <p className="text-muted-foreground mt-2 max-w-sm text-sm">
+        <p className="text-muted-foreground mt-2 max-w-sm text-[15px] leading-relaxed">
           We will get back to you within one business day. Keep reference{" "}
           <strong className="text-foreground">{reference}</strong> for your
           records.
@@ -129,7 +129,7 @@ export function ContactForm() {
       onSubmit={handleSubmit(onSubmit)}
       noValidate
       data-track-form="contact"
-      className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:p-8"
+      className="bg-background rounded-[32px] p-6 shadow-[var(--shadow-soft)] sm:p-8"
     >
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="sm:col-span-1">
@@ -168,54 +168,42 @@ export function ContactForm() {
         </div>
         <div className="sm:col-span-1">
           <Label htmlFor="budget">Budget (optional)</Label>
-          <select
-            id="budget"
-            className={cn(
-              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
-            )}
-            {...register("budget")}
-          >
-            <option value="">Select a range</option>
-            {contactBudgets.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2">
+            <Select id="budget" {...register("budget")}>
+              <option value="">Select a range</option>
+              {contactBudgets.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
         <div className="sm:col-span-1">
           <Label htmlFor="timeline">Timeline (optional)</Label>
-          <select
-            id="timeline"
-            className={cn(
-              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
-            )}
-            {...register("timeline")}
-          >
-            <option value="">No fixed date</option>
-            {contactTimelines.map((timeline) => (
-              <option key={timeline} value={timeline}>
-                {timeline}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2">
+            <Select id="timeline" {...register("timeline")}>
+              <option value="">No fixed date</option>
+              {contactTimelines.map((timeline) => (
+                <option key={timeline} value={timeline}>
+                  {timeline}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
         <div className="sm:col-span-1">
           <Label htmlFor="country">Where are you based? (optional)</Label>
-          <select
-            id="country"
-            className={cn(
-              "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/40 mt-2 flex h-11 w-full rounded-xl border px-4 text-base shadow-sm transition-colors focus-visible:ring-2 focus-visible:outline-none sm:text-sm",
-            )}
-            {...register("country")}
-          >
-            <option value="">Prefer not to say</option>
-            {contactCountries.map((country) => (
-              <option key={country.value} value={country.value}>
-                {country.label}
-              </option>
-            ))}
-          </select>
+          <div className="mt-2">
+            <Select id="country" {...register("country")}>
+              <option value="">Prefer not to say</option>
+              {contactCountries.map((country) => (
+                <option key={country.value} value={country.value}>
+                  {country.label}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="message">How can we help?</Label>
@@ -232,17 +220,17 @@ export function ContactForm() {
         </div>
       </div>
       <div className="mt-5 space-y-3">
-        <label className="flex items-start gap-3 text-sm leading-relaxed">
+        <label className="flex min-h-11 items-start gap-3 text-[15px] leading-relaxed">
           <input
             type="checkbox"
-            className="accent-primary mt-1 size-4 shrink-0"
+            className="accent-primary mt-1 size-5 shrink-0"
             {...register("followUp")}
           />
           <span className="text-muted-foreground">
             {MARKETING_CONSENT_TEXT}
           </span>
         </label>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-muted-foreground text-[13px] leading-relaxed">
           {CONTACT_CONSENT_TEXT} We never sell your details.
         </p>
       </div>
@@ -259,7 +247,7 @@ export function ContactForm() {
         <p
           id="contact-submit-error"
           role="alert"
-          className="bg-destructive/10 text-destructive mt-5 rounded-xl px-4 py-3 text-sm"
+          className="bg-destructive/10 text-destructive mt-5 rounded-[16px] px-4 py-3 text-[14px] leading-[1.5]"
         >
           {submitError}
         </p>

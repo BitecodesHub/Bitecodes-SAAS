@@ -59,22 +59,24 @@ export default function ResourcesPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <div className="border-border bg-card mx-auto max-w-3xl rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:p-8">
-            <h2 className="font-semibold">How these guides work</h2>
-            <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+          <div className="bg-surface-2 mx-auto max-w-3xl rounded-[28px] p-7 sm:p-9">
+            <h2 className="text-[21px] leading-tight font-semibold tracking-[-0.02em]">
+              How these guides work
+            </h2>
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               Each guide answers a question we hear from business owners and
               practice managers. There is no paywall and no email required to
               read one. Where a checklist is useful away from a screen, an
               optional printable version is available at the end.
             </p>
-            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               Written and maintained by {siteConfig.name}. If a price, rule, or
               recommendation changes, the guide is updated rather than left to
               drift.
             </p>
           </div>
 
-          <div className="mt-12 space-y-12">
+          <div className="mt-16 space-y-16">
             {categories.map((category) => {
               const items = resources.filter(
                 (resource) => resource.category === category,
@@ -82,23 +84,23 @@ export default function ResourcesPage() {
               return (
                 <section key={category}>
                   <div className="flex items-baseline justify-between gap-4">
-                    <h2 className="text-xl font-semibold tracking-tight">
+                    <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
                       {category}
                     </h2>
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-muted-foreground text-[13px] tabular-nums">
                       {items.length} {items.length === 1 ? "guide" : "guides"}
                     </span>
                   </div>
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
+                  <div className="mt-8 grid gap-3 md:grid-cols-2">
                     {items.map((resource) => (
                       <Reveal key={resource.slug}>
                         <Link
                           href={`/resources/${resource.slug}`}
-                          className="group border-border bg-card hover:border-primary/30 flex h-full flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+                          className="group bg-surface-2 hover:bg-background flex h-full flex-col rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
                           data-track="resource-card"
                           data-track-source={`resources-index/${resource.slug}`}
                         >
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2.5">
                             <Badge variant="secondary">
                               {resource.format === "HowTo" ? (
                                 <CheckSquare className="size-3.5" />
@@ -107,18 +109,18 @@ export default function ResourcesPage() {
                               )}
                               {resource.format}
                             </Badge>
-                            <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                            <span className="text-muted-foreground flex items-center gap-1.5 text-[13px]">
                               <Clock className="size-3.5" />
                               {resource.readingMinutes} min read
                             </span>
                           </div>
-                          <h3 className="group-hover:text-primary mt-4 text-lg leading-snug font-semibold text-balance">
+                          <h3 className="group-hover:text-primary mt-4 text-[21px] leading-[1.25] font-semibold tracking-[-0.015em] text-balance transition-colors">
                             {resource.title}
                           </h3>
-                          <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
+                          <p className="text-muted-foreground mt-2.5 flex-1 text-[15px] leading-[1.55]">
                             {resource.description}
                           </p>
-                          <span className="text-primary mt-5 inline-flex items-center gap-1.5 text-sm font-medium">
+                          <span className="text-primary mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium">
                             Read the guide
                             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                           </span>
@@ -131,17 +133,19 @@ export default function ResourcesPage() {
             })}
           </div>
 
-          <div className="border-border mt-14 flex flex-col gap-4 border-t pt-8 sm:flex-row sm:items-center sm:justify-between">
+          <div className="bg-surface-2 mt-16 flex flex-col gap-5 rounded-[28px] p-7 sm:flex-row sm:items-center sm:justify-between sm:p-9">
             <div>
-              <p className="font-medium">Need an answer that is not here?</p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="text-[19px] font-semibold tracking-[-0.01em]">
+                Need an answer that is not here?
+              </p>
+              <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.5]">
                 Ask directly. We answer with a recommendation, not a sales
                 sequence.
               </p>
             </div>
             <Link
               href="/contact"
-              className="border-border hover:border-primary/40 hover:text-primary inline-flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors"
+              className="bg-background hover:bg-secondary inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full px-6 text-[15px] font-medium transition-colors"
               data-track="resources-contact"
             >
               Ask a question

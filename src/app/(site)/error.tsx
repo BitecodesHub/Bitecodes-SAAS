@@ -22,17 +22,17 @@ export default function ErrorPage({
   return (
     <section className="relative flex min-h-[70vh] items-center">
       <div className="container-page">
-        <div className="border-border bg-card mx-auto max-w-xl rounded-3xl border p-8 text-center sm:p-10">
-          <span className="bg-destructive/10 text-destructive mx-auto flex size-14 items-center justify-center rounded-2xl">
-            <AlertTriangle className="size-6" />
+        <div className="bg-surface-2 mx-auto max-w-xl rounded-[32px] p-8 text-center sm:p-10">
+          <span className="bg-background text-destructive mx-auto flex size-16 items-center justify-center rounded-[20px]">
+            <AlertTriangle className="size-7" />
           </span>
-          <p className="text-muted-foreground mt-6 text-xs font-semibold tracking-[0.16em] uppercase">
+          <p className="text-muted-foreground mt-6 text-[11px] font-semibold tracking-[0.14em] uppercase">
             Temporary problem
           </p>
-          <h1 className="mt-2 text-3xl font-semibold">
+          <h1 className="mt-2 text-[32px] leading-[1.15] font-semibold tracking-[-0.025em]">
             This page could not finish loading
           </h1>
-          <p className="text-muted-foreground mt-3 leading-relaxed">
+          <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
             Your information has not been submitted again. Retry the page, or
             return home and continue browsing.
           </p>
@@ -41,7 +41,12 @@ export default function ErrorPage({
               <RefreshCw className="size-4" />
               Try again
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button
+              asChild
+              variant="secondary"
+              size="lg"
+              className="bg-background"
+            >
               <Link href="/">
                 <Home className="size-4" />
                 Back to home
@@ -49,7 +54,7 @@ export default function ErrorPage({
             </Button>
           </div>
           {error.digest ? (
-            <p className="text-muted-foreground mt-6 text-xs">
+            <p className="text-muted-foreground mt-6 text-[13px]">
               Reference: {error.digest}
             </p>
           ) : null}

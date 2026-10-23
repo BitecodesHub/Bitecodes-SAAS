@@ -129,7 +129,7 @@ export default async function BlogPostPage({
 
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <div className="border-border text-muted-foreground flex flex-wrap items-center gap-4 border-b pb-6 text-sm">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-[14px]">
             <span>By {post.author}</span>
             <span aria-hidden="true">·</span>
             <span>{formatDate(post.date)}</span>
@@ -141,21 +141,23 @@ export default async function BlogPostPage({
           </div>
 
           <Reveal>
-            <div className="mt-8">
+            <div className="mt-10">
               <PostBody blocks={post.body} />
             </div>
           </Reveal>
 
           {post.faq && post.faq.length > 0 && (
-            <div className="border-border mt-10 border-t pt-8">
-              <h2 className="text-xl font-semibold tracking-tight">
+            <div className="bg-surface-2 mt-14 rounded-[28px] p-7 sm:p-9">
+              <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
                 Frequently asked
               </h2>
-              <dl className="mt-5 space-y-5">
+              <dl className="mt-6 space-y-6">
                 {post.faq.map((item) => (
                   <div key={item.question}>
-                    <dt className="font-medium">{item.question}</dt>
-                    <dd className="text-muted-foreground mt-1.5 leading-relaxed">
+                    <dt className="text-[16px] font-semibold">
+                      {item.question}
+                    </dt>
+                    <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                       {item.answer}
                     </dd>
                   </div>
@@ -165,14 +167,14 @@ export default async function BlogPostPage({
           )}
 
           {post.internalLinks && post.internalLinks.length > 0 && (
-            <div className="border-border mt-8 border-t pt-6">
-              <p className="text-sm font-semibold">Explore next</p>
+            <div className="mt-12">
+              <p className="text-[15px] font-semibold">Explore next</p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {post.internalLinks.map((link) => (
                   <li key={link.path}>
                     <Link
                       href={link.path}
-                      className="border-border hover:border-primary/40 hover:text-primary inline-flex rounded-full border px-3.5 py-1.5 text-sm transition-colors"
+                      className="bg-surface-2 hover:bg-secondary inline-flex min-h-11 items-center rounded-full px-4 text-[14px] font-medium transition-colors"
                     >
                       {link.label}
                     </Link>
@@ -182,7 +184,7 @@ export default async function BlogPostPage({
             </div>
           )}
 
-          <div className="border-border mt-8 flex flex-wrap gap-2 border-t pt-6">
+          <div className="mt-8 flex flex-wrap gap-2">
             {post.tags.map((tag) => (
               <Badge key={tag} variant="secondary">
                 #{tag}
@@ -193,7 +195,7 @@ export default async function BlogPostPage({
           <div className="mt-8">
             <Link
               href="/blog"
-              className="text-primary -mx-3 inline-flex min-h-11 items-center gap-2 rounded-full px-3 py-2.5 text-sm font-medium hover:underline"
+              className="text-primary -mx-3 inline-flex min-h-11 items-center gap-2 rounded-full px-3 py-2.5 text-[15px] font-medium hover:underline"
             >
               <ArrowLeft className="size-4" />
               Back to all articles
@@ -203,23 +205,23 @@ export default async function BlogPostPage({
       </Section>
 
       {related.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               Related articles
             </h2>
-            <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <div className="mt-8 grid gap-3 md:grid-cols-3">
               {related.map((r) => (
                 <Link
                   key={r.slug}
                   href={`/blog/${r.slug}`}
-                  className="group border-border bg-card hover:border-primary/30 rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+                  className="group bg-background rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
                 >
                   <Badge>{r.category}</Badge>
-                  <h3 className="group-hover:text-primary mt-3 leading-snug font-semibold">
+                  <h3 className="group-hover:text-primary mt-4 text-[19px] leading-[1.3] font-semibold tracking-[-0.01em] transition-colors">
                     {r.title}
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {r.excerpt}
                   </p>
                 </Link>

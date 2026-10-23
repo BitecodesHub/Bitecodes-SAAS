@@ -5,7 +5,7 @@ import { JsonLd } from "@/components/json-ld";
 import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";
+import { CtaSection } from "@/components/cta-section";
 import { launchTemplates } from "@/data/templates";
 import { breadcrumbSchema, createMetadata, webPageSchema } from "@/lib/seo";
 
@@ -54,7 +54,7 @@ export default function TemplatesPage() {
               <Reveal key={template.slug} delay={index * 60}>
                 <Link
                   href={`/templates/${template.slug}`}
-                  className="group border-border bg-card hover:border-primary/30 flex h-full flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow-soft)] transition-colors"
+                  className="group bg-background flex h-full flex-col overflow-hidden rounded-[28px] shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-lift)]"
                   data-track="template-card"
                 >
                   <TemplateThumbnail
@@ -65,31 +65,31 @@ export default function TemplatesPage() {
                     ink={template.palette.ink}
                     border={template.palette.border}
                   />
-                  <div className="flex flex-1 flex-col p-6">
-                    <p className="text-muted-foreground text-xs font-semibold tracking-[0.14em] uppercase">
+                  <div className="flex flex-1 flex-col p-7">
+                    <p className="text-muted-foreground text-[13px] font-semibold tracking-[0.12em] uppercase">
                       {template.industry}
                     </p>
-                    <h2 className="group-hover:text-primary mt-2 text-xl font-semibold">
+                    <h2 className="group-hover:text-primary mt-2 text-[24px] font-semibold tracking-[-0.02em] transition-colors">
                       {template.name}
                     </h2>
-                    <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                    <p className="text-muted-foreground mt-2.5 text-[15px] leading-[1.55]">
                       {template.tagline}
                     </p>
-                    <ul className="mt-4 space-y-1.5">
+                    <ul className="mt-5 space-y-2">
                       {template.bestFor.slice(0, 2).map((item) => (
                         <li
                           key={item}
-                          className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed"
+                          className="text-muted-foreground flex items-start gap-2.5 text-[14px] leading-[1.5]"
                         >
                           <span
                             aria-hidden="true"
-                            className="bg-primary mt-1.5 size-1 shrink-0 rounded-full"
+                            className="bg-primary mt-1.5 size-1.5 shrink-0 rounded-full"
                           />
                           {item}
                         </li>
                       ))}
                     </ul>
-                    <span className="text-primary mt-5 inline-flex items-center gap-1 text-sm font-medium">
+                    <span className="text-primary mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium">
                       <MousePointerClick className="size-4" />
                       Open live preview
                       <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
@@ -100,24 +100,24 @@ export default function TemplatesPage() {
             ))}
           </div>
 
-          <p className="text-muted-foreground mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed">
+          <p className="text-muted-foreground mx-auto mt-10 max-w-2xl text-center text-[13px] leading-[1.6]">
             These are design directions, not downloadable themes. Each is
             adapted to your content and built as part of a paid engagement.
           </p>
         </div>
       </Section>
 
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight">
+            <h2 className="text-[32px] leading-tight font-semibold tracking-[-0.025em] sm:text-[40px]">
               Every template ships with the same foundation
             </h2>
-            <p className="text-muted-foreground mt-3 leading-relaxed">
+            <p className="text-muted-foreground mt-4 text-[17px] leading-[1.6]">
               The visual direction changes. The engineering standard does not.
             </p>
           </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <div className="mt-12 grid gap-3 md:grid-cols-3">
             {[
               {
                 icon: Layers,
@@ -140,13 +140,15 @@ export default function TemplatesPage() {
             ].map((item) => (
               <div
                 key={item.title}
-                className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+                className="bg-background rounded-[24px] p-7"
               >
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-[14px]">
                   <item.icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-semibold">{item.title}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                  {item.title}
+                </h3>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {item.description}
                 </p>
               </div>
@@ -155,30 +157,20 @@ export default function TemplatesPage() {
         </div>
       </Section>
 
-      <Section spacing="sm">
-        <div className="container-page mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Start from a direction, not a blank page
-          </h2>
-          <p className="text-muted-foreground mt-4 leading-relaxed">
-            Launch projects begin at $500 with a written fixed quote. Tell us
-            which template caught your eye and what you need it to do.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link href="/contact" data-track="templates-contact">
-                Start a project
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/website-development-cost-calculator">
-                Estimate the cost
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </Section>
+      <CtaSection
+        title="Start from a direction, not a blank page."
+        description="Launch projects begin at $500 with a written fixed quote. Tell us which template caught your eye and what you need it to do."
+        primary={{
+          label: "Start a project",
+          href: "/contact",
+          track: "templates-contact",
+        }}
+        secondary={{
+          label: "Estimate the cost",
+          href: "/website-development-cost-calculator",
+          track: "templates-calculator",
+        }}
+      />
     </>
   );
 }

@@ -164,22 +164,24 @@ export default function DemoPage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="secondary">
               <Link href="/signup" data-track="demo-start-free">
                 Start free instead
               </Link>
             </Button>
           </div>
 
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
+          <div className="mt-12 grid gap-3 md:grid-cols-3">
             {WALKTHROUGH.map((item, index) => (
               <Reveal key={item.title} delay={index * 0.05}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <item.icon className="size-5" />
                   </span>
-                  <h2 className="mt-4 font-semibold">{item.title}</h2>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h2 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                    {item.title}
+                  </h2>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {item.body}
                   </p>
                 </div>
@@ -189,13 +191,13 @@ export default function DemoPage() {
         </div>
       </Section>
 
-      <Section spacing="sm" className="border-border border-t">
-        <div className="container-page space-y-8">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
+      <Section spacing="sm">
+        <div className="container-page space-y-3">
+          <div className="mb-9">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               Three products, one account
             </h2>
-            <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-3 max-w-2xl text-[16px] leading-[1.6]">
               Each product works on its own and shares the same dashboard and
               prepaid credits. The snippets below are the real embed formats;
               the dashboard fills in your ids and tokens.
@@ -206,29 +208,29 @@ export default function DemoPage() {
             <article
               key={product.id}
               id={product.id}
-              className="border-border bg-card scroll-mt-24 rounded-2xl border p-6 shadow-[var(--shadow-soft)] sm:p-8"
+              className="bg-surface-2 scroll-mt-24 rounded-[32px] p-7 sm:p-9"
             >
               <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:gap-12">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                    <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                       <product.icon className="size-5" />
                     </span>
                     <Badge variant="secondary">{product.name}</Badge>
                   </div>
-                  <h3 className="mt-4 text-2xl font-semibold tracking-tight text-balance">
+                  <h3 className="mt-5 text-[24px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance">
                     {product.headline}
                   </h3>
-                  <p className="text-muted-foreground mt-3 leading-relaxed">
+                  <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
                     {product.description}
                   </p>
-                  <ul className="mt-5 space-y-2.5">
+                  <ul className="mt-5 space-y-3">
                     {product.bullets.map((bullet) => (
                       <li
                         key={bullet}
-                        className="flex items-start gap-3 text-sm leading-relaxed"
+                        className="flex items-start gap-3 text-[15px] leading-[1.55]"
                       >
-                        <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
+                        <span className="text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                           <Check className="size-3.5" />
                         </span>
                         <span className="text-muted-foreground">{bullet}</span>
@@ -238,7 +240,7 @@ export default function DemoPage() {
                   <div className="mt-6 flex flex-wrap gap-3">
                     <Link
                       href={product.href}
-                      className="text-primary inline-flex min-h-11 items-center gap-1.5 text-sm font-medium hover:underline"
+                      className="text-primary inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium hover:underline"
                       data-track={`demo-product-${product.id}`}
                     >
                       Read about {product.name}
@@ -246,7 +248,7 @@ export default function DemoPage() {
                     </Link>
                     <Link
                       href="/signup"
-                      className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center text-sm font-medium underline-offset-4 hover:underline"
+                      className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center text-[15px] font-medium underline-offset-4 hover:underline"
                       data-track={`demo-signup-${product.id}`}
                     >
                       Try it free
@@ -259,7 +261,7 @@ export default function DemoPage() {
                     label={product.snippetLabel}
                     code={product.snippet}
                   />
-                  <p className="text-muted-foreground text-xs leading-relaxed">
+                  <p className="text-muted-foreground text-[13px] leading-[1.6]">
                     {product.alternative}
                   </p>
                 </div>
@@ -269,44 +271,46 @@ export default function DemoPage() {
         </div>
       </Section>
 
-      <Section spacing="sm" className="border-border border-t">
+      <Section spacing="sm">
         <div className="container-page grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-balance">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               A note on what this page is not
             </h2>
-            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               There is no fake dashboard, invented customer quote, or scripted
               chat window here. The products are locked to approved domains, so
               a meaningful preview needs a real configuration and a page you
               own.
             </p>
-            <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+            <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
               If you would rather not speak to anyone yet, create a free account
               and use the free credits. The walkthrough exists for the questions
               that documentation cannot answer.
             </p>
           </div>
-          <div className="divide-border border-border divide-y rounded-2xl border">
-            {FAQS.map((faq) => (
-              <div key={faq.question} className="p-5">
-                <h3 className="text-sm font-semibold">{faq.question}</h3>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                  {faq.answer}
-                </p>
-              </div>
-            ))}
+          <div className="bg-surface-2 rounded-[24px] p-7">
+            <div className="space-y-6">
+              {FAQS.map((faq) => (
+                <div key={faq.question}>
+                  <h3 className="text-[15px] font-semibold">{faq.question}</h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
+                    {faq.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </Section>
 
-      <Section spacing="sm" className="border-border border-t">
-        <div className="container-page flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+      <Section spacing="sm">
+        <div className="container-page bg-surface-2 flex flex-col items-start justify-between gap-6 rounded-[28px] p-7 sm:flex-row sm:items-center sm:p-9">
           <div>
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
               Bring your own website, form, or question.
             </h2>
-            <p className="text-muted-foreground mt-2 text-sm">
+            <p className="text-muted-foreground mt-2 text-[15px]">
               Twenty minutes is usually enough to know whether a product fits.
             </p>
           </div>
@@ -317,7 +321,7 @@ export default function DemoPage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="secondary" className="bg-background">
               <Link href="/contact" data-track="demo-footer-contact">
                 Ask a question
               </Link>

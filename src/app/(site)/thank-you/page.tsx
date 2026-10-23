@@ -20,17 +20,16 @@ export default function ThankYouPage() {
     <section className="relative flex min-h-[70vh] items-center overflow-hidden pt-16">
       <div className="container-page py-20 sm:py-28">
         <Reveal className="mx-auto flex max-w-xl flex-col items-center text-center">
-          {/* Confirmation icon */}
-          <span className="bg-primary/10 text-primary flex size-16 items-center justify-center rounded-full">
-            <CheckCircle2 className="size-8" aria-hidden="true" />
+          <span className="bg-surface-2 text-primary flex size-20 items-center justify-center rounded-full">
+            <CheckCircle2 className="size-9" aria-hidden="true" />
           </span>
 
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Thank you!
+          <h1 className="mt-7 text-[clamp(2.5rem,6vw,4rem)] leading-[1.05] font-semibold tracking-[-0.035em]">
+            Thank you.
           </h1>
 
           {/* What happens next — honest timing */}
-          <p className="text-muted-foreground mt-4 text-lg leading-relaxed text-pretty">
+          <p className="text-muted-foreground mt-5 text-[19px] leading-[1.6] text-pretty">
             Your submission is safely with us. We review every submission within{" "}
             <span className="text-foreground font-medium">
               one business day
@@ -41,11 +40,11 @@ export default function ThankYouPage() {
 
         {/* Next steps */}
         <Reveal className="mx-auto mt-10 max-w-xl">
-          <div className="border-border rounded-2xl border p-6">
-            <h2 className="text-base font-semibold tracking-tight">
+          <div className="bg-surface-2 rounded-[24px] p-7">
+            <h2 className="text-[17px] font-semibold tracking-[-0.01em]">
               What happens next
             </h2>
-            <ol className="text-muted-foreground mt-4 space-y-3 text-sm">
+            <ol className="text-muted-foreground mt-4 space-y-3 text-[15px] leading-[1.55]">
               <li className="flex gap-3">
                 <span className="text-primary mt-0.5 font-semibold tabular-nums">
                   1

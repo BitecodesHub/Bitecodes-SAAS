@@ -25,12 +25,12 @@ export function TemplatePreview({ template }: { template: LaunchTemplate }) {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-muted-foreground text-xs">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-muted-foreground text-[13px] leading-[1.5]">
           Interactive preview — switch devices to see the responsive layout.
         </p>
         <div
-          className="border-border bg-card inline-flex rounded-full border p-1"
+          className="bg-surface-2 inline-flex gap-1 rounded-full p-1"
           role="group"
           aria-label="Preview device"
         >
@@ -39,9 +39,9 @@ export function TemplatePreview({ template }: { template: LaunchTemplate }) {
             onClick={() => setDevice("desktop")}
             aria-pressed={device === "desktop"}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors",
               device === "desktop"
-                ? "bg-foreground text-background"
+                ? "bg-background text-foreground shadow-[var(--shadow-soft)]"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -53,9 +53,9 @@ export function TemplatePreview({ template }: { template: LaunchTemplate }) {
             onClick={() => setDevice("phone")}
             aria-pressed={device === "phone"}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-[13px] font-medium transition-colors",
               device === "phone"
-                ? "bg-foreground text-background"
+                ? "bg-background text-foreground shadow-[var(--shadow-soft)]"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -65,12 +65,19 @@ export function TemplatePreview({ template }: { template: LaunchTemplate }) {
         </div>
       </div>
 
+      {/*
+        The simulated site is a picture of a layout, not a page: its headings,
+        nav and prices are invented for the mock. Hiding it from assistive
+        technology keeps a screen reader on the real page copy and stops the
+        miniature type from being announced as if it were readable text.
+      */}
       <div
+        aria-hidden="true"
         className={cn(
-          "border-border overflow-hidden border shadow-[var(--shadow-lift)] transition-all duration-300",
+          "overflow-hidden shadow-[var(--shadow-lift)] transition-all duration-300",
           device === "desktop"
-            ? "rounded-2xl"
-            : "mx-auto w-full max-w-[390px] rounded-[2rem] border-8",
+            ? "rounded-[20px]"
+            : "bg-foreground mx-auto w-full max-w-[390px] rounded-[2.5rem] p-2.5",
         )}
       >
         <div
@@ -87,7 +94,11 @@ export function TemplatePreview({ template }: { template: LaunchTemplate }) {
 
         <div
           className="max-h-[760px] overflow-y-auto"
-          style={{ background: palette.bg, color: palette.ink }}
+          style={{
+            background: palette.bg,
+            color: palette.ink,
+            borderRadius: device === "phone" ? "1.75rem" : 0,
+          }}
         >
           <PreviewNav template={template} compact={device === "phone"} />
           <PreviewHero template={template} compact={device === "phone"} />

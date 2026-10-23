@@ -44,14 +44,14 @@ export function BlogIndex({
   return (
     <div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="relative w-full md:max-w-xs">
-          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2" />
+        <div className="relative w-full md:max-w-sm">
+          <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2" />
           <Input
             type="search"
             placeholder="Search articles…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pl-10"
+            className="h-12 pl-11"
             aria-label="Search articles"
           />
         </div>
@@ -63,10 +63,10 @@ export function BlogIndex({
               aria-pressed={category === f}
               onClick={() => setCategory(f)}
               className={cn(
-                "min-h-11 rounded-full border px-4 py-3 text-sm font-medium transition-colors",
+                "focus-visible:ring-ring min-h-11 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                 category === f
-                  ? "bg-primary text-primary-foreground border-transparent"
-                  : "border-border text-muted-foreground hover:text-foreground",
+                  ? "bg-foreground text-background"
+                  : "bg-surface-2 text-muted-foreground hover:text-foreground",
               )}
             >
               {f}
@@ -76,28 +76,33 @@ export function BlogIndex({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-muted-foreground mt-16 text-center">
-          No articles match your search.
-        </p>
+        <div className="bg-surface-2 mt-16 rounded-[24px] p-10 text-center">
+          <p className="text-[17px] font-medium">
+            No articles match your search
+          </p>
+          <p className="text-muted-foreground mt-1.5 text-[15px]">
+            Try a different phrase or category.
+          </p>
+        </div>
       ) : (
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((post) => (
             <Link
               key={post.slug}
               href={`/blog/${post.slug}`}
-              className="group border-border bg-card hover:border-primary/30 focus-visible:ring-ring flex flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 focus-visible:ring-2 focus-visible:outline-none"
+              className="group bg-surface-2 hover:bg-background focus-visible:ring-ring flex flex-col rounded-[24px] p-7 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)] focus-visible:ring-2 focus-visible:outline-none"
             >
               <div className="flex items-center justify-between">
                 <Badge>{post.category}</Badge>
                 <ArrowUpRight className="text-muted-foreground size-4 opacity-0 transition-opacity group-hover:opacity-100" />
               </div>
-              <h2 className="mt-4 text-lg leading-snug font-semibold tracking-tight">
+              <h2 className="group-hover:text-primary mt-4 text-[21px] leading-[1.25] font-semibold tracking-[-0.015em] transition-colors">
                 {post.title}
               </h2>
-              <p className="text-muted-foreground mt-2 flex-1 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2.5 flex-1 text-[15px] leading-[1.55]">
                 {post.excerpt}
               </p>
-              <div className="text-muted-foreground mt-5 flex items-center gap-2 text-xs">
+              <div className="text-muted-foreground mt-6 flex items-center gap-2 text-[13px]">
                 <span>{formatDate(post.date)}</span>
                 <span aria-hidden="true">·</span>
                 <span>{post.readingMinutes} min read</span>

@@ -43,10 +43,12 @@ export default async function HostedBookingPage({
   // way and looked broken on every mobile device. Both classes, always.
   if (!config) {
     return (
-      <main className="mx-auto w-full max-w-lg p-6">
-        <div className="border-border bg-card rounded-xl border p-5 text-sm leading-relaxed">
-          <p className="font-medium">This booking page is not available.</p>
-          <p className="text-muted-foreground mt-1">
+      <main className="mx-auto w-full max-w-lg px-5 py-8 sm:px-6 sm:py-10">
+        <div className="bg-surface-2 rounded-[24px] p-6">
+          <p className="text-[17px] font-semibold tracking-[-0.01em]">
+            This booking page is not available.
+          </p>
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.6]">
             The link may be incomplete, or the booking page may have been paused
             by its owner.
           </p>
@@ -56,14 +58,16 @@ export default async function HostedBookingPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg p-6">
-      <h1 className="text-xl font-semibold tracking-tight">{config.name}</h1>
+    <main className="mx-auto w-full max-w-lg px-5 py-8 sm:px-6 sm:py-10">
+      <h1 className="text-[24px] leading-tight font-semibold tracking-[-0.02em]">
+        {config.name}
+      </h1>
       {config.description && (
-        <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
           {config.description}
         </p>
       )}
-      <p className="text-muted-foreground mt-1.5 text-sm">
+      <p className="text-muted-foreground mt-2 text-[13px] font-medium">
         {config.slotMinutes} minutes
       </p>
       <div className="mt-6">

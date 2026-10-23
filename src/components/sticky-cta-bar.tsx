@@ -64,20 +64,20 @@ export function StickyCTABar() {
       ref={barRef}
       role="complementary"
       aria-label="Quick actions"
-      className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-sm md:hidden"
+      className="glass border-border/50 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <div className="divide-border flex items-stretch divide-x">
+      <div className="flex items-stretch gap-2 px-3 py-2.5">
         <Link
           href="/website-audit"
           data-track="sticky_audit_cta"
-          className="text-foreground hover:bg-secondary focus-visible:outline-ring flex min-h-[44px] flex-1 items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
+          className="text-foreground bg-surface-2 hover:bg-accent focus-visible:outline-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           Free website audit
         </Link>
         <Link
           href="/book-a-call"
           data-track="sticky_call_cta"
-          className="text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-ring flex min-h-[44px] flex-1 items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px]"
+          className="text-primary-foreground bg-primary hover:bg-primary/90 focus-visible:outline-ring flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           Book a call
         </Link>

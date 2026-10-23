@@ -113,18 +113,20 @@ export default function AiVisibilityCheckPage() {
       />
 
       <Section spacing="sm">
-        <div className="container-page grid gap-4 sm:grid-cols-3">
+        <div className="container-page grid gap-3 sm:grid-cols-3">
           {principles.map((principle) => (
             <div
               key={principle.title}
-              className="border-border bg-card flex gap-4 rounded-2xl border p-5 shadow-[var(--shadow-soft)]"
+              className="bg-surface-2 flex gap-4 rounded-[24px] p-6"
             >
-              <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+              <span className="bg-background text-primary flex size-11 shrink-0 items-center justify-center rounded-[14px]">
                 <principle.icon className="size-5" />
               </span>
               <div>
-                <h2 className="text-sm font-semibold">{principle.title}</h2>
-                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                <h2 className="text-[16px] font-semibold tracking-[-0.01em]">
+                  {principle.title}
+                </h2>
+                <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.55]">
                   {principle.description}
                 </p>
               </div>
@@ -133,7 +135,7 @@ export default function AiVisibilityCheckPage() {
         </div>
       </Section>
 
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page">
           <AiVisibilityTool />
         </div>
@@ -142,13 +144,13 @@ export default function AiVisibilityCheckPage() {
       <Section spacing="sm">
         <div className="container-page grid gap-10 lg:grid-cols-[1.2fr_1fr]">
           <div>
-            <p className="text-primary text-xs font-semibold tracking-[0.16em] uppercase">
+            <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
               What this measures
             </p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+            <h2 className="mt-3 text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               The difference between being online and being citable
             </h2>
-            <div className="text-muted-foreground mt-5 space-y-4 leading-relaxed">
+            <div className="text-muted-foreground mt-5 space-y-4 text-[16px] leading-[1.65]">
               <p>
                 Search engines rank links. Answer engines assemble an answer
                 from sources they can parse and trust. A page can rank well in
@@ -177,14 +179,14 @@ export default function AiVisibilityCheckPage() {
             </div>
           </div>
 
-          <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
+          <div className="bg-surface-2 rounded-[28px] p-7">
             <div className="flex items-center gap-2">
               <Sparkles className="text-primary size-5" />
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
                 The seven signals, weighted
               </h2>
             </div>
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul className="mt-4 text-[15px]">
               {[
                 ["AI crawler access", "25"],
                 ["Structured data", "20"],
@@ -196,7 +198,7 @@ export default function AiVisibilityCheckPage() {
               ].map(([label, points]) => (
                 <li
                   key={label}
-                  className="border-border flex items-center justify-between border-b pb-3 last:border-0 last:pb-0"
+                  className="border-background flex items-center justify-between border-b py-3 last:border-0 last:pb-0"
                 >
                   <span>{label}</span>
                   <span className="text-muted-foreground tabular-nums">
@@ -209,16 +211,16 @@ export default function AiVisibilityCheckPage() {
         </div>
       </Section>
 
-      <Section className="border-border bg-secondary/35 border-t" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <h2 className="text-center text-3xl font-semibold tracking-tight">
+          <h2 className="text-center text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Questions, answered
           </h2>
           <dl className="mt-10 space-y-6">
             {faqs.map((faq) => (
               <div key={faq.question}>
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="text-muted-foreground mt-2 leading-relaxed">
+                <dt className="text-[16px] font-semibold">{faq.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {faq.answer}
                 </dd>
               </div>

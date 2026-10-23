@@ -26,10 +26,10 @@ function FilterButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "focus-visible:ring-ring focus-visible:ring-offset-background rounded-full border px-3.5 py-1.5 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "focus-visible:ring-ring focus-visible:ring-offset-background min-h-11 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground",
+          ? "bg-foreground text-background"
+          : "bg-surface-2 text-muted-foreground hover:bg-accent hover:text-foreground",
       )}
     >
       {children}
@@ -75,13 +75,13 @@ export function PortfolioExplorer({
 
   return (
     <div>
-      <div className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)] sm:p-6">
-        <div className="grid gap-6 lg:grid-cols-2">
+      <div className="space-y-5">
+        <div className="grid gap-5 lg:grid-cols-2">
           <fieldset>
-            <legend className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+            <legend className="text-muted-foreground px-1 text-[13px] font-medium tracking-[0.06em] uppercase">
               Industry
             </legend>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <FilterButton
                 active={industry === null}
                 onClick={() => setIndustry(null)}
@@ -105,10 +105,10 @@ export function PortfolioExplorer({
           </fieldset>
 
           <fieldset>
-            <legend className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+            <legend className="text-muted-foreground px-1 text-[13px] font-medium tracking-[0.06em] uppercase">
               Service
             </legend>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-2.5 flex flex-wrap gap-2">
               <FilterButton
                 active={service === null}
                 onClick={() => setService(null)}
@@ -132,10 +132,10 @@ export function PortfolioExplorer({
           </fieldset>
         </div>
 
-        <div className="border-border mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
           <p
             aria-live="polite"
-            className="text-muted-foreground text-sm tabular-nums"
+            className="text-muted-foreground text-[13px] tabular-nums"
           >
             Showing {filtered.length} of {projects.length} case studies
           </p>
@@ -143,7 +143,7 @@ export function PortfolioExplorer({
             <button
               type="button"
               onClick={clearFilters}
-              className="text-primary focus-visible:ring-ring focus-visible:ring-offset-background rounded-md text-sm font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="text-primary focus-visible:ring-ring focus-visible:ring-offset-background rounded-md text-[13px] font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
               Clear filters
             </button>
@@ -152,7 +152,7 @@ export function PortfolioExplorer({
       </div>
 
       {filtered.length > 0 ? (
-        <StaggerGroup className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup className="mt-10 grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((project, index) => (
             <StaggerItem key={project.slug}>
               <ProjectCard
@@ -164,15 +164,17 @@ export function PortfolioExplorer({
           ))}
         </StaggerGroup>
       ) : (
-        <div className="border-border bg-card mt-10 rounded-2xl border p-10 text-center">
-          <p className="font-medium">No case studies match these filters.</p>
-          <p className="text-muted-foreground mt-2 text-sm">
+        <div className="bg-surface-2 mt-10 rounded-[28px] p-10 text-center">
+          <p className="text-[17px] font-medium">
+            No case studies match these filters.
+          </p>
+          <p className="text-muted-foreground mt-2 text-[15px]">
             Clear one of the filters to see the rest of the published work.
           </p>
           <button
             type="button"
             onClick={clearFilters}
-            className="bg-primary text-primary-foreground focus-visible:ring-ring focus-visible:ring-offset-background hover:bg-primary/90 mt-5 inline-flex h-11 items-center justify-center rounded-full px-6 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            className="bg-primary text-primary-foreground focus-visible:ring-ring focus-visible:ring-offset-background hover:bg-primary/90 mt-5 inline-flex h-11 items-center justify-center rounded-full px-6 text-[15px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           >
             Clear filters
           </button>

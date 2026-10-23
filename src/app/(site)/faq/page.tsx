@@ -44,16 +44,16 @@ export default function FaqPage() {
           <FaqExplorer faqs={faqs} />
         </div>
       </Section>
-      <Section className="border-border bg-secondary/35 border-t" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page flex flex-col items-center text-center">
-          <h2 className="text-2xl font-semibold">
+          <h2 className="max-w-2xl text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em] text-balance">
             Need an answer for your project?
           </h2>
-          <p className="text-muted-foreground mt-3 max-w-xl">
+          <p className="text-muted-foreground mt-4 max-w-xl text-[17px] leading-relaxed">
             Share the goal, users, scope, and timing. We respond with practical
             next steps rather than a generic sales script.
           </p>
-          <Button asChild size="lg" className="mt-6">
+          <Button asChild size="lg" className="mt-7">
             <Link href="/contact">
               Ask Bitecodes
               <ArrowRight className="size-4" />

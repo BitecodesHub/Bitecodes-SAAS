@@ -1,11 +1,11 @@
-import { ChevronDown } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Faq } from "@/types/content";
 
 /**
  * Answer-first FAQ list rendered with native <details>/<summary> so every
- * answer is present in the HTML without JavaScript. Used by server pages and
- * by the client search island.
+ * answer is present in the HTML without JavaScript. Hairline rows and large
+ * question type follow the same disclosure rhythm as a settings list.
  */
 export function FaqDetails({
   faqs,
@@ -19,24 +19,26 @@ export function FaqDetails({
   return (
     <div
       className={cn(
-        "border-border bg-card divide-border divide-y overflow-hidden rounded-2xl border shadow-[var(--shadow-soft)]",
+        "border-t border-black/[0.08] dark:border-white/12",
         className,
       )}
     >
       {faqs.map((faq, index) => (
         <details
           key={faq.question}
-          className="group"
+          className="group border-b border-black/[0.08] dark:border-white/12"
           open={defaultOpenFirst && index === 0 ? true : undefined}
         >
-          <summary className="focus-visible:ring-ring hover:text-primary flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 text-left text-base font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
-            <span>{faq.question}</span>
-            <ChevronDown
+          <summary className="focus-visible:ring-ring flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 py-5 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset [&::-webkit-details-marker]:hidden">
+            <span className="text-[17px] leading-snug font-medium tracking-[-0.015em] sm:text-[19px]">
+              {faq.question}
+            </span>
+            <Plus
               aria-hidden="true"
-              className="text-muted-foreground size-5 shrink-0 transition-transform duration-200 group-open:rotate-180"
+              className="text-muted-foreground size-5 shrink-0 transition-transform duration-200 group-open:rotate-45"
             />
           </summary>
-          <div className="text-muted-foreground px-6 pb-5 text-sm leading-relaxed">
+          <div className="text-muted-foreground max-w-3xl pb-6 text-[15px] leading-[1.7] sm:text-[16px]">
             {faq.answer}
           </div>
         </details>

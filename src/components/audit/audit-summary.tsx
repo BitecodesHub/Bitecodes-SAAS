@@ -72,19 +72,24 @@ export function AuditSummary({ input }: { input: AuditSummaryInput }) {
   return (
     <section
       aria-labelledby="audit-summary-heading"
-      className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+      className="bg-background mt-6 rounded-[24px] p-6 sm:p-7"
       data-track="audit-summary-view"
     >
       <div className="flex items-center gap-2.5">
-        <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-xl">
+        <span className="bg-surface-2 text-primary flex size-9 items-center justify-center rounded-[12px]">
           <FileText className="size-4" />
         </span>
-        <h3 id="audit-summary-heading" className="text-lg font-semibold">
+        <h3
+          id="audit-summary-heading"
+          className="text-[19px] font-semibold tracking-[-0.01em]"
+        >
           In plain language
         </h3>
       </div>
-      <p className="text-muted-foreground mt-4 leading-relaxed">{summary}</p>
-      <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+      <p className="text-muted-foreground mt-4 text-[15px] leading-[1.65]">
+        {summary}
+      </p>
+      <p className="text-muted-foreground mt-4 text-[13px] leading-[1.55]">
         {source === "ai"
           ? "Written from the findings above with AI assistance. It adds no new findings."
           : "Written from the findings above. AI was not available, so this is the direct summary."}

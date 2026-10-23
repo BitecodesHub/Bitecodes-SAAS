@@ -64,29 +64,36 @@ export function GET() {
     return [
       ":host{all:initial;display:block}",
       "*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}",
-      ".bcf{max-width:560px;color:#111}",
-      ".row{margin-bottom:14px}",
-      "label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}",
+      // The embed lands on pages we do not own, so it brings its own surface
+      // instead of trusting the host background to keep controls legible.
+      ".bcf{max-width:560px;background:#fff;color:#111;font-size:15px;",
+      "line-height:1.55;border-radius:24px;padding:22px}",
+      ".row{margin-bottom:16px}",
+      "label{display:block;font-size:15px;font-weight:600;margin-bottom:8px}",
       ".req{color:" + accent + "}",
-      "input,textarea,select{width:100%;padding:10px 12px;border:1px solid #d6d6de;",
-      "border-radius:10px;font-size:15px;background:#fff;color:#111}",
-      "input:focus,textarea:focus,select:focus{outline:2px solid " + accent + "40;border-color:" + accent + "}",
+      // 16px on inputs is deliberate: a smaller field makes an iPhone zoom the
+      // whole embed sideways the moment somebody starts typing.
+      "input,textarea,select{width:100%;padding:12px 14px;border:0;border-radius:14px;",
+      "font-size:16px;background:#f4f4f6;color:#111;min-height:44px;outline:0;",
+      "transition:box-shadow .15s}",
+      "input:focus,textarea:focus,select:focus{box-shadow:0 0 0 3px " + accent + "40}",
       "textarea{min-height:120px;resize:vertical}",
-      ".cbrow{display:flex;align-items:flex-start;gap:9px}",
-      ".cbrow input{width:auto;margin-top:3px}",
-      ".cbrow label{margin:0;font-weight:500}",
-      "button{background:" + accent + ";color:#fff;border:0;border-radius:10px;",
-      "padding:11px 20px;font-size:15px;font-weight:600;cursor:pointer}",
+      ".cbrow{display:flex;align-items:flex-start;gap:11px;min-height:44px}",
+      ".cbrow input{width:18px;min-height:18px;margin:2px 0 0;accent-color:" + accent + "}",
+      ".cbrow label{margin:0;font-weight:500;line-height:1.55}",
+      "button{background:" + accent + ";color:#fff;border:0;border-radius:999px;",
+      "padding:11px 22px;font-size:15px;font-weight:600;cursor:pointer;min-height:44px}",
       "button[disabled]{opacity:.6;cursor:default}",
-      ".err{color:#b42318;font-size:13px;margin-top:5px}",
-      ".note{padding:14px 16px;border-radius:12px;font-size:15px;line-height:1.5}",
-      ".ok{background:#ecfdf3;color:#05603a;border:1px solid #abefc6}",
-      ".bad{background:#fef3f2;color:#b42318;border:1px solid #fecdca}",
+      ".err{background:#fdeceb;color:#b42318;font-size:14px;line-height:1.5;",
+      "border-radius:14px;padding:10px 14px;margin-bottom:16px}",
+      ".note{padding:16px 18px;border-radius:20px;font-size:15px;line-height:1.55}",
+      ".ok{background:#e7f7f1;color:#0a6b4b}",
+      ".bad{background:#fdeceb;color:#b42318}",
       ".trap{position:absolute!important;left:-9999px!important;opacity:0!important}",
-      "@media(prefers-color-scheme:dark){.bcf{color:#eee}",
-      "input,textarea,select{background:#15151b;border-color:#33333d;color:#eee}",
-      ".ok{background:#052e1f;color:#a6f4c5;border-color:#074d31}",
-      ".bad{background:#2e0d0b;color:#fda29b;border-color:#5b1a15}}"
+      "@media(prefers-color-scheme:dark){.bcf{background:#15151b;color:#eee}",
+      "input,textarea,select{background:#242430;color:#eee}",
+      ".ok{background:#08301f;color:#7ee0b3}",
+      ".bad,.err{background:#3a100c;color:#ffb4ab}}"
     ].join("");
   }
 

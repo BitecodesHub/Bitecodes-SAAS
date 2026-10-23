@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Section, SectionHeader } from "@/components/section";
+import { Section } from "@/components/section";
+import { CtaSection } from "@/components/cta-section";
 import { Reveal } from "@/components/motion/reveal";
 import { ProjectCard } from "@/components/cards/project-card";
 import { ServiceCard } from "@/components/cards/service-card";
@@ -79,21 +80,19 @@ export default async function IndustryDetailPage({
       />
 
       <Section spacing="sm">
-        <div className="container-page grid gap-12 lg:grid-cols-[1.6fr_1fr]">
-          <div className="space-y-12">
+        <div className="container-page grid gap-12 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+          <div className="space-y-14">
             <Reveal>
-              <h2 className="text-2xl font-semibold tracking-tight">
+              <h2 className="text-[clamp(1.75rem,2.6vw,2.25rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
                 What we usually find
               </h2>
-              <ul className="mt-5 space-y-4">
+              <ul className="mt-6 space-y-4">
                 {(industry.problems ?? []).map((problem) => (
                   <li
                     key={problem}
-                    className="text-muted-foreground flex items-start gap-3 leading-relaxed"
+                    className="text-muted-foreground flex items-start gap-3 text-[16px] leading-relaxed"
                   >
-                    <span className="border-border bg-card mt-1 flex size-5 shrink-0 items-center justify-center rounded-full border">
-                      <span className="bg-primary size-1.5 rounded-full" />
-                    </span>
+                    <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
                     {problem}
                   </li>
                 ))}
@@ -101,16 +100,16 @@ export default async function IndustryDetailPage({
             </Reveal>
 
             <Reveal>
-              <h2 className="text-2xl font-semibold tracking-tight">
+              <h2 className="text-[clamp(1.75rem,2.6vw,2.25rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
                 How we approach it
               </h2>
-              <ol className="mt-5 space-y-5">
+              <ol className="mt-6 space-y-5">
                 {(industry.approach ?? []).map((step, index) => (
                   <li key={step} className="flex items-start gap-4">
-                    <span className="text-muted-foreground mt-0.5 text-sm font-semibold tabular-nums">
-                      {String(index + 1).padStart(2, "0")}
+                    <span className="bg-surface-2 text-muted-foreground mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-[13px] font-semibold tabular-nums">
+                      {index + 1}
                     </span>
-                    <span className="text-muted-foreground leading-relaxed">
+                    <span className="text-muted-foreground text-[16px] leading-relaxed">
                       {step}
                     </span>
                   </li>
@@ -119,16 +118,16 @@ export default async function IndustryDetailPage({
             </Reveal>
           </div>
 
-          <div className="space-y-6">
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+          <div className="space-y-5">
+            <div className="bg-surface-2 rounded-[24px] p-6">
+              <h2 className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
                 Focus areas
               </h2>
               <ul className="mt-4 space-y-3">
                 {industry.highlights.map((highlight) => (
                   <li
                     key={highlight}
-                    className="flex items-start gap-3 text-sm"
+                    className="flex items-start gap-3 text-[15px]"
                   >
                     <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                       <Check className="size-3.5" />
@@ -138,16 +137,19 @@ export default async function IndustryDetailPage({
                 ))}
               </ul>
             </div>
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <h2 className="text-lg font-semibold">
+            <div className="rounded-[24px] bg-[#1d1d1f] p-6 text-white dark:bg-[#101012]">
+              <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
                 See what your site is missing
               </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="mt-2 text-[14px] leading-relaxed text-white/65">
                 The free website audit checks one public page for SEO,
                 accessibility markup, response performance, and security
                 headers.
               </p>
-              <Button asChild className="mt-4 w-full">
+              <Button
+                asChild
+                className="mt-5 w-full bg-white text-[#1d1d1f] hover:bg-white/90"
+              >
                 <Link
                   href="/website-audit"
                   data-track="industry-audit-click"
@@ -164,15 +166,17 @@ export default async function IndustryDetailPage({
       </Section>
 
       {caseStudies.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="Related work"
-              title="Published case studies in this sector"
-              description="We publish a case study only where the relationship and the work allow it. Each one describes the challenge, the approach, and the outcome in plain terms."
-              align="left"
-            />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              Published case studies in this sector
+            </h2>
+            <p className="text-muted-foreground mt-3 max-w-2xl text-[17px] leading-relaxed">
+              We publish a case study only where the relationship and the work
+              allow it. Each one describes the challenge, the approach, and the
+              outcome in plain terms.
+            </p>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {caseStudies.map((project) => (
                 <ProjectCard key={project.slug} project={project} />
               ))}
@@ -182,14 +186,12 @@ export default async function IndustryDetailPage({
       )}
 
       {services.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="Services"
-              title="Services that fit this sector"
-              align="left"
-            />
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              Services that fit this sector
+            </h2>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {services.map((service) => (
                 <ServiceCard
                   key={service.slug}
@@ -203,66 +205,30 @@ export default async function IndustryDetailPage({
       )}
 
       {faqs.length > 0 && (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <SectionHeader
-              eyebrow="FAQ"
-              title={`${industry.name} questions, answered`}
-              align="left"
-            />
+            <h2 className="text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+              {industry.name} questions, answered
+            </h2>
             <FaqDetails faqs={faqs} className="mt-8 max-w-3xl" />
           </div>
         </Section>
       )}
 
-      <Section spacing="sm" className="border-border border-t">
-        <div className="container-page">
-          <Reveal>
-            <div className="bg-primary text-primary-foreground rounded-3xl px-6 py-12 text-center sm:px-14 sm:py-16">
-              <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                Start with a free website audit.
-              </h2>
-              <p className="text-primary-foreground/85 mx-auto mt-4 max-w-2xl text-base leading-relaxed">
-                See how an existing site performs on SEO, speed, accessibility,
-                and security headers. No account is required, and the report is
-                yours to keep.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-background text-foreground hover:bg-background/90"
-                >
-                  <Link
-                    href="/website-audit"
-                    data-track="industry-audit-click"
-                    data-track-industry={industry.slug}
-                    data-track-location="industry-footer"
-                  >
-                    Run a free audit
-                    <ArrowRight className="size-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
-                >
-                  <Link
-                    href="/book-a-call"
-                    data-track="industry-book-call-click"
-                    data-track-industry={industry.slug}
-                    data-track-location="industry-footer"
-                  >
-                    Book a call
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </Section>
+      <CtaSection
+        title="Start with a free website audit."
+        description="See how an existing site performs on SEO, speed, accessibility, and security headers. No account is required, and the report is yours to keep."
+        primary={{
+          label: "Run a free audit",
+          href: "/website-audit",
+          track: "industry-audit-click",
+        }}
+        secondary={{
+          label: "Book a call",
+          href: "/book-a-call",
+          track: "industry-book-call-click",
+        }}
+      />
     </>
   );
 }

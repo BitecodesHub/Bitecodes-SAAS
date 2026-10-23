@@ -125,10 +125,10 @@ export default async function ReportPage({ params }: PageProps) {
     <ReportShell>
       <header className="space-y-3">
         <Badge variant="secondary">Independent website review</Badge>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.03em]">
           {headline}
         </h1>
-        <p className="text-muted-foreground max-w-2xl leading-relaxed">
+        <p className="text-muted-foreground max-w-2xl text-[16px] leading-[1.65]">
           {prospect.website ? (
             <>
               We looked at{" "}
@@ -151,28 +151,30 @@ export default async function ReportPage({ params }: PageProps) {
       </header>
 
       <section aria-labelledby="findings" className="space-y-4">
-        <h2 id="findings" className="text-xl font-semibold">
+        <h2
+          id="findings"
+          className="text-[24px] font-semibold tracking-[-0.02em]"
+        >
           What we found
         </h2>
-        <ol className="space-y-4">
+        <ol className="space-y-3">
           {items.map((item, index) => (
-            <li
-              key={item.title}
-              className="border-border bg-card rounded-2xl border p-5 shadow-[var(--shadow-soft)]"
-            >
+            <li key={item.title} className="bg-background rounded-[24px] p-6">
               <div className="flex items-start gap-3">
                 <span
                   aria-hidden="true"
-                  className="bg-muted text-muted-foreground mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-sm font-semibold"
+                  className="bg-surface-2 text-muted-foreground mt-0.5 grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold tabular-nums"
                 >
                   {index + 1}
                 </span>
                 <div className="space-y-2">
-                  <h3 className="font-semibold">{item.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <h3 className="text-[16px] font-semibold tracking-[-0.01em]">
+                    {item.title}
+                  </h3>
+                  <p className="text-muted-foreground text-[15px] leading-[1.6]">
                     {item.why}
                   </p>
-                  <p className="text-sm leading-relaxed">
+                  <p className="text-[15px] leading-[1.6]">
                     <span className="font-medium">What it takes to fix: </span>
                     {item.fix}
                   </p>
@@ -185,20 +187,23 @@ export default async function ReportPage({ params }: PageProps) {
 
       {observations.length > 0 && (
         <section aria-labelledby="checks" className="space-y-4">
-          <h2 id="checks" className="text-xl font-semibold">
+          <h2
+            id="checks"
+            className="text-[24px] font-semibold tracking-[-0.02em]"
+          >
             Everything we checked
           </h2>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[15px]">
             Every line here is something you can confirm yourself.
           </p>
-          <dl className="border-border divide-border divide-y overflow-hidden rounded-2xl border">
+          <dl className="divide-background bg-background grid divide-y overflow-hidden rounded-[24px]">
             {observations.map((observation) => (
               <div
                 key={observation.label}
-                className="flex items-center justify-between gap-4 px-4 py-3"
+                className="flex items-center justify-between gap-4 px-5 py-4"
               >
-                <dt className="text-sm">{observation.label}</dt>
-                <dd className="flex items-center gap-2 text-sm font-medium">
+                <dt className="text-[15px]">{observation.label}</dt>
+                <dd className="flex items-center gap-2 text-[15px] font-medium">
                   {observation.value}
                   {observation.ok === true && (
                     <Check
@@ -238,11 +243,11 @@ export default async function ReportPage({ params }: PageProps) {
         </>
       )}
 
-      <section className="border-border bg-card space-y-4 rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-        <h2 className="text-xl font-semibold">
+      <section className="bg-background rounded-[28px] p-7 sm:p-8">
+        <h2 className="text-[24px] font-semibold tracking-[-0.02em]">
           Want this sorted without the jargon?
         </h2>
-        <p className="text-muted-foreground text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-3 text-[15px] leading-[1.6]">
           We are {siteConfig.name}, a software studio
           {siteConfig.contact.address.city
             ? ` in ${siteConfig.contact.address.city}`
@@ -252,7 +257,7 @@ export default async function ReportPage({ params }: PageProps) {
           no obligation. If the honest answer is &ldquo;you do not need
           us&rdquo;, we will say that instead.
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap gap-3">
           <Button asChild>
             <Link href="/book-a-call" data-track="report-book-call">
               Book a free 30-minute review call
@@ -270,12 +275,12 @@ export default async function ReportPage({ params }: PageProps) {
             </Link>
           </Button>
         </div>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground mt-4 text-[13px]">
           Prefer email? {settings.contact.salesEmail}
         </p>
       </section>
 
-      <footer className="text-muted-foreground space-y-2 text-xs leading-relaxed">
+      <footer className="text-muted-foreground space-y-2 text-[13px] leading-[1.6]">
         <p>
           This review is a passive look at one public page and its response
           headers, carried out on{" "}
@@ -304,15 +309,17 @@ export default async function ReportPage({ params }: PageProps) {
 
 function ReportShell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-6 sm:py-16">
-      <div className="space-y-10">
-        <Link
-          href="/"
-          className="text-primary text-sm font-semibold tracking-wide"
-        >
-          {siteConfig.name.toUpperCase()}
-        </Link>
-        {children}
+    <main className="bg-surface-2 min-h-screen">
+      <div className="mx-auto w-full max-w-3xl px-5 py-12 sm:px-6 sm:py-16">
+        <div className="space-y-10">
+          <Link
+            href="/"
+            className="text-primary text-[13px] font-semibold tracking-[0.08em] uppercase"
+          >
+            {siteConfig.name.toUpperCase()}
+          </Link>
+          {children}
+        </div>
       </div>
     </main>
   );
@@ -326,14 +333,18 @@ function UnavailableNotice({
   detail: string;
 }) {
   return (
-    <div className="space-y-4 py-8">
+    <div className="bg-background rounded-[28px] p-7 sm:p-8">
       <CircleSlash
         aria-hidden="true"
         className="text-muted-foreground size-8"
       />
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="text-muted-foreground leading-relaxed">{detail}</p>
-      <Button asChild variant="secondary">
+      <h1 className="mt-4 text-[28px] leading-tight font-semibold tracking-[-0.02em]">
+        {title}
+      </h1>
+      <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
+        {detail}
+      </p>
+      <Button asChild variant="secondary" className="mt-5">
         <Link href="/contact">Get in touch</Link>
       </Button>
     </div>

@@ -34,27 +34,28 @@ export default function ProcessPage() {
         ]}
       />
       <ProcessSection />
-      <Section spacing="sm" className="border-border border-t">
+      <Section spacing="sm" className="bg-surface-2">
         <div className="container-page">
-          <h2 className="text-center text-xl font-semibold tracking-tight">
+          <h2 className="text-center text-[clamp(1.75rem,3vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
             What you receive at each stage
           </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {processSteps.map((step, i) => (
               <Reveal key={step.step} delay={i * 0.04}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
+                <div className="bg-background h-full rounded-[24px] p-7">
                   <div className="flex items-center gap-3">
-                    <span className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
+                    <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-[14px]">
                       <step.icon className="size-5" />
                     </span>
-                    <h3 className="font-semibold">{step.title}</h3>
+                    <h3 className="text-[17px] font-semibold">{step.title}</h3>
                   </div>
-                  <ul className="mt-4 space-y-2">
+                  <ul className="mt-4 space-y-2.5">
                     {step.deliverables.map((d) => (
                       <li
                         key={d}
-                        className="text-muted-foreground before:text-primary text-sm before:mr-2 before:content-['—']"
+                        className="text-muted-foreground flex gap-2.5 text-[14px] leading-relaxed"
                       >
+                        <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
                         {d}
                       </li>
                     ))}

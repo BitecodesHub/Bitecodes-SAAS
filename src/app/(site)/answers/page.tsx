@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { CtaSection } from "@/components/cta-section";
 import {
   answerCategories,
   answerPages,
@@ -56,13 +56,13 @@ export default function AnswersPage() {
       <Section spacing="sm">
         <div className="container-page">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="border-border bg-card inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm shadow-[var(--shadow-soft)]">
+            <div className="bg-surface-2 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[14px]">
               <BookOpen className="text-primary size-4" />
               {answerPages.length} answers, reviewed 22 October 2026
             </div>
           </div>
 
-          <div className="mt-14 space-y-14">
+          <div className="mt-16 space-y-16">
             {answerCategories.map((category) => {
               const pages = answerPages.filter(
                 (page) => page.category === category,
@@ -80,29 +80,20 @@ export default function AnswersPage() {
         </div>
       </Section>
 
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
-        <div className="container-page mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Need an answer for your situation?
-          </h2>
-          <p className="text-muted-foreground mx-auto mt-4 max-w-xl leading-relaxed">
-            These answers describe the general case. Send the specific one and
-            we will reply with a useful, honest response within one business
-            day.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button asChild>
-              <Link href="/contact" data-track="answers-contact">
-                Ask your question
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/book-a-call">Book a free call</Link>
-            </Button>
-          </div>
-        </div>
-      </Section>
+      <CtaSection
+        title="Need an answer for your situation?"
+        description="These answers describe the general case. Send the specific one and we will reply with a useful, honest response within one business day."
+        primary={{
+          label: "Ask your question",
+          href: "/contact",
+          track: "answers-contact",
+        }}
+        secondary={{
+          label: "Book a free call",
+          href: "/book-a-call",
+          track: "answers-book-call",
+        }}
+      />
     </>
   );
 }
@@ -117,33 +108,35 @@ function CategoryGroup({
   return (
     <section>
       <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-xl font-semibold tracking-tight">{category}</h2>
-        <span className="text-muted-foreground text-sm">
+        <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
+          {category}
+        </h2>
+        <span className="text-muted-foreground text-[13px] tabular-nums">
           {pages.length} {pages.length === 1 ? "answer" : "answers"}
         </span>
       </div>
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
+      <div className="mt-8 grid gap-3 md:grid-cols-2">
         {pages.map((page, index) => (
           <Reveal key={page.slug} delay={index * 40}>
             <Link
               href={`/answers/${page.slug}`}
-              className="group border-border bg-card hover:border-primary/30 flex h-full flex-col rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+              className="group bg-surface-2 hover:bg-background flex h-full flex-col rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
               data-track="answer-card"
             >
               <div className="flex items-center justify-between gap-3">
                 <Badge variant="secondary">{page.category}</Badge>
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                <span className="text-muted-foreground flex items-center gap-1 text-[13px]">
                   <Clock className="size-3.5" />
                   {page.readingMinutes} min
                 </span>
               </div>
-              <h3 className="group-hover:text-primary mt-4 text-lg leading-snug font-semibold">
+              <h3 className="group-hover:text-primary mt-4 text-[21px] leading-[1.25] font-semibold tracking-[-0.015em] transition-colors">
                 {page.question}
               </h3>
-              <p className="text-muted-foreground mt-2 line-clamp-3 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2.5 line-clamp-3 flex-1 text-[15px] leading-[1.55]">
                 {page.shortAnswer}
               </p>
-              <span className="text-primary mt-4 inline-flex items-center gap-1 text-sm font-medium">
+              <span className="text-primary mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium">
                 Read the answer
                 <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </span>

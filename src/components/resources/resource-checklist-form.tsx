@@ -125,13 +125,15 @@ export function ResourceChecklistForm({
     return (
       <section
         aria-live="polite"
-        className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+        className="bg-surface-2 rounded-[24px] p-6 sm:p-7"
         data-track="resource-checklist-unlocked"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 className="text-lg font-semibold">{result.checklist.title}</h3>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+              {result.checklist.title}
+            </h3>
+            <p className="text-muted-foreground mt-1 text-[14px] leading-[1.55]">
               {result.checklist.items.length} items. Print it or keep this page
               open while you work through them.
             </p>
@@ -148,16 +150,19 @@ export function ResourceChecklistForm({
         </div>
         <ul className="mt-5 space-y-3">
           {result.checklist.items.map((item) => (
-            <li key={item} className="flex items-start gap-3 text-sm">
-              <span className="border-border mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border">
+            <li
+              key={item}
+              className="flex items-start gap-3 text-[15px] leading-[1.6]"
+            >
+              <span className="bg-background mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-[7px]">
                 <Check className="text-primary size-3.5" />
               </span>
-              <span className="leading-relaxed">{item}</span>
+              <span>{item}</span>
             </li>
           ))}
         </ul>
         {result.newsletter === "unavailable" ? (
-          <p className="text-muted-foreground mt-5 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-5 text-[13px] leading-[1.6]">
             Newsletter sign-up is not available right now. Your checklist is
             above and nothing else is required.
           </p>
@@ -169,11 +174,13 @@ export function ResourceChecklistForm({
   return (
     <form
       onSubmit={submit}
-      className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+      className="bg-surface-2 rounded-[24px] p-6 sm:p-7"
       data-track-form="resource-checklist"
     >
-      <h3 className="text-lg font-semibold">{checklistTitle}</h3>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+      <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+        {checklistTitle}
+      </h3>
+      <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
         A print-ready version of this guide, with {itemCount} items to tick off.
         The guide above stays free to read; the checklist is the part we ask an
         address for.
@@ -223,7 +230,7 @@ export function ResourceChecklistForm({
       {error ? (
         <p
           role="alert"
-          className="bg-destructive/10 text-destructive mt-5 rounded-xl px-4 py-3 text-sm"
+          className="bg-destructive/10 text-destructive mt-5 rounded-[16px] px-4 py-3 text-[14px] leading-[1.5]"
         >
           {error}
         </p>
@@ -243,7 +250,7 @@ export function ResourceChecklistForm({
           "Get the printable checklist"
         )}
       </Button>
-      <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+      <p className="text-muted-foreground mt-3 text-[13px] leading-[1.6]">
         We use the address to record this request and, only if you tick the box,
         to follow up. The checklist is shown on this page. Read the{" "}
         <Link

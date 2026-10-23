@@ -61,13 +61,15 @@ export function StatCounter({ stat }: { stat: Stat }) {
   const value = useCountUp(stat.value, inView);
 
   return (
-    <div ref={ref} className="flex flex-col">
-      <span className="text-5xl font-semibold tracking-[-0.03em] tabular-nums sm:text-6xl">
+    <div ref={ref} className="flex flex-col items-center">
+      <span className="text-[clamp(3rem,5.2vw,4.5rem)] leading-none font-semibold tracking-[-0.045em] tabular-nums">
         {stat.prefix}
         {value}
         {stat.suffix}
       </span>
-      <span className="text-muted-foreground mt-2 text-sm">{stat.label}</span>
+      <span className="text-muted-foreground mt-3 text-[13px] sm:text-[14px]">
+        {stat.label}
+      </span>
     </div>
   );
 }

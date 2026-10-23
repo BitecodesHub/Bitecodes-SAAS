@@ -26,11 +26,13 @@ export default async function CustomerLoginLinkPage({
   const inspection = await inspectLoginLink(token);
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
+    <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
       {inspection.valid && token ? (
         <>
-          <h1 className="text-xl font-semibold tracking-tight">Almost there</h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
+            Almost there
+          </h1>
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
             Press the button to finish signing in.
           </p>
           <div className="mt-6">
@@ -42,14 +44,14 @@ export default async function CustomerLoginLinkPage({
         </>
       ) : (
         <>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
             This sign-in link is no longer valid
           </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
             Sign-in links work once and expire after 15 minutes. Request a fresh
             one and try again.
           </p>
-          <p className="mt-6 text-sm">
+          <p className="mt-6 text-[15px]">
             <Link
               href="/forgot"
               className="text-primary underline underline-offset-4"

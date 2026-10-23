@@ -10,9 +10,9 @@ interface SectionProps extends React.HTMLAttributes<HTMLElement> {
 
 const spacingMap = {
   none: "",
-  sm: "py-12 sm:py-16",
-  default: "py-20 sm:py-28",
-  lg: "py-24 sm:py-36",
+  sm: "py-16 sm:py-20",
+  default: "py-24 sm:py-32",
+  lg: "py-28 sm:py-40",
 };
 
 export function Section({
@@ -47,21 +47,21 @@ export function SectionHeader({
   return (
     <Reveal
       className={cn(
-        "flex max-w-2xl flex-col gap-4",
+        "flex max-w-3xl flex-col gap-5",
         align === "center" && "mx-auto items-center text-center",
         className,
       )}
     >
       {eyebrow && (
-        <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+        <p className="text-primary text-[13px] font-semibold tracking-[0.14em] uppercase">
           {eyebrow}
         </p>
       )}
-      <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl md:leading-[1.08]">
+      <h2 className="text-[clamp(2.25rem,4.6vw,4rem)] leading-[1.04] font-semibold tracking-[-0.035em] text-balance">
         {title}
       </h2>
       {description && (
-        <p className="text-muted-foreground text-base leading-relaxed text-pretty sm:text-lg">
+        <p className="text-muted-foreground max-w-2xl text-[17px] leading-[1.55] tracking-[-0.012em] text-pretty sm:text-[19px]">
           {description}
         </p>
       )}

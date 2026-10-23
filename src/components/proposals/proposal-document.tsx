@@ -46,9 +46,9 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
     <>
       <header className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{proposal.proposalId}</Badge>
+          <Badge variant="secondary">{proposal.proposalId}</Badge>
           {proposal.status === "draft" && (
-            <Badge variant="outline">Draft preview</Badge>
+            <Badge variant="secondary">Draft preview</Badge>
           )}
           {isOpen && (
             <Badge variant="muted">
@@ -72,37 +72,43 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
         </div>
 
         <div className="space-y-2">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-[13px] font-medium">
             Prepared for {proposal.company || proposal.clientName || "you"}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <h1 className="text-[clamp(1.75rem,4vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.03em] text-balance">
             {proposal.title}
           </h1>
           {proposal.summary && (
-            <p className="text-muted-foreground max-w-2xl text-base leading-relaxed">
+            <p className="text-muted-foreground max-w-2xl text-[16px] leading-[1.65]">
               {proposal.summary}
             </p>
           )}
         </div>
 
-        <dl className="grid gap-4 sm:grid-cols-3">
+        <dl className="bg-surface-2 mt-6 grid gap-6 rounded-[24px] p-6 sm:grid-cols-3">
           <div>
-            <dt className="text-muted-foreground text-xs uppercase">Total</dt>
-            <dd className="mt-1 text-xl font-semibold">
+            <dt className="text-muted-foreground text-[11px] font-semibold tracking-[0.14em] uppercase">
+              Total
+            </dt>
+            <dd className="mt-1.5 text-[20px] font-semibold tracking-[-0.01em]">
               {formatAmount(proposal.total, proposal.currency)}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground text-xs uppercase">
+            <dt className="text-muted-foreground text-[11px] font-semibold tracking-[0.14em] uppercase">
               Prepared on
             </dt>
-            <dd className="mt-1 text-sm">{formatDate(proposal.createdAt)}</dd>
+            <dd className="mt-1.5 text-[15px]">
+              {formatDate(proposal.createdAt)}
+            </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground text-xs uppercase">
+            <dt className="text-muted-foreground text-[11px] font-semibold tracking-[0.14em] uppercase">
               Valid until
             </dt>
-            <dd className="mt-1 text-sm">{formatDate(proposal.validUntil)}</dd>
+            <dd className="mt-1.5 text-[15px]">
+              {formatDate(proposal.validUntil)}
+            </dd>
           </div>
         </dl>
       </header>
@@ -124,28 +130,34 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
 
         {proposal.milestones.length > 0 && (
           <DocumentSection title="Milestones">
-            <div className="border-border overflow-hidden rounded-xl border">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/50 text-muted-foreground text-left">
+            <div className="bg-surface-2 overflow-hidden rounded-[20px]">
+              <table className="w-full text-[15px]">
+                <thead className="text-muted-foreground text-left">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Milestone</th>
-                    <th className="px-4 py-3 font-medium">What is delivered</th>
-                    <th className="px-4 py-3 text-right font-medium">Due</th>
+                    <th className="px-5 py-3.5 text-[13px] font-semibold">
+                      Milestone
+                    </th>
+                    <th className="px-5 py-3.5 text-[13px] font-semibold">
+                      What is delivered
+                    </th>
+                    <th className="px-5 py-3.5 text-right text-[13px] font-semibold">
+                      Due
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {proposal.milestones.map((milestone, index) => (
                     <tr
                       key={`${milestone.name}-${index}`}
-                      className="border-border border-t"
+                      className="border-background border-t"
                     >
-                      <td className="px-4 py-3 font-medium">
+                      <td className="px-5 py-4 font-medium">
                         {milestone.name}
                       </td>
-                      <td className="text-muted-foreground px-4 py-3">
+                      <td className="text-muted-foreground px-5 py-4">
                         {milestone.description || "—"}
                       </td>
-                      <td className="text-muted-foreground px-4 py-3 text-right whitespace-nowrap">
+                      <td className="text-muted-foreground px-5 py-4 text-right whitespace-nowrap">
                         Day {milestone.dueOffsetDays}
                       </td>
                     </tr>
@@ -157,41 +169,49 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
         )}
 
         <DocumentSection title="Services and pricing">
-          <div className="border-border overflow-hidden rounded-xl border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-muted-foreground text-left">
+          <div className="bg-surface-2 overflow-hidden rounded-[20px]">
+            <table className="w-full text-[15px]">
+              <thead className="text-muted-foreground text-left">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Service</th>
-                  <th className="px-4 py-3 text-right font-medium">Quantity</th>
-                  <th className="px-4 py-3 text-right font-medium">Unit</th>
-                  <th className="px-4 py-3 text-right font-medium">Amount</th>
+                  <th className="px-5 py-3.5 text-[13px] font-semibold">
+                    Service
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-[13px] font-semibold">
+                    Quantity
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-[13px] font-semibold">
+                    Unit
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-[13px] font-semibold">
+                    Amount
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {proposal.lineItems.map((line) => (
-                  <tr key={line.key} className="border-border border-t">
-                    <td className="px-4 py-3">
+                  <tr key={line.key} className="border-background border-t">
+                    <td className="px-5 py-4">
                       <span className="font-medium">{line.label}</span>
                       {line.description && (
-                        <span className="text-muted-foreground mt-0.5 block text-xs">
+                        <span className="text-muted-foreground mt-1 block text-[13px] leading-[1.5]">
                           {line.description}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">{line.quantity}</td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                    <td className="px-5 py-4 text-right">{line.quantity}</td>
+                    <td className="px-5 py-4 text-right whitespace-nowrap">
                       {formatAmount(line.unitAmount, proposal.currency)}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium whitespace-nowrap">
+                    <td className="px-5 py-4 text-right font-medium whitespace-nowrap">
                       {formatAmount(line.amount, proposal.currency)}
                     </td>
                   </tr>
                 ))}
-                <tr className="border-border border-t">
-                  <td className="px-4 py-3 font-semibold" colSpan={3}>
+                <tr className="border-background bg-background border-t">
+                  <td className="px-5 py-4 font-semibold" colSpan={3}>
                     Total
                   </td>
-                  <td className="px-4 py-3 text-right text-base font-semibold whitespace-nowrap">
+                  <td className="px-5 py-4 text-right text-[17px] font-semibold whitespace-nowrap">
                     {formatAmount(proposal.total, proposal.currency)}
                   </td>
                 </tr>
@@ -205,11 +225,11 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
             {proposal.paymentSchedule.map((term) => (
               <li
                 key={term.label}
-                className="border-border flex items-center justify-between gap-4 rounded-xl border px-4 py-3 text-sm"
+                className="bg-surface-2 flex items-center justify-between gap-4 rounded-[18px] px-5 py-4 text-[15px]"
               >
                 <span>
                   <span className="block font-medium">{term.label}</span>
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-muted-foreground mt-0.5 block text-[13px]">
                     {term.percent} percent of the total
                   </span>
                 </span>
@@ -223,8 +243,8 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
 
         {proposal.retainerUpsell && (
           <DocumentSection title="Optional retainer">
-            <div className="border-border rounded-xl border p-4">
-              <p className="text-sm font-medium">
+            <div className="bg-primary/5 rounded-[24px] p-6">
+              <p className="text-[15px] leading-[1.6] font-medium">
                 {proposal.retainerUpsell.label} —{" "}
                 {formatAmount(
                   proposal.retainerUpsell.monthlyAmount,
@@ -232,10 +252,10 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
                 )}{" "}
                 per month for {proposal.retainerUpsell.months} months
               </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
                 {proposal.retainerUpsell.description}
               </p>
-              <p className="text-muted-foreground mt-2 text-xs">
+              <p className="text-muted-foreground mt-2 text-[13px] leading-[1.5]">
                 Optional. The rest of this proposal does not depend on it.
               </p>
             </div>
@@ -258,14 +278,14 @@ export function ProposalDocument({ proposal, actions }: ProposalDocumentProps) {
         </div>
 
         {proposal.termsLinks.length > 0 && (
-          <p className="text-muted-foreground text-sm leading-relaxed">
+          <p className="text-muted-foreground text-[15px] leading-[1.6]">
             This proposal is subject to our{" "}
             {proposal.termsLinks.map((link, index) => (
               <span key={link.url}>
                 {index > 0 && " and "}
                 <a
                   href={link.url}
-                  className="text-foreground underline underline-offset-2"
+                  className="text-primary underline underline-offset-2"
                 >
                   {link.label}
                 </a>
@@ -322,24 +342,26 @@ function DocumentSection({
 }) {
   return (
     <section>
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-      <div className="mt-3">{children}</div>
+      <h2 className="text-[20px] font-semibold tracking-[-0.02em]">{title}</h2>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
 
 function BulletList({ items, empty }: { items: string[]; empty: string }) {
   if (items.length === 0) {
-    return <p className="text-muted-foreground text-sm">{empty}</p>;
+    return (
+      <p className="text-muted-foreground text-[15px] leading-[1.6]">{empty}</p>
+    );
   }
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2.5">
       {items.map((item, index) => (
         <li
           key={`${index}-${item.slice(0, 24)}`}
-          className="flex items-start gap-3 text-sm leading-relaxed"
+          className="flex items-start gap-3 text-[15px] leading-[1.6]"
         >
-          <span className="bg-primary mt-2 size-1.5 shrink-0 rounded-full" />
+          <span className="bg-primary mt-2.5 size-1.5 shrink-0 rounded-full" />
           <span>{item}</span>
         </li>
       ))}
@@ -360,19 +382,22 @@ function DecisionPanel({
     <section
       className={
         tone === "accepted"
-          ? "border-primary/25 bg-primary/5 rounded-2xl border p-6"
-          : "border-border bg-muted/40 rounded-2xl border p-6"
+          ? "bg-primary/5 rounded-[28px] p-7"
+          : "bg-surface-2 rounded-[28px] p-7"
       }
     >
-      <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+      <h2 className="flex items-center gap-2.5 text-[20px] font-semibold tracking-[-0.02em]">
         {tone === "accepted" ? (
-          <CheckCircle2 className="size-5" />
+          <CheckCircle2
+            className="size-5"
+            style={{ color: "var(--chart-3)" }}
+          />
         ) : (
-          <XCircle className="size-5" />
+          <XCircle className="text-muted-foreground size-5" />
         )}
         {title}
       </h2>
-      <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-2.5 max-w-2xl text-[15px] leading-[1.6]">
         {body}
       </p>
     </section>

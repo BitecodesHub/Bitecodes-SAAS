@@ -51,7 +51,7 @@ export default function WebsiteAuditPage() {
         ]}
       />
       <Section spacing="sm">
-        <div className="container-page grid gap-4 sm:grid-cols-3">
+        <div className="container-page grid gap-3 sm:grid-cols-3">
           <Principle
             icon={Eye}
             title="Passive by design"
@@ -69,17 +69,17 @@ export default function WebsiteAuditPage() {
           />
         </div>
       </Section>
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page">
           <WebsiteAuditTool />
         </div>
       </Section>
       <Section spacing="sm">
         <div className="container-page max-w-3xl text-center">
-          <h2 className="text-2xl font-semibold">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.025em] sm:text-[32px]">
             What this audit does not claim
           </h2>
-          <p className="text-muted-foreground mt-4 leading-relaxed">
+          <p className="text-muted-foreground mt-4 text-[17px] leading-[1.65]">
             This is a lead-friendly first-pass review, not a penetration test,
             full crawler, browser-based Lighthouse run, legal compliance
             certification, or guarantee that a website is secure or accessible.
@@ -102,13 +102,15 @@ function Principle({
   description: string;
 }) {
   return (
-    <div className="border-border bg-card flex gap-4 rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
-      <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+    <div className="bg-surface-2 flex gap-4 rounded-[24px] p-6">
+      <span className="bg-background text-primary flex size-11 shrink-0 items-center justify-center rounded-[14px]">
         <Icon className="size-5" />
       </span>
       <div>
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        <h2 className="text-[16px] font-semibold tracking-[-0.01em]">
+          {title}
+        </h2>
+        <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.55]">
           {description}
         </p>
       </div>

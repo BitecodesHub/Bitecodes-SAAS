@@ -279,6 +279,7 @@ const publishedProjects: PublishedProject[] = [
     ],
     relationship: "client",
     featured: true,
+    image: "/images/projects/saanvi-production-house.jpg",
   },
   {
     slug: "vertex-media-house",
@@ -315,6 +316,7 @@ const publishedProjects: PublishedProject[] = [
     ],
     relationship: "client",
     featured: true,
+    image: "/images/projects/vertex-media-house.jpg",
   },
   {
     slug: "rivala-care",

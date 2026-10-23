@@ -39,125 +39,117 @@ const selectedWork = [
   },
 ] as const;
 
+/**
+ * The live-work frame. A real deployed site is the artwork, and the segmented
+ * control lets people compare three without leaving the page. This is the one
+ * interactive signature on the homepage; nothing else competes with it.
+ */
 export function HeroShowcase() {
   const [active, setActive] = useState(0);
   const project = selectedWork[active];
 
   return (
-    <div className="relative mx-auto w-full max-w-[560px] lg:max-w-none">
-      <div className="relative">
-        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-muted-foreground flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] uppercase">
-            <span className="bg-primary size-1.5 rounded-full" aria-hidden />
-            Selected work
-          </p>
+    <div className="relative mx-auto w-full max-w-5xl">
+      <div className="mb-5 flex justify-center">
+        <div
+          role="group"
+          aria-label="Choose a project to preview"
+          className="bg-surface-2 inline-grid w-full grid-cols-3 gap-1 rounded-full p-1 sm:w-auto"
+        >
+          {selectedWork.map((item, index) => (
+            <button
+              key={item.name}
+              type="button"
+              aria-pressed={active === index}
+              aria-controls="hero-work-preview"
+              onClick={() => setActive(index)}
+              className={cn(
+                "inline-flex min-h-11 min-w-0 items-center justify-center truncate rounded-full px-3 text-[13px] font-medium tracking-[-0.005em] transition-all duration-200 sm:px-5",
+                active === index
+                  ? "bg-background text-foreground shadow-[var(--shadow-soft)]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {item.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <div
-            role="group"
-            aria-label="Choose a project to preview"
-            className="grid w-full grid-cols-3 gap-1 sm:flex sm:w-auto sm:flex-wrap sm:items-center"
-          >
+      <div className="bg-surface-2 rounded-[32px] p-2 sm:p-4">
+        <div
+          id="hero-work-preview"
+          className="bg-background relative overflow-hidden rounded-[24px] shadow-[var(--shadow-lift)]"
+        >
+          <div className="flex items-center gap-3 border-b border-black/[0.07] px-4 py-3">
+            <div aria-hidden className="flex gap-1.5">
+              <span className="size-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="size-2.5 rounded-full bg-[#febc2e]" />
+              <span className="size-2.5 rounded-full bg-[#28c840]" />
+            </div>
+            <div className="flex min-w-0 flex-1 justify-center">
+              <span className="bg-surface-2 text-muted-foreground inline-flex max-w-[70%] items-center gap-1.5 truncate rounded-full px-3.5 py-1 text-[11px]">
+                <span
+                  className="size-1.5 rounded-full bg-[#0ca30c]"
+                  aria-hidden
+                />
+                {project.url}
+              </span>
+            </div>
+            <span className="text-muted-foreground hidden items-center gap-1.5 text-[11px] sm:inline-flex">
+              <span
+                className="size-1.5 rounded-full bg-[var(--chart-good)]"
+                aria-hidden
+              />
+              Live
+            </span>
+          </div>
+
+          <div className="bg-surface-2 relative aspect-[16/10]">
             {selectedWork.map((item, index) => (
-              <button
+              <div
                 key={item.name}
-                type="button"
-                aria-pressed={active === index}
-                aria-controls="hero-work-preview"
-                onClick={() => setActive(index)}
+                aria-hidden={active !== index}
                 className={cn(
-                  "min-w-0 truncate rounded-full px-2.5 py-1.5 text-center font-mono text-[10px] tracking-[0.1em] uppercase transition-colors sm:py-1",
+                  "absolute inset-0 transition-[opacity,transform] duration-500 ease-out",
                   active === index
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                    ? "scale-100 opacity-100"
+                    : "pointer-events-none scale-[1.01] opacity-0",
                 )}
               >
-                {item.name}
-              </button>
+                <Image
+                  src={item.image}
+                  alt={item.alt}
+                  fill
+                  priority={index === 0}
+                  sizes="(max-width: 1024px) 92vw, 70vw"
+                  className="object-cover object-top"
+                />
+              </div>
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="relative">
-          {/* Offset backing card gives the preview depth without a backdrop. */}
-          <div
-            aria-hidden
-            className="border-border/70 bg-surface-2/80 absolute inset-x-4 top-6 -bottom-2 rotate-[1deg] rounded-2xl border"
-          />
-
-          <div
-            id="hero-work-preview"
-            className="border-border bg-card relative overflow-hidden rounded-2xl border shadow-[var(--shadow-lift)]"
-          >
-            <div className="border-border/80 bg-surface-2/80 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b px-3 py-2.5">
-              <span className="flex gap-1.5" aria-hidden>
-                <span className="bg-foreground/15 size-1.5 rounded-full" />
-                <span className="bg-foreground/15 size-1.5 rounded-full" />
-                <span className="bg-foreground/15 size-1.5 rounded-full" />
-              </span>
-              <span className="bg-background/80 text-muted-foreground max-w-[52vw] truncate rounded-full px-3 py-1 font-mono text-[10px] tracking-tight sm:max-w-none">
-                {project.url}
-              </span>
-              <span className="text-muted-foreground flex items-center justify-end gap-1.5 text-[10px] font-medium">
-                <span
-                  className="size-1.5 rounded-full bg-[var(--chart-good)]"
-                  aria-hidden
-                />
-                <span className="hidden sm:inline">Live</span>
-                <span className="sr-only">Live site</span>
-              </span>
-            </div>
-
-            <div className="bg-secondary relative aspect-[16/10]">
-              {selectedWork.map((item, index) => (
-                <div
-                  key={item.name}
-                  aria-hidden={active !== index}
-                  className={cn(
-                    "absolute inset-0 transition-[opacity,transform] duration-500 ease-out",
-                    active === index
-                      ? "scale-100 opacity-100"
-                      : "pointer-events-none scale-[1.015] opacity-0",
-                  )}
-                >
-                  <Image
-                    src={item.image}
-                    alt={item.alt}
-                    fill
-                    priority={index === 0}
-                    sizes="(max-width: 1024px) 92vw, 42vw"
-                    className="object-cover object-top"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="mt-5 flex flex-col items-start justify-between gap-4 px-1 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-muted-foreground text-[13px] font-medium tracking-[0.02em]">
+            {project.category} · {project.stack}
+          </p>
+          <p className="mt-1.5 text-[24px] font-semibold tracking-[-0.025em]">
+            {project.name}
+            <span className="text-muted-foreground ml-2 text-[17px] font-normal">
+              {project.year}
+            </span>
+          </p>
         </div>
-
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 px-1">
-          <div>
-            <p className="text-muted-foreground font-mono text-[10px] tracking-[0.16em] uppercase">
-              {String(active + 1).padStart(2, "0")} /{" "}
-              {String(selectedWork.length).padStart(2, "0")} ·{" "}
-              {project.category}
-            </p>
-            <p className="mt-1 text-xl font-semibold tracking-tight">
-              {project.name}
-              <span className="text-muted-foreground ml-2 font-normal">
-                {project.year}
-              </span>
-            </p>
-            <p className="text-muted-foreground mt-1 font-mono text-[10px] tracking-[0.06em] uppercase">
-              {project.stack}
-            </p>
-          </div>
-          <Link
-            href={project.href}
-            className="group text-foreground hover:text-primary inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
-          >
-            View case study
-            <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </Link>
-        </div>
+        <Link
+          href={project.href}
+          className="text-primary inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium transition-opacity hover:opacity-75"
+        >
+          View case study
+          <ArrowUpRight className="size-4" aria-hidden />
+        </Link>
       </div>
     </div>
   );

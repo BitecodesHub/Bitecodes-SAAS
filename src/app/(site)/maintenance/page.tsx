@@ -18,21 +18,21 @@ export default function MaintenancePage() {
   return (
     <section className="relative flex min-h-[70vh] items-center overflow-hidden">
       <div className="container-page">
-        <div className="border-border bg-card mx-auto max-w-2xl rounded-3xl border p-8 text-center shadow-[var(--shadow-lift)] sm:p-12">
-          <span className="bg-primary/10 text-primary mx-auto flex size-16 items-center justify-center rounded-2xl">
+        <div className="bg-surface-2 mx-auto max-w-2xl rounded-[32px] p-8 text-center sm:p-12">
+          <span className="bg-background text-primary mx-auto flex size-16 items-center justify-center rounded-[20px]">
             <Wrench className="size-7" />
           </span>
-          <p className="text-primary mt-6 text-xs font-semibold tracking-[0.16em] uppercase">
+          <p className="text-muted-foreground mt-6 text-[11px] font-semibold tracking-[0.14em] uppercase">
             Scheduled maintenance
           </p>
-          <h1 className="mt-2 text-3xl font-semibold sm:text-4xl">
+          <h1 className="mt-2 text-[36px] leading-[1.1] font-semibold tracking-[-0.025em] sm:text-[44px]">
             We are making Bitecodes better
           </h1>
-          <p className="text-muted-foreground mt-4 leading-relaxed">
+          <p className="text-muted-foreground mt-4 text-[17px] leading-[1.6]">
             This page is available for planned maintenance windows. For an
             active project or urgent enquiry, contact the team directly.
           </p>
-          <div className="text-muted-foreground mt-6 flex flex-wrap justify-center gap-5 text-sm">
+          <div className="text-muted-foreground mt-6 flex flex-wrap justify-center gap-5 text-[14px]">
             <span className="flex items-center gap-2">
               <Clock3 className="size-4" />
               Check back shortly
@@ -46,7 +46,12 @@ export default function MaintenancePage() {
             <Button asChild size="lg">
               <Link href="/contact">Contact Bitecodes</Link>
             </Button>
-            <Button asChild variant="outline" size="lg">
+            <Button
+              asChild
+              variant="secondary"
+              size="lg"
+              className="bg-background"
+            >
               <Link href="/">Return home</Link>
             </Button>
           </div>

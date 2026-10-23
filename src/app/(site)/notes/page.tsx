@@ -202,7 +202,7 @@ export default async function NotesPage() {
             downloads={downloads}
             version={release.latestVersion || null}
           />
-          <p className="text-muted-foreground mt-4 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-4 text-[13px] leading-[1.6]">
             First launch: on a Mac, if macOS cannot verify the developer, open
             System Settings → Privacy &amp; Security and click “Open Anyway”; on
             Windows, choose “More info” → “Run anyway”. Then click “Sign in with
@@ -217,18 +217,20 @@ export default async function NotesPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             What it does
           </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {FEATURES.map((f, i) => (
               <Reveal key={f.title} delay={i * 0.04}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <div className="bg-surface-2 h-full rounded-[24px] p-7">
+                  <span className="bg-background text-primary flex size-11 items-center justify-center rounded-[14px]">
                     <f.icon className="size-5" />
                   </span>
-                  <h3 className="mt-4 font-semibold">{f.title}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <h3 className="mt-5 text-[19px] font-semibold tracking-[-0.01em]">
+                    {f.title}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {f.body}
                   </p>
                 </div>
@@ -240,10 +242,10 @@ export default async function NotesPage() {
 
       <Section spacing="sm">
         <div className="container-page">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
             Get started in three steps
           </h2>
-          <ol className="mt-6 grid gap-4 md:grid-cols-3">
+          <ol className="mt-8 grid gap-3 md:grid-cols-3">
             {[
               [
                 "Download",
@@ -258,18 +260,15 @@ export default async function NotesPage() {
                 "Type a question, or press the screenshot shortcut and let Notes explain what it sees.",
               ],
             ].map(([title, body], i) => (
-              <li
-                key={title}
-                className="border-border bg-card rounded-2xl border p-5"
-              >
-                <span className="text-muted-foreground text-xs font-medium">
+              <li key={title} className="bg-surface-2 rounded-[24px] p-7">
+                <span className="text-muted-foreground text-[13px] font-medium tracking-[0.08em] uppercase">
                   Step {i + 1}
                 </span>
-                <h3 className="mt-1 flex items-center gap-2 font-semibold">
+                <h3 className="mt-2 flex items-center gap-2 text-[19px] font-semibold tracking-[-0.01em]">
                   {i === 0 && <Laptop className="size-4" aria-hidden="true" />}
                   {title}
                 </h3>
-                <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {body}
                 </p>
               </li>
@@ -280,23 +279,20 @@ export default async function NotesPage() {
 
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
             Frequently asked questions
           </h2>
-          <dl className="mt-6 space-y-5">
+          <dl className="mt-8 space-y-6">
             {FAQS.map((item) => (
-              <div
-                key={item.question}
-                className="border-border border-b pb-5 last:border-0"
-              >
-                <dt className="font-medium">{item.question}</dt>
-                <dd className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+              <div key={item.question}>
+                <dt className="text-[16px] font-semibold">{item.question}</dt>
+                <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.65]">
                   {item.answer}
                 </dd>
               </div>
             ))}
           </dl>
-          <p className="text-muted-foreground mt-6 text-xs">
+          <p className="text-muted-foreground mt-8 text-[13px]">
             Details on data handling are in our{" "}
             <Link href="/privacy" className="underline underline-offset-2">
               privacy policy

@@ -142,22 +142,22 @@ export default async function JobOpeningPage({
       {/* Key facts — every value mirrors the JobPosting markup above. */}
       <Section className="pt-0">
         <div className="container-page">
-          <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {facts.map((f) => (
               <Reveal key={f.label}>
-                <div className="border-border bg-card flex h-full gap-3 rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
+                <div className="bg-surface-2 flex h-full gap-3 rounded-[20px] p-5">
                   <f.icon className="text-primary mt-0.5 size-5 shrink-0" />
                   <div>
-                    <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
+                    <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.14em] uppercase">
                       {f.label}
                     </p>
-                    <p className="mt-1 text-sm font-medium">{f.value}</p>
+                    <p className="mt-1.5 text-[15px] font-medium">{f.value}</p>
                   </div>
                 </div>
               </Reveal>
             ))}
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link
                 href={applyHref}
@@ -167,7 +167,7 @@ export default async function JobOpeningPage({
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="outline">
+            <Button asChild size="lg" variant="secondary">
               <a
                 href={siteConfig.contact.whatsapp}
                 target="_blank"
@@ -182,16 +182,18 @@ export default async function JobOpeningPage({
 
       <Section className="bg-surface-2">
         <div className="container-page">
-          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
+          <div className="mx-auto grid max-w-4xl gap-3 md:grid-cols-2">
             {lists.map((l) => (
               <Reveal key={l.title}>
-                <div className="border-border bg-card h-full rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <h2 className="text-lg font-semibold">{l.title}</h2>
-                  <ul className="mt-4 space-y-3">
+                <div className="bg-background h-full rounded-[24px] p-7">
+                  <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
+                    {l.title}
+                  </h2>
+                  <ul className="mt-5 space-y-3">
                     {l.items.map((item) => (
                       <li
                         key={item}
-                        className="text-muted-foreground flex gap-2.5 text-sm leading-relaxed"
+                        className="text-muted-foreground flex gap-3 text-[15px] leading-[1.55]"
                       >
                         <Check className="text-primary mt-0.5 size-4 shrink-0" />
                         <span>{item}</span>
@@ -203,10 +205,12 @@ export default async function JobOpeningPage({
             ))}
           </div>
 
-          <Reveal className="mx-auto mt-6 max-w-4xl">
-            <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-              <h2 className="text-lg font-semibold">Skills you will build</h2>
-              <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
+          <Reveal className="mx-auto mt-3 max-w-4xl">
+            <div className="bg-background rounded-[24px] p-7">
+              <h2 className="text-[21px] font-semibold tracking-[-0.02em]">
+                Skills you will build
+              </h2>
+              <p className="text-muted-foreground mt-3 text-[15px] leading-[1.65]">
                 {job.skills.join(" · ")}
               </p>
             </div>
@@ -220,7 +224,7 @@ export default async function JobOpeningPage({
             eyebrow="About Bitecodes"
             title="A small software studio from Ahmedabad"
           />
-          <Reveal className="text-muted-foreground mx-auto mt-6 max-w-3xl space-y-4 text-center leading-relaxed">
+          <Reveal className="text-muted-foreground mx-auto mt-8 max-w-3xl space-y-4 text-center text-[17px] leading-[1.65]">
             <p>
               Bitecodes has built websites, web and enterprise applications,
               SaaS products, APIs and AI automation since {siteConfig.founded},
@@ -241,12 +245,12 @@ export default async function JobOpeningPage({
       <Section className="bg-surface-2">
         <div className="container-page">
           <SectionHeader eyebrow="FAQ" title="Internship questions, answered" />
-          <div className="mx-auto mt-10 max-w-3xl space-y-4">
+          <div className="mx-auto mt-12 max-w-3xl space-y-3">
             {job.faqs.map((faq) => (
               <Reveal key={faq.question}>
-                <div className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]">
-                  <h3 className="font-semibold">{faq.question}</h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <div className="bg-background rounded-[24px] p-7">
+                  <h3 className="text-[17px] font-semibold">{faq.question}</h3>
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
                     {faq.answer}
                   </p>
                 </div>

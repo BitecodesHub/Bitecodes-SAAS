@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { Section } from "@/components/section";
+import { Section, SectionHeader } from "@/components/section";
 import { ProjectCard } from "@/components/cards/project-card";
 import { Reveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";
 import { featuredProjects } from "@/data/projects";
 
 export function FeaturedWorkSection() {
@@ -12,41 +11,39 @@ export function FeaturedWorkSection() {
   return (
     <Section id="work">
       <div className="container-page">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <Reveal className="max-w-2xl">
-            <p className="text-muted-foreground text-xs font-semibold tracking-[0.16em] uppercase">
-              Selected work
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl md:leading-[1.08]">
-              Case studies in shipping the hard part.
-            </h2>
-            <p className="text-muted-foreground mt-4 text-base leading-relaxed sm:text-lg">
-              A selection of client projects we have designed, built, and
-              shipped.
-            </p>
-          </Reveal>
-          <Button asChild variant="outline" className="shrink-0">
-            <Link href="/portfolio">
-              All case studies
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
+        <SectionHeader
+          eyebrow="Selected work"
+          title="Case studies in shipping the hard part."
+          description="Real clients, real deployments, and an honest account of the problem, the approach, and what was built."
+        />
 
         {lead ? (
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
-            <ProjectCard
-              project={lead}
-              priority
-              lead
-              coverAspect="aspect-[16/10] sm:aspect-[21/9]"
-              className="md:col-span-2"
-            />
+          <div className="mt-14 grid gap-6 md:grid-cols-2">
+            <Reveal className="md:col-span-2">
+              <ProjectCard
+                project={lead}
+                priority
+                lead
+                coverAspect="aspect-[16/10] sm:aspect-[21/9]"
+              />
+            </Reveal>
             {rest.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
+              <Reveal key={project.slug}>
+                <ProjectCard project={project} className="h-full" />
+              </Reveal>
             ))}
           </div>
         ) : null}
+
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="/portfolio"
+            className="text-primary inline-flex min-h-11 items-center gap-1.5 text-[15px] font-medium transition-opacity hover:opacity-75"
+          >
+            All case studies
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
+        </div>
       </div>
     </Section>
   );

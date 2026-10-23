@@ -4,7 +4,7 @@ import { JsonLd } from "@/components/json-ld";
 import { ProjectCostCalculator } from "@/components/calculators/project-cost-calculator";
 import { FaqDetails } from "@/components/faq/faq-details";
 import { PageHeader } from "@/components/page-header";
-import { Section, SectionHeader } from "@/components/section";
+import { Section } from "@/components/section";
 import { breadcrumbSchema, createMetadata, faqSchema } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -72,7 +72,7 @@ export default function ProjectCostCalculatorPage() {
         ]}
       />
       <Section spacing="sm">
-        <div className="container-page grid gap-4 sm:grid-cols-3">
+        <div className="container-page grid gap-3 sm:grid-cols-3">
           <TrustItem
             icon={Calculator}
             title="Transparent assumptions"
@@ -90,19 +90,21 @@ export default function ProjectCostCalculatorPage() {
           />
         </div>
       </Section>
-      <Section className="border-border bg-secondary/35 border-y" spacing="sm">
+      <Section className="bg-surface-2" spacing="sm">
         <div className="container-page">
           <ProjectCostCalculator />
         </div>
       </Section>
       <Section>
         <div className="container-page max-w-3xl">
-          <SectionHeader
-            eyebrow="Questions"
-            title="What the estimate means"
-            description="Clear boundaries make an early estimate useful rather than misleading."
-          />
-          <FaqDetails faqs={calculatorFaqs} className="mt-10" />
+          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
+            What the estimate means
+          </h2>
+          <p className="text-muted-foreground mt-3 text-[16px] leading-[1.6]">
+            Clear boundaries make an early estimate useful rather than
+            misleading.
+          </p>
+          <FaqDetails faqs={calculatorFaqs} className="mt-8" />
         </div>
       </Section>
     </>
@@ -119,13 +121,15 @@ function TrustItem({
   description: string;
 }) {
   return (
-    <div className="border-border bg-card flex gap-4 rounded-2xl border p-5 shadow-[var(--shadow-soft)]">
-      <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-xl">
+    <div className="bg-surface-2 flex gap-4 rounded-[24px] p-6">
+      <span className="bg-background text-primary flex size-11 shrink-0 items-center justify-center rounded-[14px]">
         <Icon className="size-5" />
       </span>
       <div>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        <h3 className="text-[16px] font-semibold tracking-[-0.01em]">
+          {title}
+        </h3>
+        <p className="text-muted-foreground mt-1.5 text-[14px] leading-[1.55]">
           {description}
         </p>
       </div>

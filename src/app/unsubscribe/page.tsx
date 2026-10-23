@@ -70,12 +70,12 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
               : "text-muted-foreground size-8"
           }
         />
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
           {outcome.reason === "storage-failed"
             ? "Something went wrong"
             : "This link is not valid"}
         </h1>
-        <p className="text-muted-foreground leading-relaxed">
+        <p className="text-muted-foreground text-[15px] leading-[1.6]">
           {message} Email{" "}
           <a
             href={`mailto:${siteConfig.contact.email}`}
@@ -97,15 +97,15 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
         className="size-8"
         style={{ color: "var(--chart-3)" }}
       />
-      <h1 className="text-2xl font-semibold tracking-tight">
+      <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
         You are unsubscribed
       </h1>
-      <p className="text-muted-foreground leading-relaxed">
+      <p className="text-muted-foreground text-[15px] leading-[1.6]">
         <span className="text-foreground font-medium">{outcome.email}</span>{" "}
         will not receive anything further from us. No confirmation step, and
         nothing else to do.
       </p>
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      <p className="text-muted-foreground text-[13px] leading-[1.6]">
         We have also removed the business record this was linked to. If you
         would like the rest of your details deleted as well, email{" "}
         <a
@@ -116,7 +116,11 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
         </a>{" "}
         and we will do it.
       </p>
-      <Button asChild variant="secondary">
+      <Button
+        asChild
+        variant="secondary"
+        className="bg-surface-2 mt-2 self-start"
+      >
         <Link href="/">Go to {siteConfig.name}</Link>
       </Button>
     </Shell>
@@ -125,13 +129,13 @@ export default async function UnsubscribePage({ searchParams }: PageProps) {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <main className="mx-auto w-full max-w-xl px-5 py-16 sm:px-6 sm:py-24">
-      <div className="space-y-4">
+    <main className="bg-surface-2 flex min-h-screen items-center justify-center px-5 py-16 sm:px-6 sm:py-24">
+      <div className="bg-background flex w-full max-w-xl flex-col gap-4 rounded-[28px] p-7 sm:p-9">
         <Link
           href="/"
-          className="text-primary text-sm font-semibold tracking-wide"
+          className="text-primary text-[13px] font-semibold tracking-[0.08em] uppercase"
         >
-          {siteConfig.name.toUpperCase()}
+          {siteConfig.name}
         </Link>
         {children}
       </div>

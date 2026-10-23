@@ -56,11 +56,13 @@ export default async function PublicProposalPage({ params }: PageProps) {
   const isOpen = proposal.status === "sent" || proposal.status === "viewed";
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-6 py-10 sm:py-14 print:py-0">
-      <ProposalDocument
-        proposal={proposal}
-        actions={isOpen ? <ProposalResponse token={token} /> : null}
-      />
+    <div className="px-5 py-6 sm:px-6 sm:py-8 print:p-0">
+      <div className="bg-background mx-auto w-full max-w-4xl rounded-[28px] p-7 sm:p-10 print:max-w-none print:rounded-none print:p-0">
+        <ProposalDocument
+          proposal={proposal}
+          actions={isOpen ? <ProposalResponse token={token} /> : null}
+        />
+      </div>
     </div>
   );
 }

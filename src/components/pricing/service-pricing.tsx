@@ -23,17 +23,17 @@ export function ServicePricing({ slug }: { slug: string }) {
 
   return (
     <div
-      className="border-border bg-card rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+      className="bg-surface-2 rounded-[24px] p-6"
       aria-label="Starting pricing"
     >
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-muted-foreground text-[13px] font-medium tracking-[0.06em] uppercase">
           Starting from
         </span>
         <div
           role="tablist"
           aria-label="Select currency"
-          className="bg-muted/60 rounded-full p-1"
+          className="bg-background flex rounded-full p-1 shadow-[var(--shadow-soft)]"
         >
           {rows.map((r) => {
             const isActive = r.currency === active;
@@ -45,9 +45,9 @@ export function ServicePricing({ slug }: { slug: string }) {
                 aria-selected={isActive}
                 onClick={() => setActive(r.currency)}
                 className={cn(
-                  "min-h-11 rounded-full px-3 py-2 text-sm font-semibold transition-colors",
+                  "min-h-11 rounded-full px-4 text-[13px] font-medium transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground"
+                    ? "bg-foreground text-background"
                     : "text-muted-foreground hover:text-foreground",
                 )}
               >
@@ -58,20 +58,20 @@ export function ServicePricing({ slug }: { slug: string }) {
         </div>
       </div>
 
-      <p className="mt-4 text-3xl font-bold tracking-tight">
-        from {current.formatted}
-        <span className="text-muted-foreground ml-2 text-sm font-normal">
+      <p className="mt-5 text-[36px] leading-none font-semibold tracking-[-0.035em]">
+        {current.formatted}
+        <span className="text-muted-foreground ml-2 text-[13px] font-normal tracking-normal">
           {unitPhrase(current.unit)}
         </span>
       </p>
 
       {/* The other two currencies stay in the DOM (SEO + citation safety). */}
-      <p className="text-muted-foreground mt-1 text-sm">
+      <p className="text-muted-foreground mt-2 text-[13px]">
         Also: {others.map((r) => `${r.formatted} ${r.currency}`).join(" · ")}{" "}
         {unitPhrase(current.unit)}
       </p>
 
-      <p className="text-muted-foreground mt-3 text-xs leading-relaxed">
+      <p className="text-muted-foreground mt-4 text-[13px] leading-relaxed">
         Indicative starting price for a scoped engagement. Final quotes are
         fixed after a short discovery call — no surprises.
       </p>

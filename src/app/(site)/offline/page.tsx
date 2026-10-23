@@ -17,14 +17,14 @@ export default function OfflinePage() {
   return (
     <section className="relative flex min-h-[70vh] items-center overflow-hidden">
       <div className="container-page">
-        <div className="border-border bg-card mx-auto max-w-xl rounded-3xl border p-8 text-center shadow-[var(--shadow-lift)] sm:p-10">
-          <span className="bg-primary/10 text-primary mx-auto flex size-14 items-center justify-center rounded-2xl">
-            <CloudOff className="size-6" />
+        <div className="bg-surface-2 mx-auto max-w-xl rounded-[32px] p-8 text-center sm:p-10">
+          <span className="bg-background text-primary mx-auto flex size-16 items-center justify-center rounded-[20px]">
+            <CloudOff className="size-7" />
           </span>
-          <h1 className="mt-6 text-3xl font-semibold">
+          <h1 className="mt-6 text-[36px] leading-[1.1] font-semibold tracking-[-0.025em]">
             You appear to be offline
           </h1>
-          <p className="text-muted-foreground mt-3 leading-relaxed">
+          <p className="text-muted-foreground mt-3 text-[17px] leading-[1.6]">
             Reconnect to load live pages, submit forms, run calculators backed
             by APIs, or use the AI consultant. This route is informational; full
             offline caching is not currently claimed.

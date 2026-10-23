@@ -65,7 +65,7 @@ export default function ToolsPage() {
             title="Get a useful range in minutes"
             description="Every calculator uses the same transparent delivery model, with a preset tailored to the decision you are making."
           />
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
+          <div className="mt-14 grid gap-3 md:grid-cols-2">
             <ToolCard
               href="/project-cost-calculator"
               title="Software project cost calculator"
@@ -83,25 +83,25 @@ export default function ToolsPage() {
           </div>
         </div>
       </Section>
-      <Section className="border-border bg-secondary/35 border-y">
+      <Section className="bg-surface-2">
         <div className="container-page">
           <SectionHeader
             eyebrow="Website intelligence"
             title="Find practical improvements without an invasive scan"
             description="The public audit reads one public webpage and its response headers, with strict destination, redirect, timeout, and response-size controls."
           />
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
-            <article className="border-primary/30 bg-primary/5 rounded-2xl border p-6">
-              <span className="bg-primary text-primary-foreground flex size-11 items-center justify-center rounded-xl">
+          <div className="mt-14 grid gap-3 md:grid-cols-2">
+            <article className="bg-background rounded-[28px] p-7">
+              <span className="bg-surface-2 text-primary flex size-11 items-center justify-center rounded-[14px]">
                 <Gauge className="size-5" />
               </span>
-              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-muted-foreground mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                 Available now
               </p>
-              <h2 className="mt-4 text-lg font-semibold">
+              <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.02em]">
                 Website audit & improvement report
               </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                 Review initial SEO, response performance, accessibility markup,
                 HTTPS, and defensive headers with clear limitations.
               </p>
@@ -112,42 +112,42 @@ export default function ToolsPage() {
                 </Link>
               </Button>
             </article>
-            <article className="border-primary/30 bg-card rounded-2xl border p-6">
-              <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+            <article className="bg-background rounded-[28px] p-7">
+              <span className="bg-surface-2 text-primary flex size-11 items-center justify-center rounded-[14px]">
                 <Bot className="size-5" />
               </span>
-              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-muted-foreground mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                 Available now
               </p>
-              <h2 className="mt-4 text-lg font-semibold">
+              <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.02em]">
                 AI project consultant
               </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                 Turn a project brief into a structured service, scope,
                 technology, budget, timeline, and team recommendation.
               </p>
-              <Button asChild variant="outline" className="mt-6">
+              <Button asChild variant="secondary" className="bg-surface-2 mt-6">
                 <Link href="/ai-project-consultant">
                   Consult AI assistant
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
             </article>
-            <article className="border-primary/30 bg-card rounded-2xl border p-6">
-              <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+            <article className="bg-background rounded-[28px] p-7">
+              <span className="bg-surface-2 text-primary flex size-11 items-center justify-center rounded-[14px]">
                 <Laptop className="size-5" />
               </span>
-              <p className="text-muted-foreground mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-muted-foreground mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                 Free download
               </p>
-              <h2 className="mt-4 text-lg font-semibold">
+              <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.02em]">
                 Notes — AI desktop app
               </h2>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                 A free AI assistant for Mac and Windows: explain anything on
                 your screen, chat, or ask by voice.
               </p>
-              <Button asChild variant="outline" className="mt-6">
+              <Button asChild variant="secondary" className="bg-surface-2 mt-6">
                 <Link href="/notes">
                   Download Notes free
                   <ArrowRight className="size-4" />
@@ -157,16 +157,18 @@ export default function ToolsPage() {
             {plannedTools.map((tool) => (
               <div
                 key={tool.title}
-                className="border-border bg-card rounded-2xl border p-6"
+                className="bg-background rounded-[28px] p-7"
               >
-                <span className="bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl">
+                <span className="bg-surface-2 text-primary flex size-11 items-center justify-center rounded-[14px]">
                   <tool.icon className="size-5" />
                 </span>
-                <p className="text-muted-foreground/70 mt-5 text-xs font-semibold tracking-[0.16em] uppercase">
+                <p className="text-muted-foreground/70 mt-5 text-[11px] font-semibold tracking-[0.14em] uppercase">
                   In development
                 </p>
-                <h2 className="mt-4 text-lg font-semibold">{tool.title}</h2>
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <h2 className="mt-3 text-[24px] font-semibold tracking-[-0.02em]">
+                  {tool.title}
+                </h2>
+                <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                   {tool.description}
                 </p>
               </div>
@@ -181,7 +183,7 @@ export default function ToolsPage() {
             title="Find where the next customer is"
             description="Check how AI search sees your site, estimate what a better conversion rate is worth, and start from a design direction that is already thought through."
           />
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+          <div className="mt-14 grid gap-3 md:grid-cols-3">
             <ToolCard
               href="/ai-visibility-check"
               title="AI visibility check"
@@ -204,7 +206,7 @@ export default function ToolsPage() {
               cta="Browse templates"
             />
           </div>
-          <div className="mt-5 grid gap-5 md:grid-cols-2">
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
             <ToolCard
               href="/answers"
               title="Answer library"
@@ -245,21 +247,37 @@ function ToolCard({
     <article
       className={
         featured
-          ? "border-primary/30 bg-primary/5 rounded-3xl border p-7 md:col-span-2"
-          : "border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-soft)]"
+          ? "bg-foreground text-background rounded-[28px] p-7 md:col-span-2"
+          : "bg-surface-2 rounded-[28px] p-7"
       }
     >
-      <span className="bg-primary text-primary-foreground flex size-12 items-center justify-center rounded-2xl">
+      <span
+        className={
+          featured
+            ? "flex size-11 items-center justify-center rounded-[14px] bg-white/10 text-white"
+            : "bg-background text-primary flex size-11 items-center justify-center rounded-[14px]"
+        }
+      >
         <Icon className="size-5" />
       </span>
-      <h2 className="mt-5 text-xl font-semibold">{title}</h2>
-      <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-relaxed">
+      <h2 className="mt-5 text-[24px] font-semibold tracking-[-0.02em]">
+        {title}
+      </h2>
+      <p
+        className={
+          featured
+            ? "text-background/70 mt-2 max-w-2xl text-[15px] leading-[1.55]"
+            : "text-muted-foreground mt-2 max-w-2xl text-[15px] leading-[1.55]"
+        }
+      >
         {description}
       </p>
       <Button
         asChild
-        variant={featured ? "default" : "outline"}
-        className="mt-6"
+        variant={featured ? "secondary" : "outline"}
+        className={
+          featured ? "mt-6 bg-white text-[#1d1d1f] hover:bg-white/90" : "mt-6"
+        }
       >
         <Link href={href}>
           {cta}

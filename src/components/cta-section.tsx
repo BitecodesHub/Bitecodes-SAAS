@@ -85,6 +85,10 @@ const PRESETS: Record<
   },
 };
 
+/**
+ * The closing statement. A single full-bleed graphite band gives every page a
+ * deliberate ending and makes the two actions the only bright objects in view.
+ */
 export function CtaSection({
   variant = "project",
   title,
@@ -100,47 +104,47 @@ export function CtaSection({
   const resolvedSecondary = secondary ?? preset.secondary;
 
   return (
-    <section className={cn("container-page py-20 sm:py-28", className)}>
-      <Reveal>
-        <div className="bg-primary text-primary-foreground relative overflow-hidden rounded-3xl px-6 py-16 text-center sm:px-16 sm:py-20">
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {resolvedTitle}
-            </h2>
-            <p className="text-primary-foreground/85 mt-4 text-base leading-relaxed text-pretty sm:text-lg">
-              {resolvedDescription}
-            </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                asChild
-                size="lg"
-                className="bg-background text-foreground hover:bg-background/90 min-h-[44px]"
+    <section
+      className={cn("bg-[#1d1d1f] text-white dark:bg-[#101012]", className)}
+    >
+      <div className="container-page py-24 sm:py-32">
+        <Reveal className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          <h2 className="text-[clamp(2.25rem,5vw,4.5rem)] leading-[1.03] font-semibold tracking-[-0.035em] text-balance">
+            {resolvedTitle}
+          </h2>
+          <p className="mt-5 max-w-2xl text-[17px] leading-[1.6] text-pretty text-white/65 sm:text-[19px]">
+            {resolvedDescription}
+          </p>
+          <div className="mt-9 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-[#1d1d1f] hover:bg-white/90"
+            >
+              <Link
+                href={resolvedPrimary.href}
+                data-track={resolvedPrimary.track}
               >
-                <Link
-                  href={resolvedPrimary.href}
-                  data-track={resolvedPrimary.track}
-                >
-                  {resolvedPrimary.label}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 min-h-[44px] bg-transparent"
+                {resolvedPrimary.label}
+                <ArrowRight className="size-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="border border-white/25 text-white hover:bg-white/10 hover:text-white"
+            >
+              <Link
+                href={resolvedSecondary.href}
+                data-track={resolvedSecondary.track}
               >
-                <Link
-                  href={resolvedSecondary.href}
-                  data-track={resolvedSecondary.track}
-                >
-                  {resolvedSecondary.label}
-                </Link>
-              </Button>
-            </div>
+                {resolvedSecondary.label}
+              </Link>
+            </Button>
           </div>
-        </div>
-      </Reveal>
+        </Reveal>
+      </div>
     </section>
   );
 }

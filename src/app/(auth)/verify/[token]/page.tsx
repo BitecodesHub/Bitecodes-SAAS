@@ -29,7 +29,7 @@ export default async function VerifyTokenPage({
   const valid = await peekToken(token, "verify-email");
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
+    <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
       {valid ? (
         <>
           <div className="flex items-start gap-3">
@@ -38,10 +38,10 @@ export default async function VerifyTokenPage({
               className="text-primary mt-0.5 size-5 shrink-0"
             />
             <div>
-              <h1 className="text-xl font-semibold tracking-tight">
+              <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
                 Confirm your email
               </h1>
-              <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
                 One click and your account is live, with free credits on every
                 product.
               </p>
@@ -53,10 +53,10 @@ export default async function VerifyTokenPage({
         </>
       ) : (
         <>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em]">
             This link is no longer valid
           </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
             Confirmation links work once and expire after 48 hours. If your
             account is already confirmed, just sign in. Otherwise, enter your
             address and we will send a fresh link.

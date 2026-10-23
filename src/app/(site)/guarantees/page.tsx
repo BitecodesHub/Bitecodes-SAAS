@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Check } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { Section, SectionHeader } from "@/components/section";
+import { Section } from "@/components/section";
 import { Reveal } from "@/components/motion/reveal";
 import { FaqDetails } from "@/components/faq/faq-details";
 import { CtaSection } from "@/components/cta-section";
@@ -44,7 +44,7 @@ export default function GuaranteesPage() {
 
       <Section spacing="sm">
         <div className="container-page max-w-3xl">
-          <p className="text-muted-foreground leading-relaxed">
+          <p className="text-muted-foreground text-[19px] leading-[1.6]">
             The signed proposal and statement of work set the binding terms for
             an engagement. This page explains the commitments we bring to that
             agreement. If a point matters to your organisation, ask us to
@@ -53,9 +53,9 @@ export default function GuaranteesPage() {
         </div>
       </Section>
 
-      <Section spacing="sm">
+      <Section spacing="sm" className="bg-surface-2">
         <div className="container-page">
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2">
             {guarantees.map((guarantee) => {
               const appliesTo = guarantee.appliesTo.includes("all")
                 ? ["All services"]
@@ -64,18 +64,18 @@ export default function GuaranteesPage() {
                   );
               return (
                 <Reveal key={guarantee.slug}>
-                  <article className="border-border bg-card flex h-full flex-col rounded-2xl border p-7 shadow-[var(--shadow-soft)]">
-                    <h2 className="text-xl font-semibold tracking-tight">
+                  <article className="bg-background flex h-full flex-col rounded-[28px] p-7">
+                    <h2 className="text-[24px] font-semibold tracking-[-0.02em]">
                       {guarantee.title}
                     </h2>
-                    <p className="mt-3 leading-relaxed">
+                    <p className="mt-3 text-[16px] leading-relaxed">
                       {guarantee.commitment}
                     </p>
                     <ul className="mt-5 space-y-3">
                       {guarantee.details.map((detail) => (
                         <li
                           key={detail}
-                          className="text-muted-foreground flex items-start gap-3 text-sm leading-relaxed"
+                          className="text-muted-foreground flex items-start gap-3 text-[15px] leading-relaxed"
                         >
                           <span className="bg-primary/10 text-primary mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full">
                             <Check className="size-3.5" />
@@ -84,7 +84,7 @@ export default function GuaranteesPage() {
                         </li>
                       ))}
                     </ul>
-                    <p className="text-muted-foreground mt-auto pt-6 text-xs">
+                    <p className="text-muted-foreground mt-auto pt-6 text-[13px]">
                       Applies to:{" "}
                       {guarantee.appliesTo.includes("all") ? (
                         appliesTo[0]
@@ -112,14 +112,15 @@ export default function GuaranteesPage() {
         </div>
       </Section>
 
-      <Section spacing="sm" className="border-border border-t">
+      <Section spacing="sm">
         <div className="container-page">
-          <SectionHeader
-            eyebrow="FAQ"
-            title="Questions about the commitments"
-            description="How the commitments interact with the contract, defects, timelines, and support."
-            align="left"
-          />
+          <h2 className="max-w-3xl text-[clamp(1.75rem,2.8vw,2.5rem)] leading-[1.1] font-semibold tracking-[-0.025em]">
+            Questions about the commitments
+          </h2>
+          <p className="text-muted-foreground mt-3 max-w-2xl text-[17px] leading-relaxed">
+            How the commitments interact with the contract, defects, timelines,
+            and support.
+          </p>
           <FaqDetails faqs={guaranteeFaqs} className="mt-8 max-w-3xl" />
         </div>
       </Section>

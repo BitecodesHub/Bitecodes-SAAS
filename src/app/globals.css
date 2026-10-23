@@ -23,39 +23,43 @@
      Initialised to 0 here so SSR-rendered floating buttons start correctly. */
   --sticky-cta-height: 0px;
 
-  /* Light theme — pure white canvas, near-black ink, single indigo accent */
+  /*
+   * Light appearance. Values follow Apple's published web surfaces: pure
+   * white content (#ffffff), the #f5f5f7 band, #1d1d1f ink, and #6e6e73
+   * secondary text (5.1:1 on white, 4.7:1 on the band). Indigo remains the
+   * single brand accent and is reserved for actions and links.
+   */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.18 0.014 281);
+  --foreground: oklch(0.226 0.004 286);
 
-  /* Alternating band surface for quiet section separation (Apple #f5f5f7). */
-  --surface-2: oklch(0.972 0.002 286);
+  --surface-2: oklch(0.968 0.002 286);
 
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.014 281);
+  --card-foreground: oklch(0.226 0.004 286);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.014 281);
+  --popover-foreground: oklch(0.226 0.004 286);
 
   --primary: oklch(0.45 0.2 282);
   --primary-foreground: oklch(0.99 0 0);
 
-  --secondary: oklch(0.968 0.006 281);
-  --secondary-foreground: oklch(0.22 0.014 281);
+  --secondary: oklch(0.968 0.002 286);
+  --secondary-foreground: oklch(0.226 0.004 286);
 
-  --muted: oklch(0.968 0.006 281);
-  --muted-foreground: oklch(0.46 0.014 281);
+  --muted: oklch(0.968 0.002 286);
+  --muted-foreground: oklch(0.52 0.006 286);
 
-  --accent: oklch(0.96 0.014 282);
-  --accent-foreground: oklch(0.26 0.03 282);
+  --accent: oklch(0.934 0.003 286);
+  --accent-foreground: oklch(0.226 0.004 286);
 
   --destructive: oklch(0.55 0.22 27);
   --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.905 0.006 281);
-  --input: oklch(0.905 0.006 281);
+  --border: oklch(0.87 0.004 286);
+  --input: oklch(0.87 0.004 286);
   --ring: oklch(0.45 0.2 282);
 
-  /* Brand ramp — one accent, three stops for restrained gradients */
+  /* Brand ramp — one accent, three stops for restrained emphasis */
   --brand-1: oklch(0.45 0.2 282); /* indigo   */
   --brand-2: oklch(0.48 0.19 273); /* indigo-violet */
   --brand-3: oklch(0.52 0.16 258); /* periwinkle   */
@@ -99,42 +103,42 @@
 }
 
 .dark {
-  /* Refined near-black with a cool indigo undertone */
-  --background: oklch(0.15 0.018 281);
-  --foreground: oklch(0.97 0.004 285);
+  /* True-black canvas and graphite cards, as Apple uses in dark appearance. */
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.968 0.002 286);
 
-  --card: oklch(0.198 0.02 282);
-  --card-foreground: oklch(0.97 0.004 285);
+  --card: oklch(0.226 0.004 286);
+  --card-foreground: oklch(0.968 0.002 286);
 
-  --popover: oklch(0.185 0.02 282);
-  --popover-foreground: oklch(0.97 0.004 285);
+  --popover: oklch(0.24 0.004 286);
+  --popover-foreground: oklch(0.968 0.002 286);
 
-  --primary: oklch(0.68 0.2 287);
-  --primary-foreground: oklch(0.14 0.02 282);
+  --primary: oklch(0.72 0.18 287);
+  --primary-foreground: oklch(0.13 0.01 286);
 
-  --secondary: oklch(0.25 0.018 282);
-  --secondary-foreground: oklch(0.97 0.004 285);
+  --secondary: oklch(0.24 0.004 286);
+  --secondary-foreground: oklch(0.968 0.002 286);
 
-  --muted: oklch(0.25 0.018 282);
-  --muted-foreground: oklch(0.72 0.025 283);
+  --muted: oklch(0.24 0.004 286);
+  --muted-foreground: oklch(0.7 0.006 286);
 
-  --accent: oklch(0.3 0.04 285);
-  --accent-foreground: oklch(0.97 0.004 285);
+  --accent: oklch(0.28 0.006 286);
+  --accent-foreground: oklch(0.968 0.002 286);
 
   --destructive: oklch(0.64 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(1 0 0 / 9%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.68 0.2 287);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.72 0.18 287);
 
-  --brand-1: oklch(0.7 0.2 287);
-  --brand-2: oklch(0.68 0.18 276);
-  --brand-3: oklch(0.74 0.15 260);
+  --brand-1: oklch(0.72 0.18 287);
+  --brand-2: oklch(0.7 0.16 276);
+  --brand-3: oklch(0.76 0.14 260);
 
-  --surface-2: oklch(0.185 0.018 281);
+  --surface-2: oklch(0.226 0.004 286);
 
-  --glow: oklch(0.68 0.2 287 / 0.4);
+  --glow: oklch(0.72 0.18 287 / 0.4);
 
   /*
    * Dark chart palette — the same five hues re-stepped for the dark card
@@ -185,9 +189,18 @@
   --color-brand-3: var(--brand-3);
   --color-surface-2: var(--surface-2);
 
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  /*
+   * SF Pro on Apple hardware, Inter everywhere else. Keeping the system face
+   * first is deliberate: navigation and controls should feel native, and the
+   * two faces share the same geometric-grotesque proportions.
+   */
+  --font-sans:
+    "SF Pro Text", "SF Pro Display", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
-  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 8px);
   --radius-md: calc(var(--radius) - 4px);
@@ -195,10 +208,8 @@
   --radius-xl: calc(var(--radius) + 6px);
   --radius-2xl: calc(var(--radius) + 12px);
 
-  --shadow-soft:
-    0 1px 2px oklch(0.2 0.02 281 / 0.04), 0 8px 24px oklch(0.2 0.02 281 / 0.06);
-  --shadow-lift:
-    0 1px 2px oklch(0.2 0.02 281 / 0.05), 0 18px 48px oklch(0.2 0.02 281 / 0.1);
+  --shadow-soft: 0 1px 2px oklch(0 0 0 / 0.04), 0 10px 30px oklch(0 0 0 / 0.06);
+  --shadow-lift: 0 2px 6px oklch(0 0 0 / 0.05), 0 28px 70px oklch(0 0 0 / 0.13);
   /* Legacy alias — glow shadows are retired; hovers lift neutrally instead. */
   --shadow-glow: var(--shadow-lift);
 
@@ -214,7 +225,7 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
-    scroll-padding-top: 5rem;
+    scroll-padding-top: 4.5rem;
     overflow-x: clip;
   }
 
@@ -222,6 +233,10 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    /* Apple's web body size: 17px, with generous leading for reading. */
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    letter-spacing: -0.011em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -241,17 +256,18 @@
     font-family: var(--font-display);
     font-optical-sizing: auto;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
   }
 
   ::selection {
-    background-color: oklch(0.45 0.2 282 / 0.18);
+    background-color: oklch(0.45 0.2 282 / 0.2);
   }
 
   :focus-visible {
     outline: 2px solid var(--color-ring);
-    outline-offset: 2px;
-    border-radius: 3px;
+    outline-offset: 3px;
+    border-radius: 4px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -270,13 +286,19 @@
   .container-page {
     width: 100%;
     margin-inline: auto;
-    padding-inline: 1.25rem;
-    max-width: 80rem;
+    padding-inline: 1.5rem;
+    max-width: 76rem;
   }
 
   @media (min-width: 640px) {
     .container-page {
       padding-inline: 2rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .container-page {
+      padding-inline: 2.5rem;
     }
   }
 
@@ -301,15 +323,27 @@
     background-image: none;
   }
 
-  /* Frosted glass surface — white-tinted, subtle. */
+  /*
+   * Frosted functional layer for the sticky header only — never for content
+   * cards. Regular material: enough blur to keep navigation legible over
+   * imagery, enough translucency that the page still shows through.
+   */
   .glass {
-    background-color: oklch(1 0 0 / 0.72);
-    backdrop-filter: saturate(180%) blur(14px);
-    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    background-color: oklch(1 0 0 / 0.76);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
 
   .dark .glass {
-    background-color: oklch(0.198 0.02 282 / 0.62);
+    background-color: oklch(0 0 0 / 0.68);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background-color: var(--color-background);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 
   /*

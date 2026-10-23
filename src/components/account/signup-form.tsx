@@ -156,7 +156,10 @@ export function SignupForm({
           required
           aria-describedby="password-rules"
         />
-        <p id="password-rules" className="text-muted-foreground text-xs">
+        <p
+          id="password-rules"
+          className="text-muted-foreground text-[13px] leading-[1.5]"
+        >
           At least 12 characters, with an uppercase letter, a lowercase letter,
           a number, and a symbol.
         </p>
@@ -187,7 +190,7 @@ export function SignupForm({
           name="terms"
           value="yes"
           required
-          className="border-input accent-primary mt-0.5 size-4 shrink-0 rounded"
+          className="border-input accent-primary mt-0.5 size-5 shrink-0 rounded"
         />
         <span className="text-muted-foreground leading-relaxed">
           I accept the{" "}

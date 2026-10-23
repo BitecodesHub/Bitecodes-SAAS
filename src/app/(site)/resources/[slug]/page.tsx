@@ -126,7 +126,7 @@ export default async function ResourcePage({
 
       <Section spacing="sm">
         <div className="container-page mx-auto max-w-3xl">
-          <div className="border-border text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 border-b pb-6 text-sm">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-[14px]">
             <span className="flex items-center gap-1.5">
               <Clock className="size-4" />
               {resource.readingMinutes} min read
@@ -157,44 +157,44 @@ export default async function ResourcePage({
             {resource.intro.map((paragraph) => (
               <p
                 key={paragraph}
-                className="text-muted-foreground text-base leading-relaxed sm:text-lg"
+                className="text-[19px] leading-[1.65] tracking-[-0.005em] text-pretty"
               >
                 {paragraph}
               </p>
             ))}
           </div>
 
-          <div className="mt-12 space-y-12">
+          <div className="mt-14 space-y-14">
             {resource.sections.map((section) => (
               <Reveal key={section.heading}>
                 <section>
-                  <h2 className="text-2xl font-semibold tracking-tight text-balance">
+                  <h2 className="text-[28px] leading-[1.2] font-semibold tracking-[-0.02em] text-balance">
                     {section.heading}
                   </h2>
                   <div className="mt-4 space-y-4">
                     {section.paragraphs.map((paragraph) => (
                       <p
                         key={paragraph}
-                        className="text-muted-foreground leading-relaxed"
+                        className="text-muted-foreground text-[17px] leading-[1.65]"
                       >
                         {paragraph}
                       </p>
                     ))}
                   </div>
                   {section.steps && section.steps.length > 0 ? (
-                    <ol className="mt-6 space-y-4">
+                    <ol className="mt-6 space-y-3">
                       {section.steps.map((step, stepIndex) => (
                         <li
                           key={step.title}
-                          className="border-border bg-card rounded-2xl border p-5"
+                          className="bg-surface-2 rounded-[20px] p-5"
                         >
-                          <p className="font-medium">
+                          <p className="text-[16px] font-semibold">
                             <span className="text-muted-foreground mr-2 tabular-nums">
                               {String(stepIndex + 1).padStart(2, "0")}
                             </span>
                             {step.title}
                           </p>
-                          <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+                          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.6]">
                             {step.text}
                           </p>
                         </li>
@@ -206,7 +206,7 @@ export default async function ResourcePage({
                       {section.bullets.map((bullet) => (
                         <li
                           key={bullet}
-                          className="text-muted-foreground flex items-start gap-3 text-sm leading-relaxed"
+                          className="text-muted-foreground flex items-start gap-3 text-[16px] leading-[1.6]"
                         >
                           <span
                             aria-hidden="true"
@@ -223,7 +223,7 @@ export default async function ResourcePage({
           </div>
 
           {resource.checklist ? (
-            <div id="checklist" className="mt-14 scroll-mt-24">
+            <div id="checklist" className="mt-16 scroll-mt-24">
               <ResourceChecklistForm
                 slug={resource.slug}
                 resourceTitle={resource.title}
@@ -234,15 +234,17 @@ export default async function ResourcePage({
           ) : null}
 
           {resource.faqs && resource.faqs.length > 0 ? (
-            <div className="border-border mt-14 border-t pt-10">
-              <h2 className="text-2xl font-semibold tracking-tight">
+            <div className="bg-surface-2 mt-16 rounded-[28px] p-7 sm:p-9">
+              <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
                 Frequently asked
               </h2>
               <dl className="mt-6 space-y-6">
                 {resource.faqs.map((faq) => (
                   <div key={faq.question}>
-                    <dt className="font-medium">{faq.question}</dt>
-                    <dd className="text-muted-foreground mt-2 leading-relaxed">
+                    <dt className="text-[16px] font-semibold">
+                      {faq.question}
+                    </dt>
+                    <dd className="text-muted-foreground mt-2 text-[15px] leading-[1.6]">
                       {faq.answer}
                     </dd>
                   </div>
@@ -251,10 +253,10 @@ export default async function ResourcePage({
             </div>
           ) : null}
 
-          <div className="border-border mt-12 flex flex-wrap items-center justify-between gap-4 border-t pt-8">
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-4">
             <Link
               href="/resources"
-              className="text-primary inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:underline"
+              className="text-primary inline-flex min-h-11 items-center gap-2 text-[15px] font-medium hover:underline"
               data-track="resource-back-to-index"
             >
               <ArrowLeft className="size-4" />
@@ -268,7 +270,7 @@ export default async function ResourcePage({
             </Button>
           </div>
 
-          <p className="text-muted-foreground mt-8 text-xs leading-relaxed">
+          <p className="text-muted-foreground mt-8 text-[13px] leading-[1.6]">
             Written and maintained by {siteConfig.name}. If something here is
             wrong or out of date, tell us and we will correct it.
           </p>
@@ -276,24 +278,24 @@ export default async function ResourcePage({
       </Section>
 
       {related.length > 0 ? (
-        <Section spacing="sm" className="border-border border-t">
+        <Section spacing="sm" className="bg-surface-2">
           <div className="container-page">
-            <h2 className="text-xl font-semibold tracking-tight">
+            <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[32px]">
               Related guides
             </h2>
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <div className="mt-8 grid gap-3 md:grid-cols-2">
               {related.map((item) => (
                 <Link
                   key={item.slug}
                   href={`/resources/${item.slug}`}
-                  className="group border-border bg-card hover:border-primary/30 rounded-2xl border p-6 shadow-[var(--shadow-soft)] transition-colors"
+                  className="group bg-background rounded-[24px] p-7 transition-all duration-300 hover:shadow-[var(--shadow-soft)]"
                   data-track="resource-related"
                 >
                   <Badge variant="secondary">{item.category}</Badge>
-                  <h3 className="group-hover:text-primary mt-3 leading-snug font-semibold">
+                  <h3 className="group-hover:text-primary mt-4 text-[19px] leading-[1.3] font-semibold tracking-[-0.01em] transition-colors">
                     {item.title}
                   </h3>
-                  <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                  <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                     {item.description}
                   </p>
                 </Link>

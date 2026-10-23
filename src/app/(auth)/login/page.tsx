@@ -35,16 +35,16 @@ export default async function LoginPage({
   const errorMessage = authErrorMessage(error);
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-7 shadow-[var(--shadow-lift)]">
-      <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+    <div className="bg-surface-2 rounded-[28px] p-7 sm:p-8">
+      <h1 className="text-[24px] font-semibold tracking-[-0.02em]">Sign in</h1>
+      <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
         Your chatbots, forms, calendars, and credits.
       </p>
 
       {errorMessage && (
         <p
           role="alert"
-          className="border-destructive/40 bg-destructive/5 text-destructive mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+          className="bg-destructive/10 text-destructive mt-4 rounded-[16px] p-4 text-[14px] leading-[1.55]"
         >
           {errorMessage}
         </p>
@@ -53,7 +53,7 @@ export default async function LoginPage({
       {verified === "1" && (
         <p
           role="status"
-          className="border-border bg-muted/40 mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+          className="bg-background mt-4 rounded-[16px] p-4 text-[14px] leading-[1.55]"
         >
           Your email address is confirmed. Sign in to get started.
         </p>
@@ -62,7 +62,7 @@ export default async function LoginPage({
       {reset === "done" && (
         <p
           role="status"
-          className="border-border bg-muted/40 mt-4 rounded-xl border p-3.5 text-sm leading-relaxed"
+          className="bg-background mt-4 rounded-[16px] p-4 text-[14px] leading-[1.55]"
         >
           Your password has been changed. Sign in with the new one.
         </p>
@@ -92,7 +92,7 @@ export default async function LoginPage({
         </div>
       )}
 
-      <p className="text-muted-foreground mt-6 text-center text-xs leading-relaxed">
+      <p className="text-muted-foreground mt-6 text-center text-[13px] leading-relaxed">
         <Link
           href="/forgot"
           className="hover:text-foreground underline underline-offset-4"
@@ -101,7 +101,7 @@ export default async function LoginPage({
         </Link>
       </p>
 
-      <p className="text-muted-foreground mt-4 border-t border-[var(--border)] pt-5 text-center text-sm">
+      <p className="text-muted-foreground mt-4 pt-5 text-center text-[14px]">
         New here?{" "}
         <Link
           href="/signup"

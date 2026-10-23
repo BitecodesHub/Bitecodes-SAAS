@@ -40,12 +40,14 @@ export function RevenueCalculator() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr] lg:items-start">
-      <div className="border-border bg-card rounded-3xl border p-6 shadow-[var(--shadow-soft)] sm:p-8">
+      <div className="bg-surface-2 rounded-[28px] p-7 sm:p-9">
         <div className="flex items-center gap-2">
           <Target className="text-primary size-5" />
-          <h2 className="text-lg font-semibold">Your current funnel</h2>
+          <h2 className="text-[19px] font-semibold tracking-[-0.01em]">
+            Your current funnel
+          </h2>
         </div>
-        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+        <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
           Use your own numbers. A rough estimate is enough; the arithmetic is
           shown in the results.
         </p>
@@ -99,18 +101,18 @@ export function RevenueCalculator() {
       </div>
 
       <div className="space-y-4">
-        <div className="border-border bg-foreground text-background rounded-3xl border p-6 shadow-[var(--shadow-lift)] sm:p-8">
-          <p className="text-background/60 text-xs font-semibold tracking-[0.16em] uppercase">
+        <div className="bg-foreground text-background rounded-[28px] p-7 sm:p-9">
+          <p className="text-background/60 text-[11px] font-semibold tracking-[0.14em] uppercase">
             Current estimate
           </p>
-          <p className="mt-2 text-4xl font-semibold tracking-tight tabular-nums">
+          <p className="mt-2 text-4xl font-semibold tracking-[-0.03em] tabular-nums">
             {formatMoney(result.monthlyRevenue)}
             <span className="text-background/50 text-base font-normal">
               {" "}
               / month
             </span>
           </p>
-          <p className="text-background/60 mt-1 text-sm">
+          <p className="text-background/60 mt-1 text-[14px]">
             {formatMoney(result.annualRevenue)} per year at the current rate
           </p>
 
@@ -133,20 +135,20 @@ export function RevenueCalculator() {
           </div>
         </div>
 
-        <div className="border-primary/25 bg-primary/5 rounded-3xl border p-6 sm:p-8">
+        <div className="bg-primary/5 rounded-[28px] p-7 sm:p-9">
           {result.lostMonthlyRevenue > 0 ? (
             <>
-              <p className="text-primary text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
                 Estimated opportunity
               </p>
-              <p className="text-foreground mt-2 text-4xl font-semibold tracking-tight tabular-nums">
+              <p className="text-foreground mt-2 text-4xl font-semibold tracking-[-0.03em] tabular-nums">
                 {formatMoney(result.lostAnnualRevenue)}
                 <span className="text-muted-foreground text-base font-normal">
                   {" "}
                   / year
                 </span>
               </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                 If the enquiry rate reached the {BENCHMARK_CONVERSION_RATE}%
                 reference point, at the same close rate, that is{" "}
                 {formatMoney(result.lostMonthlyRevenue)} more revenue each month
@@ -155,13 +157,13 @@ export function RevenueCalculator() {
             </>
           ) : (
             <>
-              <p className="text-primary text-xs font-semibold tracking-[0.16em] uppercase">
+              <p className="text-primary text-[11px] font-semibold tracking-[0.14em] uppercase">
                 Above the reference point
               </p>
-              <p className="text-foreground mt-2 text-2xl font-semibold tracking-tight">
+              <p className="text-foreground mt-2 text-2xl font-semibold tracking-[-0.02em]">
                 Your enquiry rate is {input.conversionRate.toFixed(1)}%.
               </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+              <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
                 That is at or above the {BENCHMARK_CONVERSION_RATE}% reference
                 used here. The scenarios below show what a further improvement
                 would be worth, with no claim that it is easy.
@@ -170,8 +172,8 @@ export function RevenueCalculator() {
           )}
         </div>
 
-        <div className="border-border bg-card rounded-3xl border p-6 shadow-[var(--shadow-soft)]">
-          <h3 className="text-sm font-semibold">
+        <div className="bg-surface-2 rounded-[28px] p-7">
+          <h3 className="text-[16px] font-semibold">
             What a better conversion rate is worth
           </h3>
           <div className="mt-4 space-y-3">
@@ -181,19 +183,19 @@ export function RevenueCalculator() {
                 className="border-border flex items-center justify-between gap-4 border-b pb-3 last:border-0 last:pb-0"
               >
                 <div>
-                  <p className="text-sm font-medium">
+                  <p className="text-[15px] font-medium">
                     +{Math.round(scenario.uplift * 100)}% enquiry rate
                   </p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-muted-foreground text-[13px]">
                     {scenario.extraLeads.toLocaleString("en-US")} extra
                     enquiries ·{" "}
                     {scenario.extraCustomers.toLocaleString("en-US")} extra
                     customers
                   </p>
                 </div>
-                <p className="text-sm font-semibold tabular-nums">
+                <p className="text-[15px] font-semibold tabular-nums">
                   +{formatMoney(scenario.extraAnnualRevenue)}
-                  <span className="text-muted-foreground text-xs font-normal">
+                  <span className="text-muted-foreground text-[13px] font-normal">
                     /yr
                   </span>
                 </p>
@@ -234,7 +236,7 @@ function SliderField({
       <div className="flex items-end justify-between gap-3">
         <div>
           <Label htmlFor={id}>{label}</Label>
-          <p className="text-muted-foreground mt-0.5 text-xs">{hint}</p>
+          <p className="text-muted-foreground mt-0.5 text-[13px]">{hint}</p>
         </div>
         <p className="text-lg font-semibold tabular-nums">{display}</p>
       </div>
@@ -262,10 +264,10 @@ function FunnelStat({
   label: string;
 }) {
   return (
-    <div className="bg-background/8 border-background/10 rounded-2xl border p-3">
+    <div className="bg-background/10 rounded-[16px] p-3">
       <Icon className="text-background/50 size-4" />
       <p className="mt-2 text-lg font-semibold tabular-nums">{value}</p>
-      <p className="text-background/55 text-xs">{label}</p>
+      <p className="text-background/55 text-[13px]">{label}</p>
     </div>
   );
 }
@@ -321,18 +323,18 @@ function ReportForm({
   }
 
   return (
-    <div className="border-border bg-card rounded-3xl border p-6 shadow-[var(--shadow-soft)]">
+    <div className="bg-surface-2 rounded-[28px] p-7">
       {state === "sent" ? (
         <div>
-          <p className="flex items-center gap-2 font-semibold">
+          <p className="flex items-center gap-2 text-[16px] font-semibold">
             <CheckCircle2 className="size-5 text-emerald-600" />
             Estimate sent
           </p>
-          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-2 text-[15px] leading-[1.55]">
             The numbers and assumptions are in your inbox. Nothing else was
             subscribed.
           </p>
-          <Button asChild variant="outline" className="mt-4">
+          <Button asChild variant="secondary" className="bg-background mt-4">
             <Link href={contactHref} data-track="revenue-contact">
               Talk through the numbers
               <ArrowRight className="size-4" />
@@ -343,9 +345,11 @@ function ReportForm({
         <form onSubmit={submit}>
           <div className="flex items-center gap-2">
             <Mail className="text-primary size-5" />
-            <h3 className="text-lg font-semibold">Email me this estimate</h3>
+            <h3 className="text-[19px] font-semibold tracking-[-0.01em]">
+              Email me this estimate
+            </h3>
           </div>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+          <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
             Keep the assumptions and scenarios for your next planning
             conversation.
           </p>
@@ -375,12 +379,12 @@ function ReportForm({
               />
             </div>
           </div>
-          <label className="text-muted-foreground mt-3 flex items-start gap-2 text-xs leading-relaxed">
+          <label className="text-muted-foreground mt-3 flex items-start gap-2 text-[13px] leading-relaxed">
             <input
               type="checkbox"
               checked={followUp}
               onChange={(event) => setFollowUp(event.target.checked)}
-              className="accent-primary mt-0.5 size-4"
+              className="accent-primary mt-0.5 size-5"
             />
             <span>
               You may contact me about this estimate. Leave unticked for the
@@ -388,7 +392,7 @@ function ReportForm({
             </span>
           </label>
           {message ? (
-            <p role="alert" className="text-destructive mt-3 text-sm">
+            <p role="alert" className="text-destructive mt-3 text-[14px]">
               {message}
             </p>
           ) : null}
@@ -410,7 +414,7 @@ function ReportForm({
                 </>
               )}
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="secondary" className="bg-background">
               <Link href={contactHref} data-track="revenue-contact">
                 Discuss the fixes
               </Link>

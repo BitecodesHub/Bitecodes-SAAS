@@ -98,14 +98,16 @@ export function AuditEmailForm({
     return (
       <section
         aria-live="polite"
-        className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+        className="bg-background mt-6 rounded-[24px] p-6 sm:p-7"
         data-track="audit-email-sent"
       >
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" />
           <div>
-            <h3 className="font-semibold">The report is on its way.</h3>
-            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            <h3 className="text-[16px] font-semibold">
+              The report is on its way.
+            </h3>
+            <p className="text-muted-foreground mt-1 text-[15px] leading-[1.55]">
               We sent it to {sentTo}. If it does not arrive within a few
               minutes, check the spam folder or run the audit again.
             </p>
@@ -118,12 +120,15 @@ export function AuditEmailForm({
   return (
     <section
       aria-labelledby="audit-email-heading"
-      className="border-border bg-card mt-6 rounded-2xl border p-6 shadow-[var(--shadow-soft)]"
+      className="bg-background mt-6 rounded-[24px] p-6 sm:p-7"
     >
-      <h3 id="audit-email-heading" className="text-lg font-semibold">
+      <h3
+        id="audit-email-heading"
+        className="text-[19px] font-semibold tracking-[-0.01em]"
+      >
         Email me this report
       </h3>
-      <p className="text-muted-foreground mt-1.5 text-sm leading-relaxed">
+      <p className="text-muted-foreground mt-1.5 text-[15px] leading-[1.55]">
         Optional. We will send the findings and the plain-language summary to
         your inbox so you can share them with your team or your developer.
       </p>
@@ -169,7 +174,7 @@ export function AuditEmailForm({
         {error ? (
           <p
             role="alert"
-            className="bg-destructive/10 text-destructive rounded-xl px-4 py-3 text-sm"
+            className="bg-destructive/10 text-destructive rounded-[14px] px-4 py-3 text-[14px]"
           >
             {error}
           </p>
