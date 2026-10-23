@@ -258,7 +258,7 @@ export default function AiChatbotPage() {
               ))}
             </ul>
           </Reveal>
-          <Reveal direction="left">
+          <Reveal direction="left" className="min-w-0">
             <div className="bg-background overflow-x-auto rounded-[24px] p-6">
               <p className="text-muted-foreground mb-3 text-[13px] font-medium">
                 Option 1 — JavaScript widget

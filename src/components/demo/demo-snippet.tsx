@@ -64,7 +64,10 @@ export function DemoSnippet({
           )}
         </button>
       </div>
-      <pre className="text-foreground/90 overflow-x-auto p-4 text-xs leading-relaxed">
+      {/* `min-w-0` keeps a long single-line snippet inside this box. Without it
+          the pre's min-content width pushes the whole grid track wider than the
+          screen and the page scrolls sideways. */}
+      <pre className="text-foreground/90 min-w-0 overflow-x-auto p-4 text-xs leading-relaxed">
         <code>{code}</code>
       </pre>
     </div>

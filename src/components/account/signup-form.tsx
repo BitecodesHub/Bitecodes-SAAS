@@ -189,7 +189,7 @@ export function SignupForm({
         />
       </div>
 
-      <label className="flex items-start gap-2.5 text-sm">
+      <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-sm">
         <input
           type="checkbox"
           name="terms"
@@ -199,16 +199,18 @@ export function SignupForm({
         />
         <span className="text-muted-foreground leading-relaxed">
           I accept the{" "}
+          {/* Vertical padding on an inline box grows its tap area without
+              reflowing the line, so these stay readable and still clear 44pt. */}
           <Link
             href="/terms"
-            className="hover:text-foreground underline underline-offset-4"
+            className="hover:text-foreground px-1.5 py-3.5 underline underline-offset-4"
           >
             terms
           </Link>{" "}
           and the{" "}
           <Link
             href="/privacy"
-            className="hover:text-foreground underline underline-offset-4"
+            className="hover:text-foreground px-1.5 py-3.5 underline underline-offset-4"
           >
             privacy policy
           </Link>

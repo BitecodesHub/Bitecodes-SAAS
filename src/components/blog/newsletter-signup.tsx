@@ -115,7 +115,7 @@ export function NewsletterSignup({
           />
         </div>
 
-        <div className="flex items-start gap-2.5">
+        <label className="flex min-h-11 cursor-pointer items-start gap-2.5">
           <input
             id={consentId}
             type="checkbox"
@@ -123,16 +123,13 @@ export function NewsletterSignup({
             checked={consent}
             onChange={(e) => setConsent(e.target.checked)}
             disabled={state.phase === "submitting"}
-            className="mt-0.5 size-4 shrink-0 cursor-pointer rounded accent-current"
+            className="mt-0.5 size-5 shrink-0 cursor-pointer rounded accent-current"
           />
-          <label
-            htmlFor={consentId}
-            className="text-muted-foreground cursor-pointer text-[13px] leading-[1.55]"
-          >
+          <span className="text-muted-foreground text-[13px] leading-[1.55]">
             I agree to receive the Bitecodes newsletter. You can unsubscribe at
             any time.
-          </label>
-        </div>
+          </span>
+        </label>
 
         {state.phase === "error" && (
           <p

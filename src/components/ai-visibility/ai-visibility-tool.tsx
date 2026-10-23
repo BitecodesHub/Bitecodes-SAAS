@@ -428,7 +428,7 @@ function ReportEmailForm({ result }: { result: AiVisibilityResult }) {
           />
         </div>
       </div>
-      <label className="text-muted-foreground mt-3 flex items-start gap-2 text-[13px] leading-relaxed">
+      <label className="text-muted-foreground mt-3 flex min-h-11 cursor-pointer items-start gap-2 text-[13px] leading-relaxed">
         <input
           type="checkbox"
           checked={followUp}

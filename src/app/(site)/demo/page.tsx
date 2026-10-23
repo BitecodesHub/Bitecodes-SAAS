@@ -256,7 +256,7 @@ export default function DemoPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3">
+                <div className="flex min-w-0 flex-col gap-3">
                   <DemoSnippet
                     label={product.snippetLabel}
                     code={product.snippet}

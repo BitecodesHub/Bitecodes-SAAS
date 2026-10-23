@@ -455,7 +455,7 @@ export default function PricingPage() {
                           <div className="flex items-baseline justify-between gap-4">
                             <Link
                               href={`/services/${p.slug}`}
-                              className="hover:text-primary text-[15px] font-medium underline-offset-4 hover:underline"
+                              className="hover:text-primary inline-flex items-center py-2.5 text-[15px] font-medium underline-offset-4 hover:underline md:-my-2.5"
                             >
                               {svc.title}
                             </Link>

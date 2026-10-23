@@ -116,7 +116,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
         />
       </div>
 
-      <label className="mt-5 flex items-start gap-3 text-[15px] leading-[1.6]">
+      <label className="mt-5 flex min-h-11 cursor-pointer items-start gap-3 text-[15px] leading-[1.6]">
         <input
           type="checkbox"
           checked={confirmed}
