@@ -333,11 +333,11 @@ export default function PricingPage() {
                 "defect-fix-window",
                 "no-lock-in",
               ].map((slug) => (
-                <li key={slug} className="flex gap-2.5">
-                  <ShieldCheck className="text-primary mt-0.5 size-4 shrink-0" />
+                <li key={slug} className="flex min-h-11 items-center gap-2.5">
+                  <ShieldCheck className="text-primary size-4 shrink-0" />
                   <Link
                     href="/guarantees"
-                    className="text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+                    className="text-muted-foreground hover:text-foreground inline-flex min-h-11 flex-1 items-center underline-offset-4 hover:underline"
                   >
                     {guaranteeTitle(slug)}
                   </Link>

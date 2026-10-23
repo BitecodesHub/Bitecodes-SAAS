@@ -196,7 +196,7 @@ export function ResourceChecklistForm({
             maxLength={254}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2"
+            className="bg-background mt-2"
             placeholder="you@company.com"
           />
         </div>
@@ -208,7 +208,7 @@ export function ResourceChecklistForm({
             maxLength={100}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="mt-2"
+            className="bg-background mt-2"
             placeholder="Your name"
           />
         </div>

@@ -103,6 +103,7 @@ export function SignupForm({
           required
           defaultValue={values?.name ?? ""}
           autoFocus
+          className="bg-background"
         />
       </div>
 
@@ -115,6 +116,7 @@ export function SignupForm({
           autoComplete="username"
           required
           defaultValue={values?.email ?? ""}
+          className="bg-background"
         />
       </div>
 
@@ -128,6 +130,7 @@ export function SignupForm({
           name="company"
           autoComplete="organization"
           defaultValue={values?.company ?? ""}
+          className="bg-background"
         />
       </div>
 
@@ -143,6 +146,7 @@ export function SignupForm({
           spellCheck={false}
           placeholder="BC-XXXXXX"
           defaultValue={values?.referralCode ?? defaultReferralCode ?? ""}
+          className="bg-background"
         />
       </div>
 
@@ -155,6 +159,7 @@ export function SignupForm({
           autoComplete="new-password"
           required
           aria-describedby="password-rules"
+          className="bg-background"
         />
         <p
           id="password-rules"

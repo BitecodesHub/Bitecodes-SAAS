@@ -32,40 +32,53 @@ const Checkbox = React.forwardRef<
     if (innerRef.current) innerRef.current.indeterminate = indeterminate;
   }, [indeterminate]);
 
+  // A checkbox with text is one control, so the text becomes part of its hit
+  // area: the row is a `<label>` and 44px tall, which is the floor for anything
+  // a thumb has to aim at. A bare checkbox (bulk-select in a dense table) keeps
+  // its compact row and is associated by `htmlFor` instead.
+  const box = (
+    <span className="relative inline-flex size-5 shrink-0">
+      <input
+        ref={innerRef}
+        id={inputId}
+        type="checkbox"
+        aria-checked={indeterminate ? "mixed" : undefined}
+        className="peer border-input bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus-visible:ring-ring/40 focus-visible:ring-offset-background size-5 cursor-pointer appearance-none rounded-md border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+        {...props}
+      />
+      {/*
+        Both marks are always rendered and revealed by the input's own state,
+        so the tick needs no React re-render and stays correct even when the
+        checkbox is toggled by a form reset or by the browser.
+      */}
+      <Check
+        aria-hidden="true"
+        className="text-primary-foreground pointer-events-none absolute inset-0 m-auto hidden size-3.5 peer-checked:block peer-indeterminate:hidden"
+      />
+      <Minus
+        aria-hidden="true"
+        className="text-primary-foreground pointer-events-none absolute inset-0 m-auto hidden size-3.5 peer-indeterminate:block"
+      />
+    </span>
+  );
+
+  if (label) {
+    return (
+      <label
+        className={cn(
+          "flex min-h-11 cursor-pointer items-center gap-2.5",
+          className,
+        )}
+      >
+        {box}
+        <span className="text-[15px] leading-snug">{label}</span>
+      </label>
+    );
+  }
+
   return (
     <div className={cn("flex min-h-6 items-center gap-2.5", className)}>
-      <span className="relative inline-flex size-5 shrink-0">
-        <input
-          ref={innerRef}
-          id={inputId}
-          type="checkbox"
-          aria-checked={indeterminate ? "mixed" : undefined}
-          className="peer border-input bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus-visible:ring-ring/40 focus-visible:ring-offset-background size-5 cursor-pointer appearance-none rounded-md border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          {...props}
-        />
-        {/*
-          Both marks are always rendered and revealed by the input's own state,
-          so the tick needs no React re-render and stays correct even when the
-          checkbox is toggled by a form reset or by the browser.
-        */}
-        <Check
-          aria-hidden="true"
-          className="text-primary-foreground pointer-events-none absolute inset-0 m-auto hidden size-3.5 peer-checked:block peer-indeterminate:hidden"
-        />
-        <Minus
-          aria-hidden="true"
-          className="text-primary-foreground pointer-events-none absolute inset-0 m-auto hidden size-3.5 peer-indeterminate:block"
-        />
-      </span>
-
-      {label && (
-        <label
-          htmlFor={inputId}
-          className="cursor-pointer text-[15px] leading-snug"
-        >
-          {label}
-        </label>
-      )}
+      {box}
     </div>
   );
 });

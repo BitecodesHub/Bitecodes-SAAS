@@ -41,6 +41,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           minLength={10}
           required
           autoFocus
+          className="bg-background"
         />
         <p className="text-muted-foreground text-[13px] leading-[1.5]">
           At least 10 characters.
@@ -56,6 +57,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           autoComplete="new-password"
           minLength={10}
           required
+          className="bg-background"
         />
       </div>
 

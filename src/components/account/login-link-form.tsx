@@ -48,6 +48,7 @@ export function LoginLinkForm({
             autoFocus
             required
             placeholder="123456"
+            className="bg-background"
           />
           <p className="text-muted-foreground text-[13px] leading-[1.5]">
             Enter the six-digit code from your authenticator app.

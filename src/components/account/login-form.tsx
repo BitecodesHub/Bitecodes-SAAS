@@ -80,6 +80,7 @@ export function LoginForm({ next }: { next?: string }) {
           // Focus lands here on first load, but must not steal focus from the
           // code field once the form has advanced to the second factor.
           autoFocus={!state?.needsTwoFactor}
+          className="bg-background"
         />
       </div>
 
@@ -91,6 +92,7 @@ export function LoginForm({ next }: { next?: string }) {
           type="password"
           autoComplete="current-password"
           required
+          className="bg-background"
         />
       </div>
 
@@ -109,7 +111,7 @@ export function LoginForm({ next }: { next?: string }) {
             maxLength={6}
             required
             autoFocus
-            className="font-mono tracking-[0.3em]"
+            className="bg-background font-mono tracking-[0.3em]"
           />
         </div>
       )}

@@ -92,6 +92,7 @@ export function ResendVerificationForm({
           autoComplete="username"
           required
           defaultValue={defaultEmail}
+          className="bg-background"
         />
       </div>
 

@@ -63,6 +63,7 @@ export function RecoveryForm() {
           required
           defaultValue={state?.email ?? ""}
           autoFocus
+          className="bg-background"
         />
       </div>
 

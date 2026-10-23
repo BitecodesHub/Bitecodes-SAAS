@@ -248,7 +248,7 @@ function SliderField({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="accent-primary mt-3 h-2 w-full cursor-pointer"
+        className="accent-primary mt-1 h-11 w-full cursor-pointer"
       />
     </div>
   );
@@ -362,7 +362,7 @@ function ReportForm({
                 onChange={(event) => setName(event.target.value)}
                 autoComplete="name"
                 maxLength={100}
-                className="mt-1.5"
+                className="bg-background mt-1.5"
               />
             </div>
             <div>
@@ -375,7 +375,7 @@ function ReportForm({
                 autoComplete="email"
                 required
                 maxLength={254}
-                className="mt-1.5"
+                className="bg-background mt-1.5"
               />
             </div>
           </div>

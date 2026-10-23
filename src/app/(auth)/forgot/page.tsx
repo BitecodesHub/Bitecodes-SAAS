@@ -26,7 +26,7 @@ export default function ForgotPage() {
       <p className="text-muted-foreground mt-6 text-center text-[13px] leading-relaxed">
         <Link
           href="/login"
-          className="hover:text-foreground underline underline-offset-4"
+          className="hover:text-foreground inline-flex min-h-11 items-center underline underline-offset-4"
         >
           Back to sign in
         </Link>

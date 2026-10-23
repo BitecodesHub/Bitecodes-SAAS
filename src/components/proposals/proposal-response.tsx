@@ -90,6 +90,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
             value={name}
             onChange={(event) => setName(event.target.value)}
             autoComplete="name"
+            className="bg-background"
           />
         </div>
         <div className="space-y-1.5">
@@ -99,6 +100,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Founder, Director, Product lead"
+            className="bg-background"
           />
         </div>
       </div>
@@ -110,7 +112,7 @@ export function ProposalResponse({ token }: ProposalResponseProps) {
           value={signature}
           onChange={(event) => setSignature(event.target.value)}
           placeholder="Type your full name"
-          className="font-mono"
+          className="bg-background font-mono"
         />
       </div>
 

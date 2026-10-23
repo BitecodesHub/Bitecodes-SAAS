@@ -94,7 +94,7 @@ export default async function SignupPage({
         <div className="mt-6 space-y-4">
           <div className="flex items-center gap-3">
             <span className="bg-border h-px flex-1" />
-            <span className="text-muted-foreground text-xs">or</span>
+            <span className="text-muted-foreground text-[13px]">or</span>
             <span className="bg-border h-px flex-1" />
           </div>
           <GoogleButton label="Sign up with Google" />

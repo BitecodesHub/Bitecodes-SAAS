@@ -85,7 +85,7 @@ export default async function LoginPage({
         <div className="mt-6 space-y-4">
           <div className="flex items-center gap-3">
             <span className="bg-border h-px flex-1" />
-            <span className="text-muted-foreground text-xs">or</span>
+            <span className="text-muted-foreground text-[13px]">or</span>
             <span className="bg-border h-px flex-1" />
           </div>
           <GoogleButton next={next} />
@@ -95,7 +95,7 @@ export default async function LoginPage({
       <p className="text-muted-foreground mt-6 text-center text-[13px] leading-relaxed">
         <Link
           href="/forgot"
-          className="hover:text-foreground underline underline-offset-4"
+          className="hover:text-foreground inline-flex min-h-11 items-center underline underline-offset-4"
         >
           Forgotten your password?
         </Link>
