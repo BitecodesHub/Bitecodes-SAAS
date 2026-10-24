@@ -10,8 +10,10 @@ import { HeroVisual } from "@/components/sections/hero-visual";
  * sharp, adapts to dark mode, and costs no image request.
  */
 export function Hero() {
+  // `overflow-clip` keeps the art contained without creating a scroll
+  // container, so the globe's view timeline tracks the page.
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-clip">
       <div className="container-page grid items-center gap-10 pt-24 pb-14 sm:gap-12 sm:pt-28 sm:pb-16 xl:min-h-svh xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-8 xl:pt-28 xl:pb-20">
         <div className="relative z-10">
           <Reveal direction="none">

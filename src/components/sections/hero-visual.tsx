@@ -135,7 +135,7 @@ export function HeroVisual() {
   return (
     <div
       aria-hidden
-      className="relative mx-auto aspect-square w-full max-w-[26rem] sm:max-w-[32rem] xl:max-w-none"
+      className="hero-art-scroll relative mx-auto aspect-square w-full max-w-[26rem] sm:max-w-[32rem] xl:max-w-none"
     >
       <div className="absolute top-1/2 left-1/2 size-[92%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(96,64,244,0.15),transparent_72%)] blur-2xl dark:bg-[radial-gradient(closest-side,rgba(120,86,255,0.24),transparent_72%)]" />
 

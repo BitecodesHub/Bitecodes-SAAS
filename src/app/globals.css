@@ -458,6 +458,41 @@
   animation: orbit-dash 26s linear infinite;
 }
 
+/*
+ * Scroll exit for the hero artwork. The cage lags a little behind the page,
+ * so it reads as depth rather than a flat cut under the fixed header, then
+ * softens once it is mostly off-screen. Only active where scroll-driven
+ * animations exist; reduced-motion users keep the still composition.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .hero-art-scroll {
+      animation: hero-art-exit linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+  }
+}
+
+@keyframes hero-art-exit {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 4.5%, 0) scale(0.985);
+  }
+  78% {
+    opacity: 0.82;
+    transform: translate3d(0, 8%, 0) scale(0.96);
+  }
+  100% {
+    opacity: 0.25;
+    transform: translate3d(0, 12%, 0) scale(0.93);
+  }
+}
+
 @keyframes scroll-progress-grow {
   from {
     transform: scaleX(0);
