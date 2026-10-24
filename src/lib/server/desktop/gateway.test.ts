@@ -323,6 +323,25 @@ describe("runTextChain — automations", () => {
     ]);
   });
 
+  it("sends earlier turns between the system prompt and the new question", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(textStream("ok"));
+    await runTextChain([openrouter], {
+      system: "rules",
+      history: [
+        { role: "user", content: "what does launch cost" },
+        { role: "assistant", content: "from $500" },
+      ],
+      prompt: "how long does it take",
+      fetchImpl,
+    });
+    expect(bodyOf(fetchImpl.mock.calls[0]).messages).toEqual([
+      { role: "system", content: "rules" },
+      { role: "user", content: "what does launch cost" },
+      { role: "assistant", content: "from $500" },
+      { role: "user", content: "how long does it take" },
+    ]);
+  });
+
   it("passes the system prompt to Bedrock in its system field", async () => {
     const fetchImpl = vi
       .fn()
@@ -339,6 +358,29 @@ describe("runTextChain — automations", () => {
     expect(body.system).toEqual([{ text: "rules" }]);
     expect(body.messages).toEqual([
       { role: "user", content: [{ text: "hi" }] },
+    ]);
+  });
+
+  it("maps earlier turns into Bedrock conversation messages", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(
+        json(200, { output: { message: { content: [{ text: "ok" }] } } }),
+      );
+    await runTextChain([bedrock], {
+      system: "rules",
+      history: [
+        { role: "user", content: "first" },
+        { role: "assistant", content: "answer" },
+      ],
+      prompt: "next",
+      fetchImpl,
+    });
+    const body = bodyOf(fetchImpl.mock.calls[0]);
+    expect(body.messages).toEqual([
+      { role: "user", content: [{ text: "first" }] },
+      { role: "assistant", content: [{ text: "answer" }] },
+      { role: "user", content: [{ text: "next" }] },
     ]);
   });
 

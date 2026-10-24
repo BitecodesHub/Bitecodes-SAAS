@@ -56,11 +56,18 @@ export class GatewayError extends Error {
   }
 }
 
+export type ChatHistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 interface CallInput {
   provider: ResolvedProvider;
   model: string;
   /** Optional system prompt (automations). The desktop app never sends one. */
   system?: string;
+  /** Earlier turns, oldest first. Used by the public site assistant. */
+  history?: ChatHistoryTurn[];
   prompt: string;
   images: string[];
   maxTokens: number;
@@ -141,12 +148,11 @@ async function callOpenAICompatible(input: CallInput): Promise<CallResult> {
       },
       body: JSON.stringify({
         model: input.model,
-        messages: input.system
-          ? [
-              { role: "system", content: input.system },
-              { role: "user", content },
-            ]
-          : [{ role: "user", content }],
+        messages: [
+          ...(input.system ? [{ role: "system", content: input.system }] : []),
+          ...(input.history ?? []),
+          { role: "user", content },
+        ],
         temperature: input.temperature,
         max_tokens: input.maxTokens,
         stream: true,
@@ -247,7 +253,13 @@ async function callBedrock(input: CallInput): Promise<CallResult> {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        messages: [{ role: "user", content }],
+        messages: [
+          ...(input.history ?? []).map((turn) => ({
+            role: turn.role,
+            content: [{ text: turn.content }],
+          })),
+          { role: "user", content },
+        ],
         ...(input.system ? { system: [{ text: input.system }] } : {}),
         inferenceConfig: {
           maxTokens: input.maxTokens,
@@ -503,6 +515,11 @@ SCREENSHOT>>>`;
 export interface TextChainOptions {
   /** Optional system prompt: a system message, or Bedrock's `system` field. */
   system?: string;
+  /**
+   * Earlier turns, oldest first. Passed as real chat messages so follow-up
+   * questions keep their context instead of arriving as cold prompts.
+   */
+  history?: ChatHistoryTurn[];
   prompt: string;
   maxTokens?: number;
   temperature?: number;
@@ -597,6 +614,7 @@ export async function runTextChain(
         provider,
         model,
         system: opts.system,
+        history: opts.history,
         prompt: opts.prompt,
         images: [],
         maxTokens: opts.maxTokens ?? DEFAULT_MAX_TOKENS,

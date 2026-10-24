@@ -3,10 +3,14 @@ import type { NextRequest } from "next/server";
 import { consumeNamedRateLimit } from "@/lib/server/rate-limit";
 import { resolveAutomationChain } from "@/lib/server/desktop/providers";
 import { runTextChain } from "@/lib/server/desktop/gateway";
-import { siteConfig } from "@/lib/site";
-import { services } from "@/data/services";
-import { faqs } from "@/data/faqs";
-import { offerPackages } from "@/data/offers";
+import {
+  ASSISTANT_MAX_PROMPT_CHARS,
+  ASSISTANT_SYSTEM_PROMPT,
+  hasUnsupportedPrice,
+  parseAssistantHistory,
+  SAFE_PRICING_ANSWER,
+  sanitizeAnswer,
+} from "@/lib/assistant/grounding";
 
 /**
  * The site-wide assistant.
@@ -24,8 +28,7 @@ import { offerPackages } from "@/data/offers";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_BODY_BYTES = 4_000;
-const MAX_PROMPT_CHARS = 600;
+const MAX_BODY_BYTES = 12_000;
 
 function json(body: unknown, status: number) {
   return Response.json(body, {
@@ -43,43 +46,6 @@ function clientKey(request: NextRequest) {
   return createHash("sha256").update(`assistant:${candidate}`).digest("hex");
 }
 
-/**
- * The facts the assistant may use, kept compact so the prompt stays cheap and
- * the model has less room to wander. Every line is derived from site data
- * rather than typed a second time.
- */
-function knowledge() {
-  const serviceLines = services
-    .slice(0, 12)
-    .map((service) => `- ${service.title}: ${service.tagline}`)
-    .join("\n");
-
-  const pricingLines = offerPackages
-    .map((pack) => `- ${pack.name}: from $${pack.priceUSD} (${pack.summary})`)
-    .join("\n");
-
-  const faqLines = faqs
-    .slice(0, 10)
-    .map((faq) => `Q: ${faq.question}\nA: ${faq.answer}`)
-    .join("\n");
-
-  return [
-    `Company: ${siteConfig.name} — ${siteConfig.tagline}`,
-    `Description: ${siteConfig.description}`,
-    `Markets: ${siteConfig.markets.join(", ")}`,
-    `Contact: ${siteConfig.contact.email}, ${siteConfig.contact.phone}`,
-    "",
-    "Services:",
-    serviceLines,
-    "",
-    "Packages:",
-    pricingLines,
-    "",
-    "Frequently asked:",
-    faqLines,
-  ].join("\n");
-}
-
 export async function POST(request: NextRequest) {
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_BODY_BYTES) {
@@ -95,7 +61,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         message:
-          "You have asked a lot in a short time. Book a call or email us and we will pick it up there.",
+          "You have reached this hour's question limit. A person can pick it up from here.",
         fallback: true,
       },
       429,
@@ -125,51 +91,64 @@ export async function POST(request: NextRequest) {
   if (typeof prompt !== "string" || !prompt.trim()) {
     return json({ ok: false, message: "Send a question." }, 400);
   }
-  if (prompt.length > MAX_PROMPT_CHARS) {
+  if (prompt.length > ASSISTANT_MAX_PROMPT_CHARS) {
     return json(
-      { ok: false, message: "Please keep the question under 600 characters." },
+      {
+        ok: false,
+        message: `Please keep the question under ${ASSISTANT_MAX_PROMPT_CHARS} characters.`,
+      },
       400,
     );
   }
+
+  const history = parseAssistantHistory(
+    (payload as { history?: unknown }).history,
+  );
 
   const chain = await resolveAutomationChain();
   if (chain.length === 0) {
     return json(
       {
         ok: false,
-        message:
-          "The assistant is offline right now. Book a free call or send us a message and a person will reply.",
+        message: "The assistant is offline right now.",
         fallback: true,
       },
       503,
     );
   }
 
-  const system = [
-    "You are the Bitecodes website assistant.",
-    "Answer only from the facts below. If a question is not covered, say so and point to /contact or /book-a-call.",
-    "Never invent prices, timelines, client names, or guarantees.",
-    "Be concise: at most 90 words, plain text, no markdown headings.",
-    "If the person is describing a project, invite them to book a free 30-minute call.",
-    "",
-    knowledge(),
-  ].join("\n");
-
   try {
     const result = await runTextChain(chain, {
-      system,
+      system: ASSISTANT_SYSTEM_PROMPT,
+      history,
       prompt: prompt.trim(),
-      maxTokens: 320,
-      temperature: 0.2,
+      // The visible answer is capped at 90 words; the extra headroom is for
+      // providers that spend tokens reasoning before they answer.
+      maxTokens: 400,
+      temperature: 0.15,
+      signal: request.signal,
     });
 
-    return json(
-      {
-        ok: true,
-        text: result.text.trim().slice(0, 1_200),
-      },
-      200,
-    );
+    const answer = sanitizeAnswer(result.text);
+    if (!answer) {
+      return json(
+        {
+          ok: false,
+          message: "That one did not come through. Ask again.",
+          fallback: true,
+        },
+        502,
+      );
+    }
+
+    if (hasUnsupportedPrice(answer)) {
+      console.warn(
+        "[site-assistant] blocked an answer containing an unpublished price",
+      );
+      return json({ ok: true, text: SAFE_PRICING_ANSWER }, 200);
+    }
+
+    return json({ ok: true, text: answer }, 200);
   } catch (error) {
     console.error(
       "[site-assistant] provider failed:",
@@ -178,8 +157,7 @@ export async function POST(request: NextRequest) {
     return json(
       {
         ok: false,
-        message:
-          "The assistant could not answer right now. Book a call or send us a message instead.",
+        message: "The assistant could not answer right now.",
         fallback: true,
       },
       502,
