@@ -109,6 +109,18 @@ describe("sanitizeAnswer", () => {
     );
   });
 
+  it("turns a bare path in a sentence into the same link", () => {
+    expect(sanitizeAnswer("Explore them here: /contact.")).toBe(
+      "Explore them here: [Contact](/contact).",
+    );
+    expect(sanitizeAnswer("See [pricing](/pricing) and /contact.")).toBe(
+      "See [pricing](/pricing) and [Contact](/contact).",
+    );
+    expect(sanitizeAnswer("We answer within 24/7 cover.")).toBe(
+      "We answer within 24/7 cover.",
+    );
+  });
+
   it("drops apologies and generic closing questions", () => {
     expect(
       sanitizeAnswer("Sorry, but I can't share that. Ask about our services."),

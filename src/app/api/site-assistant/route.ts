@@ -118,16 +118,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await runTextChain(chain, {
-      system: ASSISTANT_SYSTEM_PROMPT,
-      history,
-      prompt: prompt.trim(),
-      // The visible answer is capped at 90 words; the extra headroom is for
-      // providers that spend tokens reasoning before they answer.
-      maxTokens: 400,
-      temperature: 0.15,
-      signal: request.signal,
-    });
+    // A queued free-tier provider can sit silent for half a minute. One
+    // bounded retry recovers those transient stalls without making the visitor
+    // wait for a second full first-token deadline.
+    const ask = () =>
+      runTextChain(chain, {
+        system: ASSISTANT_SYSTEM_PROMPT,
+        history,
+        prompt: prompt.trim(),
+        // The visible answer is capped at 90 words; the extra headroom is for
+        // providers that spend tokens reasoning before they answer.
+        maxTokens: 400,
+        temperature: 0.15,
+        signal: AbortSignal.any([request.signal, AbortSignal.timeout(15_000)]),
+      });
+
+    let result: Awaited<ReturnType<typeof ask>>;
+    try {
+      result = await ask();
+    } catch (firstError) {
+      if (request.signal.aborted) throw firstError;
+      console.warn("[site-assistant] retrying after a provider stall");
+      result = await ask();
+    }
 
     const answer = sanitizeAnswer(result.text);
     if (!answer) {
