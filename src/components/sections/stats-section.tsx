@@ -8,7 +8,7 @@ import { stats } from "@/data/stats";
  */
 export function StatsSection() {
   return (
-    <section className="bg-surface-2">
+    <section>
       <div className="container-page py-16 sm:py-20">
         <h2 className="sr-only">Bitecodes in numbers</h2>
         <Reveal>

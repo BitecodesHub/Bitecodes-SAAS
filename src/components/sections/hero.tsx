@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { HeroShowcase } from "@/components/sections/hero-showcase";
 
@@ -21,14 +19,16 @@ const capabilities = [
 ];
 
 /**
- * Apple product-page structure: one idea, stated at display scale, followed by
- * the product itself. The live work frame below the copy is the page's single
- * bold moment; everything around it stays quiet.
+ * One statement, one supporting line, one row of hairline-separated actions.
+ *
+ * The opening carries no cards, no buttons and no fills: the confidence comes
+ * from the emptiness around the words, so the first screen is type and air and
+ * the live work frame only arrives once the reader scrolls.
  */
 export function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="container-page pt-32 pb-14 text-center sm:pt-40 sm:pb-16 lg:pt-44">
+      <div className="container-page flex flex-col items-center justify-center py-20 text-center sm:min-h-svh sm:py-28">
         <Reveal direction="none">
           <p className="text-muted-foreground inline-flex items-center gap-2.5 text-[13px] font-semibold tracking-[0.14em] uppercase">
             <span
@@ -40,7 +40,7 @@ export function Hero() {
         </Reveal>
 
         <Reveal direction="up">
-          <h1 className="mx-auto mt-6 max-w-5xl text-[clamp(3.25rem,8.4vw,7.25rem)] leading-[0.98] font-semibold tracking-[-0.045em] text-balance">
+          <h1 className="mx-auto mt-8 max-w-[20ch] text-[clamp(2.5rem,5.2vw,4.35rem)] leading-[1.05] font-semibold tracking-[-0.038em] text-balance">
             Custom software.
             <span className="block">
               Built to ship<span className="text-primary">.</span>
@@ -49,49 +49,56 @@ export function Hero() {
         </Reveal>
 
         <Reveal direction="up">
-          <p className="text-muted-foreground mx-auto mt-7 max-w-2xl text-[18px] leading-[1.5] tracking-[-0.014em] text-pretty sm:text-[23px]">
+          <p className="text-muted-foreground mx-auto mt-7 max-w-[46ch] text-[17px] leading-[1.6] tracking-[-0.01em] text-pretty sm:max-w-[44rem] sm:text-[19px]">
             Websites, web apps, SaaS platforms and AI automation for growing
-            businesses — designed, built, and maintained by one senior team.
+            businesses — designed, built and maintained by one senior team.
           </p>
         </Reveal>
 
         <Reveal direction="up">
-          <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-            <Button asChild size="lg">
-              <Link href="/contact" data-track="hero_start_cta">
-                Start a project
-                <ArrowRight className="size-4" />
-              </Link>
-            </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="#work" data-track="hero_work_cta">
-                See selected work
-              </Link>
-            </Button>
-          </div>
-          <Link
-            href="/website-audit"
-            data-track="hero_audit_cta"
-            className="text-muted-foreground hover:text-foreground mt-5 inline-flex min-h-11 items-center gap-1.5 text-[15px] transition-colors"
+          <nav
+            aria-label="Ways to start"
+            className="mt-10 flex flex-col items-center justify-center gap-x-5 text-[15px] font-medium sm:flex-row sm:flex-wrap"
           >
-            Not ready to talk? Get a free website audit
-            <ArrowRight className="size-3.5" aria-hidden />
-          </Link>
+            <Link
+              href="/contact"
+              data-track="hero_start_cta"
+              className="text-foreground inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+            >
+              Start a project
+            </Link>
+            <span aria-hidden className="bg-border hidden h-4 w-px sm:block" />
+            <Link
+              href="#work"
+              data-track="hero_work_cta"
+              className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+            >
+              Selected work
+            </Link>
+            <span aria-hidden className="bg-border hidden h-4 w-px sm:block" />
+            <Link
+              href="/website-audit"
+              data-track="hero_audit_cta"
+              className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center underline-offset-4 hover:underline"
+            >
+              Free website audit
+            </Link>
+          </nav>
         </Reveal>
 
         <Reveal direction="none">
-          <ul className="text-muted-foreground mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[13px] sm:text-[14px]">
+          <p className="text-muted-foreground mt-6 flex max-w-[34rem] flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[13px] leading-relaxed">
+            {/* The separator rides on the end of each item so a wrapped line
+                can never start with a floating middot. */}
             {assurances.map((item) => (
-              <li key={item} className="flex items-center gap-1.5">
-                <Check
-                  className="text-primary size-3.5"
-                  strokeWidth={2.5}
-                  aria-hidden
-                />
+              <span
+                key={item}
+                className="after:ml-2.5 after:content-['·'] last:after:content-none"
+              >
                 {item}
-              </li>
+              </span>
             ))}
-          </ul>
+          </p>
         </Reveal>
       </div>
 
