@@ -46,11 +46,90 @@ const beads = [
   { className: "bottom-[4%] left-[45%] size-2.5", delay: "-4.1s" },
 ] as const;
 
+interface OrbitLine {
+  rx: number;
+  ry: number;
+  rotate: number;
+  stroke: string;
+  width: number;
+  duration: string;
+  opacity?: number;
+  dash?: string;
+  dashAnimated?: boolean;
+  reverse?: boolean;
+}
+
 /**
- * The hero artwork: a dark, glossy product orb ringed by fine orbits and
- * travelling beads. Everything is markup — no hero image to download, nothing
- * to upscale, and it adapts to dark mode and reduced motion. It is decorative,
- * so the whole composition is hidden from assistive tech.
+ * Six rings at different tilts, each turning on its own slow clock. The
+ * crossing near-vertical pairs read as meridians, so the artwork feels like a
+ * globe rather than a set of concentric ovals. Durations stay between 1.5 and
+ * 3.5 minutes: visible on a second look, never a carousel.
+ */
+const orbitLines: readonly OrbitLine[] = [
+  {
+    rx: 288,
+    ry: 172,
+    rotate: -14,
+    stroke: "url(#hero-orbit-line)",
+    width: 1.35,
+    dash: "1 9",
+    dashAnimated: true,
+    duration: "180s",
+  },
+  {
+    rx: 238,
+    ry: 120,
+    rotate: 17,
+    stroke: "url(#hero-orbit-line-2)",
+    width: 1.2,
+    duration: "130s",
+    reverse: true,
+  },
+  {
+    rx: 204,
+    ry: 86,
+    rotate: -34,
+    stroke: "#a78bfa",
+    opacity: 0.42,
+    width: 1,
+    duration: "95s",
+  },
+  {
+    rx: 154,
+    ry: 278,
+    rotate: 23,
+    stroke: "url(#hero-orbit-line-3)",
+    width: 1.1,
+    duration: "210s",
+    reverse: true,
+  },
+  {
+    rx: 122,
+    ry: 252,
+    rotate: -38,
+    stroke: "#c4b5fd",
+    opacity: 0.3,
+    width: 0.9,
+    dash: "2 8",
+    duration: "160s",
+  },
+  {
+    rx: 272,
+    ry: 148,
+    rotate: 49,
+    stroke: "url(#hero-orbit-line-4)",
+    width: 1.05,
+    dash: "1 12",
+    duration: "240s",
+    reverse: true,
+  },
+];
+
+/**
+ * The hero artwork: a dark, glossy product orb inside a slowly turning cage of
+ * fine orbits and travelling beads. Everything is markup — no hero image to
+ * download, nothing to upscale, and it adapts to dark mode and reduced motion.
+ * It is decorative, so the whole composition is hidden from assistive tech.
  */
 export function HeroVisual() {
   return (
@@ -75,8 +154,8 @@ export function HeroVisual() {
             gradientUnits="userSpaceOnUse"
           >
             <stop stopColor="#8f7bff" stopOpacity="0" />
-            <stop offset="0.25" stopColor="#8f7bff" stopOpacity="0.55" />
-            <stop offset="0.7" stopColor="#c4b5fd" stopOpacity="0.28" />
+            <stop offset="0.25" stopColor="#8f7bff" stopOpacity="0.68" />
+            <stop offset="0.7" stopColor="#c4b5fd" stopOpacity="0.36" />
             <stop offset="1" stopColor="#8f7bff" stopOpacity="0" />
           </linearGradient>
           <linearGradient
@@ -88,41 +167,59 @@ export function HeroVisual() {
             gradientUnits="userSpaceOnUse"
           >
             <stop stopColor="#8f7bff" stopOpacity="0" />
-            <stop offset="0.45" stopColor="#a78bfa" stopOpacity="0.45" />
+            <stop offset="0.45" stopColor="#a78bfa" stopOpacity="0.55" />
             <stop offset="1" stopColor="#8f7bff" stopOpacity="0" />
           </linearGradient>
+          <linearGradient
+            id="hero-orbit-line-3"
+            x1="180"
+            y1="80"
+            x2="440"
+            y2="540"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#8f7bff" stopOpacity="0" />
+            <stop offset="0.5" stopColor="#c4b5fd" stopOpacity="0.44" />
+            <stop offset="1" stopColor="#8f7bff" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient
+            id="hero-orbit-line-4"
+            x1="80"
+            y1="300"
+            x2="520"
+            y2="320"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#a78bfa" stopOpacity="0" />
+            <stop offset="0.4" stopColor="#a78bfa" stopOpacity="0.4" />
+            <stop offset="0.75" stopColor="#c4b5fd" stopOpacity="0.22" />
+            <stop offset="1" stopColor="#a78bfa" stopOpacity="0" />
+          </linearGradient>
         </defs>
-        <ellipse
-          cx="300"
-          cy="300"
-          rx="288"
-          ry="172"
-          transform="rotate(-14 300 300)"
-          stroke="url(#hero-orbit-line)"
-          strokeWidth="1.1"
-          strokeDasharray="1 9"
-          strokeLinecap="round"
-          className="hero-orbit"
-        />
-        <ellipse
-          cx="300"
-          cy="296"
-          rx="238"
-          ry="120"
-          transform="rotate(17 300 296)"
-          stroke="url(#hero-orbit-line-2)"
-          strokeWidth="1"
-        />
-        <ellipse
-          cx="300"
-          cy="290"
-          rx="204"
-          ry="86"
-          transform="rotate(-34 300 290)"
-          stroke="#a78bfa"
-          strokeOpacity="0.3"
-          strokeWidth="0.8"
-        />
+        {orbitLines.map((line) => (
+          <g
+            key={`${line.rx}-${line.ry}-${line.rotate}`}
+            className="hero-orbit-spin"
+            style={{
+              animationDuration: line.duration,
+              animationDirection: line.reverse ? "reverse" : "normal",
+            }}
+          >
+            <ellipse
+              cx="300"
+              cy="300"
+              rx={line.rx}
+              ry={line.ry}
+              transform={`rotate(${line.rotate} 300 300)`}
+              stroke={line.stroke}
+              strokeOpacity={line.opacity}
+              strokeWidth={line.width}
+              strokeDasharray={line.dash}
+              strokeLinecap={line.dash ? "round" : undefined}
+              className={line.dashAnimated ? "hero-orbit" : undefined}
+            />
+          </g>
+        ))}
       </svg>
 
       <div className="absolute top-1/2 left-1/2 z-10 aspect-square w-[52%] -translate-x-1/2 -translate-y-1/2">

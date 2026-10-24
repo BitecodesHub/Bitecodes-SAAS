@@ -414,19 +414,6 @@
     animation-play-state: paused;
   }
 
-  /*
-   * Hero orbital artwork. Cards drift on their own clocks and the dotted
-   * orbit's dash pattern travels along its path. The global reduced-motion
-   * rule freezes both without hiding anything.
-   */
-  .hero-float {
-    animation: hero-float 7s ease-in-out infinite alternate;
-  }
-
-  .hero-orbit {
-    animation: orbit-dash 26s linear infinite;
-  }
-
   /* Pure-CSS scroll progress bar (no JS). */
   .scroll-progress {
     position: fixed;
@@ -445,6 +432,30 @@
       animation-timeline: scroll(root block);
     }
   }
+}
+
+/*
+ * Hero orbital artwork. Beads drift on their own clocks, the dotted orbit's
+ * dash pattern travels along its path, and the whole cage turns at a rate
+ * slow enough to notice only on a second look. The global reduced-motion
+ * rule freezes all three without hiding anything.
+ *
+ * Kept outside `@layer utilities`: these are component behaviours, and the
+ * utilities layer is tree-shaken from scanned class candidates.
+ */
+.hero-float {
+  animation: hero-float 7s ease-in-out infinite alternate;
+}
+
+.hero-orbit-spin {
+  transform-box: view-box;
+  transform-origin: center;
+  /* Per-ring durations and directions are set inline. */
+  animation: orbit-spin 180s linear infinite;
+}
+
+.hero-orbit {
+  animation: orbit-dash 26s linear infinite;
 }
 
 @keyframes scroll-progress-grow {
@@ -488,6 +499,15 @@
 @keyframes orbit-dash {
   to {
     stroke-dashoffset: -240;
+  }
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 
