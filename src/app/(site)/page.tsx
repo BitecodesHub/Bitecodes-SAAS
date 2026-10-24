@@ -1,10 +1,9 @@
 import { Hero } from "@/components/sections/hero";
-import { StatsSection } from "@/components/sections/stats-section";
-import { FeaturedWorkSection } from "@/components/sections/featured-work-section";
-import { ToolsSection } from "@/components/sections/tools-section";
+import { SelectedWorkSection } from "@/components/sections/selected-work-section";
 import { ServicesSection } from "@/components/sections/services-section";
 import { ProcessSection } from "@/components/sections/process-section";
 import { TestimonialsStrip } from "@/components/proof/testimonials-strip";
+import { ToolsSection } from "@/components/sections/tools-section";
 import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
 import { FaqSection } from "@/components/sections/faq-section";
 import { CtaSection } from "@/components/cta-section";
@@ -37,18 +36,17 @@ export default function HomePage() {
   return (
     <>
       {/*
-        Conversion order: promise → proof-numbers → featured work → free tools
-        → services → process → social proof → pricing → FAQ → close.
+        Conversion order: promise → selected work → services → process →
+        social proof → free tools → pricing → FAQ → close.
       */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
-      <StatsSection />
-      <FeaturedWorkSection />
-      <ToolsSection />
+      <SelectedWorkSection />
       <ServicesSection />
       <ProcessSection />
       {/* Renders nothing when no approved testimonials exist */}
       <TestimonialsStrip />
+      <ToolsSection />
       <PricingPreviewSection />
       <FaqSection limit={6} />
       <CtaSection variant="audit" />

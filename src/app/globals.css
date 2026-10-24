@@ -414,6 +414,19 @@
     animation-play-state: paused;
   }
 
+  /*
+   * Hero orbital artwork. Cards drift on their own clocks and the dotted
+   * orbit's dash pattern travels along its path. The global reduced-motion
+   * rule freezes both without hiding anything.
+   */
+  .hero-float {
+    animation: hero-float 7s ease-in-out infinite alternate;
+  }
+
+  .hero-orbit {
+    animation: orbit-dash 26s linear infinite;
+  }
+
   /* Pure-CSS scroll progress bar (no JS). */
   .scroll-progress {
     position: fixed;
@@ -460,6 +473,21 @@
   }
   to {
     transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes hero-float {
+  from {
+    transform: translate3d(0, -5px, 0);
+  }
+  to {
+    transform: translate3d(0, 7px, 0);
+  }
+}
+
+@keyframes orbit-dash {
+  to {
+    stroke-dashoffset: -240;
   }
 }
 

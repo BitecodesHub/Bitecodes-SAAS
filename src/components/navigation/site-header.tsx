@@ -35,7 +35,7 @@ export function SiteHeader() {
           <Link
             href="/login"
             data-track="header_signin"
-            className="text-foreground/80 hover:text-foreground hidden min-h-11 items-center rounded-full px-3 text-[13px] font-medium transition-colors lg:inline-flex"
+            className="text-foreground/80 hover:text-foreground hidden min-h-11 items-center rounded-full px-3 text-[13px] font-medium whitespace-nowrap transition-colors lg:inline-flex"
           >
             Sign in
           </Link>
