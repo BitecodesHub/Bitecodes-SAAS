@@ -6,7 +6,6 @@ import { TestimonialsStrip } from "@/components/proof/testimonials-strip";
 import { ToolsSection } from "@/components/sections/tools-section";
 import { PricingPreviewSection } from "@/components/sections/pricing-preview-section";
 import { FaqSection } from "@/components/sections/faq-section";
-import { CtaSection } from "@/components/cta-section";
 import { JsonLd } from "@/components/json-ld";
 import { createMetadata, faqSchema } from "@/lib/seo";
 import { faqs } from "@/data/faqs";
@@ -37,7 +36,7 @@ export default function HomePage() {
     <>
       {/*
         Conversion order: promise → selected work → services → process →
-        social proof → free tools → pricing → FAQ → close.
+        social proof → free tools → pricing → FAQ.
       */}
       <JsonLd data={faqSchema(faqs)} />
       <Hero />
@@ -49,7 +48,6 @@ export default function HomePage() {
       <ToolsSection />
       <PricingPreviewSection />
       <FaqSection limit={6} />
-      <CtaSection variant="audit" />
     </>
   );
 }

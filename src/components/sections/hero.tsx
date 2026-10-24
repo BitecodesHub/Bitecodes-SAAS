@@ -4,27 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { HeroVisual } from "@/components/sections/hero-visual";
 
-const assurances = [
-  "Transparent pricing",
-  "Milestone delivery",
-  "Direct engineer access",
-];
-
-const capabilities = [
-  "SaaS platforms",
-  "AI automation",
-  "Web applications",
-  "Enterprise software",
-  "Marketing websites",
-  "Product design",
-  "Cloud & DevOps",
-];
-
 /**
- * Promise on the left, a live product atmosphere on the right: a glossy orb
- * ringed by orbits with capability cards floating in front. The artwork is
- * built from markup so it stays sharp, adapts to dark mode, and costs no image
- * request. A hairline capability strip closes the opening.
+ * Promise on the left, a single product orb on the right: a dark, glossy
+ * sphere ringed by fine orbits. The artwork is built from markup so it stays
+ * sharp, adapts to dark mode, and costs no image request.
  */
 export function Hero() {
   return (
@@ -88,56 +71,11 @@ export function Hero() {
               </div>
             </div>
           </Reveal>
-
-          <Reveal direction="none">
-            <p className="text-muted-foreground mt-7 flex max-w-[34rem] flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] leading-relaxed sm:text-[15px]">
-              {/* The separator rides on the end of each item so a wrapped line
-                  can never start with a floating middot. Hidden on mobile,
-                  where the row wraps. */}
-              {assurances.map((item) => (
-                <span
-                  key={item}
-                  className="after:ml-2.5 after:content-['·'] last:after:content-none max-sm:after:hidden"
-                >
-                  {item}
-                </span>
-              ))}
-            </p>
-          </Reveal>
         </div>
 
         <Reveal direction="none" className="relative">
           <HeroVisual />
         </Reveal>
-      </div>
-
-      <div className="border-y border-black/[0.06] dark:border-white/10">
-        <div className="container-page flex items-center gap-6 py-3.5">
-          <span className="text-muted-foreground hidden shrink-0 text-[11px] font-semibold tracking-[0.14em] uppercase sm:inline">
-            What we build
-          </span>
-          <span
-            className="hidden h-3 w-px shrink-0 bg-black/10 sm:block dark:bg-white/15"
-            aria-hidden
-          />
-          <div className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
-            <div className="hero-marquee flex w-max items-center">
-              {[...capabilities, ...capabilities].map((capability, index) => (
-                <span
-                  key={`${capability}-${index}`}
-                  aria-hidden={index >= capabilities.length ? true : undefined}
-                  className="text-muted-foreground flex items-center text-[13px] font-medium tracking-[0.02em] whitespace-nowrap"
-                >
-                  {capability}
-                  <span
-                    className="bg-primary/40 mx-7 size-1 rounded-full sm:mx-9"
-                    aria-hidden
-                  />
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
