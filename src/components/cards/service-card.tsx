@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import type { Service } from "@/types/content";
 import { cn } from "@/lib/utils";
+import { ServiceCardFrame } from "@/components/cards/service-card-frame";
+import { ArrowUpRight } from "lucide-react";
 
 export function ServiceCard({
   service,
@@ -12,28 +12,25 @@ export function ServiceCard({
 }) {
   const Icon = service.icon;
   return (
-    <Link
+    <ServiceCardFrame
       href={`/services/${service.slug}`}
       className={cn(
-        "group bg-background focus-visible:ring-ring hover:border-primary/30 dark:hover:border-primary/50 relative isolate flex flex-col overflow-hidden rounded-[28px] border border-black/[0.08] p-7 shadow-[var(--shadow-soft)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-lift)] focus-visible:ring-2 focus-visible:outline-none active:translate-y-0 active:scale-[0.995] dark:border-white/10",
+        "service-card group bg-background focus-visible:ring-ring relative isolate flex flex-col overflow-hidden rounded-[28px] border border-black/[0.08] p-7 shadow-[var(--shadow-soft)] focus-visible:ring-2 focus-visible:outline-none dark:border-white/10",
         className,
       )}
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(120%_100%_at_100%_0%,rgba(96,64,244,0.10),transparent_55%)] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 dark:bg-[radial-gradient(120%_100%_at_100%_0%,rgba(139,112,255,0.18),transparent_55%)]"
+        className="service-card-light pointer-events-none absolute inset-0 -z-10"
       />
       <div className="flex items-start justify-between">
-        <span className="text-primary bg-primary/10 ring-primary/10 group-hover:bg-primary group-hover:text-primary-foreground group-hover:ring-primary/30 flex size-12 items-center justify-center rounded-2xl ring-1 transition-[background-color,color,box-shadow,transform] duration-300 ease-out group-hover:scale-105">
-          <Icon
-            className="size-5 transition-transform duration-300 group-hover:scale-110"
-            aria-hidden
-          />
+        <span className="service-icon flex size-12 items-center justify-center rounded-2xl">
+          <Icon className="size-5" aria-hidden />
         </span>
-        <ArrowUpRight
-          aria-hidden
-          className="text-muted-foreground group-hover:text-primary size-5 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-        />
+        <span className="service-arrow" aria-hidden>
+          <ArrowUpRight className="service-arrow-a" />
+          <ArrowUpRight className="service-arrow-b" />
+        </span>
       </div>
       <h3 className="mt-8 text-[21px] font-semibold tracking-[-0.02em]">
         {service.title}
@@ -41,6 +38,6 @@ export function ServiceCard({
       <p className="text-muted-foreground mt-2 text-[15px] leading-relaxed">
         {service.tagline}
       </p>
-    </Link>
+    </ServiceCardFrame>
   );
 }
